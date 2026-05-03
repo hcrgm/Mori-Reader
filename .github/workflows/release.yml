@@ -21,12 +21,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: 21
           distribution: temurin
+          cache: gradle
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
@@ -37,6 +40,28 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
+          cache-read-only: false
+
+      - name: Restore Gradle Build Cache
+        uses: actions/cache@v4
+        with:
+          path: .gradle/build-cache
+          key: gradle-build-cache-${{ runner.os }}-${{ github.ref }}
+          restore-keys: |
+            gradle-build-cache-${{ runner.os }}-
+            gradle-build-cache-
+
+      - name: Restore Gradle Dependencies Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-deps-${{ runner.os }}-${{ hashFiles('**/gradle/wrapper/gradle-wrapper.properties', '**/gradle.properties', '**/build.gradle.kts') }}
+          restore-keys: |
+            gradle-deps-${{ runner.os }}-
 
       - name: Get version from tag or input
         id: version
@@ -61,8 +86,9 @@ jobs:
           # 解码并保存keystore文件
           echo "$KEYSTORE_FILE" | base64 -d > /tmp/signing.jks
           
-          # 构建release APK
+          # 构建release APK (启用缓存)
           ./gradlew assembleRelease \
+            --build-cache \
             -Pandroid.injected.signing.store.file=/tmp/signing.jks \
             -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
