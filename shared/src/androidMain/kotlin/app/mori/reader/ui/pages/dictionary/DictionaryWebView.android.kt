@@ -573,7 +573,7 @@ private fun dictionaryHtml(
         window.ankiEnabled = $ankiEnabled;
         window.enableInternalPopup = $enableInternalPopup;
         window.swipeThreshold = ${swipeDismissThreshold.coerceIn(0, 80)};
-        if (window.isDark) document.documentElement.classList.add('dark');
+        document.documentElement.classList.add(window.isDark ? 'dark' : 'light');
         </script>
         <script>${dictionaryJs()}</script>
         </body>
@@ -643,7 +643,7 @@ private fun dictionaryCss(
         --mori-image-overlay: rgba(160,160,160,0.8);
     }
     @media (prefers-color-scheme: dark) {
-        :root {
+        :root:not(.dark):not(.light) {
             --mori-text: #f4f6fb;
             --mori-text-secondary: rgba(190, 196, 210, 0.95);
             --mori-entry-bg: rgba(28, 31, 36, 0.78);
@@ -1275,41 +1275,304 @@ function renderEntries(entries, target) {
   });
 }
 window.hoshiSelection = {
-  scanDelimiters: '。、！？…‥「」『』（）()【】〈〉《》〔〕｛｝{}［］[]・：；:;，,.─\n\r ',
-  selection: null,
-  getRange(x, y) {
-    if (document.caretRangeFromPoint) return document.caretRangeFromPoint(x, y);
-    const pos = document.caretPositionFromPoint?.(x, y);
-    if (!pos) return null;
-    const range = document.createRange();
-    range.setStart(pos.offsetNode, pos.offset);
-    range.collapse(true);
-    return range;
-  },
-  selectText(x, y, maxLength) {
-    const range = this.getRange(x, y);
-    if (!range || range.startContainer.nodeType !== Node.TEXT_NODE) return null;
-    if (isRubyAnnotationNode(range.startContainer)) return null;
-    const node = range.startContainer;
-    const text = node.textContent || '';
-    let start = Math.max(0, Math.min(range.startOffset, text.length - 1));
-    if (this.scanDelimiters.includes(text[start]) && start > 0) start--;
-    if (this.scanDelimiters.includes(text[start])) return null;
-    let end = start;
-    while (end < text.length && end - start < maxLength && !this.scanDelimiters.includes(text[end])) end++;
-    const selected = text.slice(start, end).trim();
-    if (!selected) return null;
-    const highlightRange = document.createRange();
-    highlightRange.setStart(node, start);
-    highlightRange.setEnd(node, end);
-    this.selection = highlightRange;
-    CSS.highlights?.set('hoshi-selection', new Highlight(highlightRange));
-    return { text: selected, rect: highlightRange.getBoundingClientRect() };
-  },
-  clearSelection() {
-    CSS.highlights?.get('hoshi-selection')?.clear();
-    this.selection = null;
-  }
+    selection: null,
+    scanDelimiters: '。、！？…‥「」『』（）()【】〈〉《》〔〕｛｝{}［］[]・：；:;，,.─\n\r',
+    sentenceDelimiters: '。！？.!?\n\r',
+    trailingSentenceChars: '。、！？…‥」』）)】〉》〕｝}］]',
+    brackets: {'「':'」', '『': '』', '（':'）', '(':')', '【':'】', '〈':'〉', '《':'》', '〔':'〕', '｛':'｝', '{':'}', '［':'］', '[':']'},
+
+    isScanBoundary(char) {
+        return /^[\s\u3000]$/.test(char) || this.scanDelimiters.includes(char);
+    },
+
+    isFurigana(node) {
+        const el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        return !!el?.closest('rt, rp');
+    },
+
+    findParagraph(node) {
+        let el = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+        return el?.closest('p, .glossary-content') || null;
+    },
+
+    createWalker(rootNode) {
+        const root = rootNode || document.body;
+        return document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode: (n) => this.isFurigana(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+        });
+    },
+
+    inCharRange(charRange, x, y) {
+        const rects = charRange.getClientRects();
+        if (rects.length) {
+            for (const rect of rects) {
+                if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        const rect = charRange.getBoundingClientRect();
+        return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+    },
+
+    getCaretRange(x, y) {
+        if (document.caretPositionFromPoint) {
+            const pos = document.caretPositionFromPoint(x, y);
+            if (!pos) return null;
+            const range = document.createRange();
+            range.setStart(pos.offsetNode, pos.offset);
+            range.collapse(true);
+            return range;
+        } else {
+            const element = document.elementFromPoint(x, y);
+            if (!element) return null;
+
+            const container = element.closest('p, div, span, ruby, a') || document.body;
+            const walker = this.createWalker(container);
+
+            const range = document.createRange();
+            let node;
+            while (node = walker.nextNode()) {
+                for (let i = 0; i < node.textContent.length; i++) {
+                    range.setStart(node, i);
+                    range.setEnd(node, i + 1);
+                    if (this.inCharRange(range, x, y)) {
+                        range.collapse(true);
+                        return range;
+                    }
+                }
+            }
+            return document.caretRangeFromPoint(x, y);
+        }
+    },
+
+    getCharacterAtPoint(x, y) {
+        const range = this.getCaretRange(x, y);
+        if (!range) return null;
+
+        const node = range.startContainer;
+        if (node.nodeType !== Node.TEXT_NODE) return null;
+        if (this.isFurigana(node)) return null;
+
+        const text = node.textContent;
+        const caret = range.startOffset;
+
+        for (const offset of [caret, caret - 1, caret + 1]) {
+            if (offset < 0 || offset >= text.length) continue;
+
+            const charRange = document.createRange();
+            charRange.setStart(node, offset);
+            charRange.setEnd(node, offset + 1);
+            if (this.inCharRange(charRange, x, y)) {
+                if (this.isScanBoundary(text[offset])) return null;
+                return { node, offset };
+            }
+        }
+
+        return null;
+    },
+
+    getSentence(startNode, startOffset) {
+        const container = this.findParagraph(startNode) || document.body;
+        const walker = this.createWalker(container);
+
+        walker.currentNode = startNode;
+        const partsBefore = [];
+        let node = startNode;
+        let limit = startOffset;
+
+        while (node) {
+            const text = node.textContent;
+            let foundStart = false;
+            for (let i = limit - 1; i >= 0; i--) {
+                if (this.sentenceDelimiters.includes(text[i])) {
+                    partsBefore.push(text.slice(i + 1, limit));
+                    foundStart = true;
+                    break;
+                }
+            }
+
+            if (foundStart) break;
+
+            partsBefore.push(text.slice(0, limit));
+            node = walker.previousNode();
+            if (node) limit = node.textContent.length;
+        }
+
+        walker.currentNode = startNode;
+        const partsAfter = [];
+        node = startNode;
+        let start = startOffset;
+
+        while (node) {
+            const text = node.textContent;
+            let foundEnd = false;
+
+            for (let i = start; i < text.length; i++) {
+                if (this.sentenceDelimiters.includes(text[i])) {
+                    let end = i + 1;
+                    while (end < text.length) {
+                        if (!this.trailingSentenceChars.includes(text[end])) break;
+                        end += 1;
+                    }
+                    partsAfter.push(text.slice(start, end));
+                    foundEnd = true;
+                    break;
+                }
+            }
+
+            if (foundEnd) break;
+
+            partsAfter.push(text.slice(start));
+            node = walker.nextNode();
+            start = 0;
+        }
+
+        let sentence = (partsBefore.reverse().join('') + partsAfter.join('')).trim();
+        const closeBrackets = new Set(Object.values(this.brackets));
+        const openBrackets = new Set(Object.keys(this.brackets));
+        let stack = [];
+        let unmatchedClose = [];
+
+        for (let i = 0; i < sentence.length; i++) {
+            const ch = sentence[i];
+            if (openBrackets.has(ch)) {
+                stack.push(ch);
+            } else if (closeBrackets.has(ch)) {
+                if (stack.length > 0 && this.brackets[stack[stack.length - 1]] === ch) {
+                    stack.pop();
+                } else {
+                    unmatchedClose.push(ch);
+                }
+            }
+        }
+
+        let startSlice = 0;
+        while (stack.length > 0 && startSlice < sentence.length - 1) {
+            if (stack[0] === sentence[startSlice]) {
+                stack.shift();
+            } else break;
+            startSlice++;
+        }
+
+        let endSlice = sentence.length - 1;
+        let endIdx = sentence.length - 1;
+        while (unmatchedClose.length > 0 && endIdx > startSlice) {
+            if (unmatchedClose[unmatchedClose.length - 1] === sentence[endIdx]) {
+                unmatchedClose.pop();
+                endSlice = endIdx - 1;
+            } else if (!this.sentenceDelimiters.includes(sentence[endIdx])) break;
+            endIdx--;
+        }
+        return sentence.slice(startSlice, endSlice + 1).trim();
+    },
+
+    selectText(x, y, maxLength) {
+        const hit = this.getCharacterAtPoint(x, y);
+        if (!hit) {
+            this.clearSelection();
+            return null;
+        }
+
+        if (this.selection &&
+            hit.node === this.selection.startNode &&
+            hit.offset === this.selection.startOffset) {
+            this.clearSelection();
+            return null;
+        }
+
+        this.clearSelection();
+
+        const container = this.findParagraph(hit.node) || document.body;
+        const walker = this.createWalker(container);
+
+        let text = '';
+        let node = hit.node;
+        let offset = hit.offset;
+        let ranges = [];
+
+        walker.currentNode = node;
+        while (text.length < maxLength && node) {
+            const content = node.textContent;
+            const start = offset;
+
+            while (offset < content.length && text.length < maxLength) {
+                const char = content[offset];
+                if (this.isScanBoundary(char)) break;
+                text += char;
+                offset++;
+            }
+
+            if (offset > start) {
+                ranges.push({ node, start, end: offset });
+            }
+
+            if (offset < content.length || text.length >= maxLength) break;
+
+            node = walker.nextNode();
+            offset = 0;
+        }
+
+        if (!text) return null;
+
+        this.selection = {
+            startNode: hit.node,
+            startOffset: hit.offset,
+            ranges,
+            text
+        };
+
+        return {
+            text,
+            sentence: this.getSentence(hit.node, hit.offset),
+            rect: this.getSelectionRect(x, y)
+        };
+    },
+
+    getSelectionRect(x, y) {
+        if (!this.selection?.ranges.length) return null;
+
+        const first = this.selection.ranges[0];
+        const range = document.createRange();
+        range.setStart(first.node, first.start);
+        range.setEnd(first.node, first.start + 1);
+
+        const rects = Array.from(range.getClientRects());
+        const rect = rects.find(rect => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) ?? range.getBoundingClientRect();
+        return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    },
+
+    highlightSelection(charCount) {
+        if (!this.selection?.ranges.length) return;
+
+        const highlights = [];
+        let remaining = charCount;
+
+        for (const r of this.selection.ranges) {
+            if (remaining <= 0) break;
+
+            let end = r.start;
+            while (end < r.end && remaining > 0) {
+                const char = String.fromCodePoint(r.node.textContent.codePointAt(end));
+                end += char.length;
+                remaining--;
+            }
+
+            const range = document.createRange();
+            range.setStart(r.node, r.start);
+            range.setEnd(r.node, end);
+            highlights.push(range);
+        }
+
+        CSS.highlights?.set('hoshi-selection', new Highlight(...highlights));
+    },
+
+    clearSelection() {
+        window.getSelection()?.removeAllRanges();
+        CSS.highlights?.get('hoshi-selection')?.clear();
+        this.selection = null;
+    }
 };
 function hidePopup() {
   document.getElementById('popup').hidden = true;
@@ -1320,6 +1583,8 @@ function showPopup(selection) {
   window.lastPopupSelectionText = selection.text || '';
   const result = JSON.parse(AndroidHoshi.lookup(selection.text, window.maxResults || 16));
   if (!result.entries?.length) { hidePopup(); return; }
+  const matched = result.entries[0]?.matched || '';
+  if (matched) window.hoshiSelection.highlightSelection(Array.from(matched).length);
   const popup = document.getElementById('popup');
   const content = document.getElementById('popup-content');
   const oldEntries = window.lookupEntries;
@@ -1327,6 +1592,7 @@ function showPopup(selection) {
   window.lookupEntries = result.entries;
   window.dictionaryStyles = result.styles || {};
   renderEntries(result.entries, content);
+  normalizeRubyTextContainers(content);
   window.lookupEntries = oldEntries;
   window.dictionaryStyles = oldStyles;
   const yBelow = selection.rect.bottom + 8;
@@ -1334,6 +1600,24 @@ function showPopup(selection) {
   popup.style.top = `${'$'}{desiredTop}px`;
   popup.hidden = false;
   document.getElementById('popup-backdrop').hidden = false;
+}
+function highlightLookupMatch(selection) {
+  try {
+    const result = JSON.parse(AndroidHoshi.lookup(selection.text, window.maxResults || 16));
+    const matched = result.entries?.[0]?.matched || '';
+    if (matched) window.hoshiSelection.highlightSelection(Array.from(matched).length);
+  } catch {}
+}
+function normalizeRubyTextContainers(root) {
+  root.querySelectorAll('.glossary-content ruby, .expression ruby').forEach(ruby => {
+    ruby.childNodes.forEach(node => {
+      if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+        const span = document.createElement('span');
+        span.textContent = node.textContent;
+        node.replaceWith(span);
+      }
+    });
+  });
 }
 document.getElementById('popup-backdrop').addEventListener('click', hidePopup);
 if (window.swipeThreshold) {
@@ -1366,6 +1650,7 @@ document.addEventListener('click', e => {
     if (window.enableInternalPopup) {
       showPopup(selection);
     } else {
+      highlightLookupMatch(selection);
       try { AndroidHoshi.openChildPopup(JSON.stringify(selection)); } catch {}
     }
   } else if (window.enableInternalPopup) {
@@ -1375,6 +1660,7 @@ document.addEventListener('click', e => {
 const container = document.getElementById('entries-container');
 if (window.lookupEntries.length) {
   renderEntries(window.lookupEntries, container);
+  normalizeRubyTextContainers(container);
 } else {
   document.getElementById('empty-state').textContent = window.emptyMessage || '';
 }
