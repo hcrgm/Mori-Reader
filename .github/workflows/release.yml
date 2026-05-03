@@ -40,9 +40,8 @@ jobs:
           cmake-version: 3.28.0
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-home-cache-cleanup: true
           cache-read-only: false
 
       - name: Restore Gradle Build Cache
@@ -132,10 +131,6 @@ jobs:
             ## Release ${{ steps.version.outputs.version }}
             
             APK: ${{ steps.apk.outputs.apk_name }}
-            
-            ### Installation
-            ```bash
-            adb install ${{ steps.apk.outputs.apk_name }}
             ```
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
