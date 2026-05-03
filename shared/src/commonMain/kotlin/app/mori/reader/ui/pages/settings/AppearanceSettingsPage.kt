@@ -1,31 +1,31 @@
 package app.mori.reader.ui.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.appearance_app_title
+import app.mori.reader.shared.generated.resources.appearance_reader_title
+import app.mori.reader.shared.generated.resources.cd_appearance
+import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppState
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.AppThemeSettingsCard
 import app.mori.reader.ui.components.settings.ReaderAppearanceSettingsCard
+import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.utils.overScrollVertical
-import app.mori.reader.shared.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AppearanceSettingsPage(

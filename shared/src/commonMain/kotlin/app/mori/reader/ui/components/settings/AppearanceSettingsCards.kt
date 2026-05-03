@@ -28,6 +28,7 @@ import top.yukonga.miuix.kmp.basic.SliderDefaults.SliderHapticEffect
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SpinnerEntry
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
@@ -83,12 +84,14 @@ fun AppThemeSettingsCard(
                 onLanguageModeSelected(languageModes[index])
             },
         )
-        SwitchPreference(
-            checked = blurEnabled,
-            onCheckedChange = onBlurEnabledChanged,
-            title = stringResource(Res.string.appearance_blur_title),
-            summary = stringResource(Res.string.appearance_blur_summary),
-        )
+        if (isRenderEffectSupported()) {
+            SwitchPreference(
+                checked = blurEnabled,
+                onCheckedChange = onBlurEnabledChanged,
+                title = stringResource(Res.string.appearance_blur_title),
+                summary = stringResource(Res.string.appearance_blur_summary),
+            )
+        }
     }
 }
 

@@ -9,16 +9,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.cd_appearance
+import app.mori.reader.shared.generated.resources.settings_appearance_summary
+import app.mori.reader.shared.generated.resources.settings_audio_summary
+import app.mori.reader.shared.generated.resources.settings_audio_title
+import app.mori.reader.shared.generated.resources.settings_dictionary_summary
+import app.mori.reader.shared.generated.resources.tab_dictionary
+import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppState
 import app.mori.reader.ui.AppTab
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.utils.overScrollVertical
-import app.mori.reader.shared.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SettingsPage(
@@ -49,13 +56,6 @@ fun SettingsPage(
             ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-//            item {
-//                HeroCard(
-//                    title = "显示与体验",
-//                    subtitle = "设置页绑定全局状态，可继续扩展主题、账号、同步等模块。",
-//                )
-//            }
-
             item {
                 SmallTitle(text = stringResource(Res.string.tab_settings))
                 Card(modifier = Modifier.padding(horizontal = 12.dp)) {
@@ -70,7 +70,7 @@ fun SettingsPage(
                         onClick = onOpenDictionarySettings,
                     )
                     ArrowPreference(
-title = stringResource(Res.string.settings_audio_title),
+                        title = stringResource(Res.string.settings_audio_title),
                         summary = stringResource(Res.string.settings_audio_summary),
                         onClick = onOpenAudioSettings,
                     )
