@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items as gridItems
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -51,12 +50,37 @@ import app.mori.reader.data.book.BookCategory
 import app.mori.reader.data.book.BookInfo
 import app.mori.reader.data.book.rememberEpubPicker
 import app.mori.reader.data.settings.BookshelfSortMode
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.btn_cancel
+import app.mori.reader.shared.generated.resources.btn_confirm
+import app.mori.reader.shared.generated.resources.btn_delete
+import app.mori.reader.shared.generated.resources.cd_add_category
+import app.mori.reader.shared.generated.resources.cd_category_manage
+import app.mori.reader.shared.generated.resources.cd_close
+import app.mori.reader.shared.generated.resources.cd_drag_sort
+import app.mori.reader.shared.generated.resources.cd_import_book
+import app.mori.reader.shared.generated.resources.cd_rename
+import app.mori.reader.shared.generated.resources.cd_sort_by
+import app.mori.reader.shared.generated.resources.home_adjust_category
+import app.mori.reader.shared.generated.resources.home_category_name_label
+import app.mori.reader.shared.generated.resources.home_delete_book
+import app.mori.reader.shared.generated.resources.home_delete_book_confirm
+import app.mori.reader.shared.generated.resources.home_delete_category
+import app.mori.reader.shared.generated.resources.home_empty_bookshelf
+import app.mori.reader.shared.generated.resources.home_empty_category
+import app.mori.reader.shared.generated.resources.home_importing
+import app.mori.reader.shared.generated.resources.home_loading
+import app.mori.reader.shared.generated.resources.home_no_categories
+import app.mori.reader.shared.generated.resources.home_no_categories_available
+import app.mori.reader.shared.generated.resources.home_rename_category
+import app.mori.reader.shared.generated.resources.home_tab_all
 import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppState
 import app.mori.reader.ui.AppTab
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
@@ -89,8 +113,7 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import app.mori.reader.shared.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.lazy.grid.items as gridItems
 
 private val HomeHorizontalPadding = 12.dp
 private val HomeTabInnerPadding = 5.dp
@@ -413,7 +436,10 @@ private fun BookshelfContent(
                     key = "empty",
                     span = { GridItemSpan(maxLineSpan) },
                 ) {
-                    val emptyText = if (page == 0) stringResource(Res.string.home_empty_bookshelf) else stringResource(Res.string.home_empty_category)
+                    val emptyText =
+                        if (page == 0) stringResource(Res.string.home_empty_bookshelf) else stringResource(
+                            Res.string.home_empty_category
+                        )
                     EmptyBookshelfMessage(text = emptyText)
                 }
 
@@ -475,28 +501,34 @@ private fun BookCard(
                     title = book.title,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .aspectRatio(0.68f)
+                        .aspectRatio(5f / 7f)
                         .clip(cardShape),
                 )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 6.dp, top = 6.dp, end = 6.dp, bottom = 6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                        .padding(start = 1.dp, end = 1.dp, top = 6.dp, bottom = 6.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            text = book.title,
-                            modifier = Modifier.weight(1f),
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(3.dp)
+                                .clip(progressShape)
+                                .background(MiuixTheme.colorScheme.surfaceVariant),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth(progress / 100f)
+                                    .height(3.dp)
+                                    .background(MiuixTheme.colorScheme.primary),
+                            )
+                        }
                         Text(
                             text = progressText,
                             fontSize = 12.sp,
@@ -504,20 +536,13 @@ private fun BookCard(
                             maxLines = 1,
                         )
                     }
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(3.dp)
-                            .clip(progressShape)
-                            .background(MiuixTheme.colorScheme.surfaceVariant),
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(progress / 100f)
-                                .height(3.dp)
-                                .background(MiuixTheme.colorScheme.primary),
-                        )
-                    }
+                    Text(
+                        text = book.title,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
@@ -652,7 +677,10 @@ private fun CategoryManagerSheet(
                 onClick = onCreate,
                 backgroundColor = MiuixTheme.colorScheme.primary.copy(0.2f)
             ) {
-                Icon(MiuixIcons.Add, contentDescription = stringResource(Res.string.cd_add_category))
+                Icon(
+                    MiuixIcons.Add,
+                    contentDescription = stringResource(Res.string.cd_add_category)
+                )
             }
         },
         onDismissRequest = onDismiss,
@@ -745,7 +773,11 @@ private fun LazyItemScope.CategoryManageItem(
                     Icon(MiuixIcons.Edit, contentDescription = stringResource(Res.string.cd_rename))
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(MiuixIcons.Delete, contentDescription = stringResource(Res.string.btn_delete), tint = Color.Red)
+                    Icon(
+                        MiuixIcons.Delete,
+                        contentDescription = stringResource(Res.string.btn_delete),
+                        tint = Color.Red
+                    )
                 }
             }
         }
@@ -875,7 +907,8 @@ private fun EditBookCategoriesSheet(
     onConfirm: (BookInfo, List<String>) -> Unit,
 ) {
     var selectedCategoryIds by remember(book?.id, categories) {
-        mutableStateOf(book?.categoryIds?.filter { categoryId -> categories.any { it.id == categoryId } }?.toSet().orEmpty())
+        mutableStateOf(book?.categoryIds?.filter { categoryId -> categories.any { it.id == categoryId } }
+            ?.toSet().orEmpty())
     }
 
     WindowBottomSheet(
@@ -943,7 +976,7 @@ private fun DeleteBookDialog(
         onDismissRequest = onDismiss,
     ) {
         Text(
-text = stringResource(Res.string.home_delete_book_confirm, book?.title.orEmpty()),
+            text = stringResource(Res.string.home_delete_book_confirm, book?.title.orEmpty()),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 16.dp),
