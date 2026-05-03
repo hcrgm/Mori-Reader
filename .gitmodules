@@ -1,0 +1,3 @@
+[submodule "external/hoshidicts-kotlin-bridge"]
+	path = external/hoshidicts-kotlin-bridge
+	url = https://github.com/Manhhao/hoshidicts-kotlin-bridge.git

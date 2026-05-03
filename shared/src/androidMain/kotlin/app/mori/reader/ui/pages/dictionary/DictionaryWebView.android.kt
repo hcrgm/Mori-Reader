@@ -295,7 +295,7 @@ private class DictionaryBridge {
     fun lookup(text: String, maxResults: Int): String =
         runCatching {
             val entries =
-                HoshiDicts.lookup(HoshiDicts.lookupObject, text, maxResults.coerceIn(1, 50))
+                HoshiDicts.lookup(HoshiDicts.lookupObject, text, maxResults.coerceIn(1, 50), scanLength = 16)
                     .map { result ->
                         val term = result.term
                         DictionaryLookupEntry(

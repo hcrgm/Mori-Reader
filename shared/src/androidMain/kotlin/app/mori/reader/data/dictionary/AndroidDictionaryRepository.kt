@@ -206,7 +206,7 @@ private class AndroidDictionaryRepository(
             if (trimmed.isEmpty()) {
                 return@withContext DictionaryLookupResult()
             }
-            val entries = HoshiDicts.lookup(HoshiDicts.lookupObject, trimmed, maxResults)
+            val entries = HoshiDicts.lookup(HoshiDicts.lookupObject, trimmed, maxResults, scanLength = 16)
                 .map { result ->
                     val term = result.term
                     DictionaryLookupEntry(
