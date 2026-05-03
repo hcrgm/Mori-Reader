@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===================== Global / App Level ===================== -->
+    <!-- AppTab labels -->
+    <string name="tab_bookshelf">书架</string>
+    <string name="tab_dictionary">词典</string>
+    <string name="tab_settings">设置</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_sort_by">排序方式</string>
+    <string name="cd_import_book">导入图书</string>
+    <string name="cd_category_manage">分类管理</string>
+    <string name="cd_add_category">新增分类</string>
+    <string name="cd_drag_sort">拖拽排序</string>
+    <string name="cd_rename">重命名</string>
+    <string name="cd_delete">删除</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_back">返回</string>
+    <string name="cd_appearance">外观</string>
+    <string name="cd_table_of_contents">目录</string>
+    <string name="cd_clear_search">清除搜索内容</string>
+    <string name="cd_delete_source">删除音源</string>
+    <string name="cd_delete_dictionary">删除词典</string>
+    <string name="cd_add_source">添加音源</string>
+    <string name="cd_import_dictionary">导入词典</string>
+
+    <!-- Button labels -->
+    <string name="btn_cancel">取消</string>
+    <string name="btn_confirm">确认</string>
+    <string name="btn_delete">删除</string>
+    <string name="btn_add">添加</string>
+    <string name="btn_save">保存</string>
+    <string name="btn_import">导入</string>
+    <string name="btn_connect">连接</string>
+    <string name="btn_refresh">刷新</string>
+    <string name="btn_close">关闭</string>
+    <string name="btn_dismiss">关闭</string>
+
+    <!-- ===================== Bookshelf (HomePage) ===================== -->
+    <string name="home_tab_all">全部</string>
+    <string name="home_importing">正在导入图书</string>
+    <string name="home_loading">正在加载书架</string>
+    <string name="home_empty_bookshelf">书架里还没有图书</string>
+    <string name="home_empty_category">这个分类还没有图书</string>
+    <string name="home_adjust_category">调整分类</string>
+    <string name="home_delete_book">删除图书</string>
+    <string name="home_category_manage">分类管理</string>
+    <string name="home_no_categories">暂无分类</string>
+    <string name="home_no_categories_available">暂无可选分类</string>
+    <string name="home_create_category">新增分类</string>
+    <string name="home_rename_category">重命名分类</string>
+    <string name="home_delete_category">删除分类</string>
+    <string name="home_category_name_label">分类名称</string>
+    <string name="home_category_name_hint">分类名称</string>
+    <string name="home_delete_category_confirm">确认删除「%s」？分类下的图书不会删除，但会移出该分类。</string>
+    <string name="home_delete_book_confirm">确定删除《%s》吗？</string>
+    <string name="home_sort_recent">最近阅读</string>
+    <string name="home_sort_title">书名</string>
+
+    <!-- ===================== Dictionary (DictionaryPage) ===================== -->
+    <string name="dict_placeholder">输入词条开始查询</string>
+    <string name="dict_search_hint">搜索词条</string>
+
+    <!-- ===================== Reader ===================== -->
+    <string name="reader_loading_epub">正在加载 EPUB</string>
+    <string name="reader_no_chapter">没有可阅读章节</string>
+    <string name="reader_chapter_sheet_title">目录</string>
+    <string name="reader_appearance_sheet_title">外观</string>
+
+    <!-- ===================== Settings ===================== -->
+    <string name="settings_title">设置</string>
+    <string name="settings_appearance_title">外观</string>
+    <string name="settings_appearance_summary">应用主题、模糊效果和阅读器排版</string>
+    <string name="settings_dictionary_title">词典</string>
+    <string name="settings_dictionary_summary">导入、启用、排序和维护本地词典</string>
+    <string name="settings_audio_title">音频</string>
+    <string name="settings_audio_summary">配置词条发音、自动播放和离线音频</string>
+
+    <!-- ===================== Appearance Settings ===================== -->
+    <string name="appearance_title">外观</string>
+    <string name="appearance_app_title">应用</string>
+    <string name="appearance_reader_title">阅读器</string>
+
+    <!-- Language -->
+    <string name="appearance_language_title">语言</string>
+    <string name="appearance_language_summary">应用显示语言</string>
+    <string name="language_follow_system">跟随系统</string>
+    <string name="language_english">英语</string>
+    <string name="language_chinese">中文</string>
+    <string name="appearance_theme_title">应用主题</string>
+    <string name="appearance_theme_summary">选择跟随系统、浅色或深色</string>
+    <string name="appearance_blur_title">全局模糊效果</string>
+    <string name="appearance_blur_summary">控制应用部分控件的模糊效果</string>
+    <string name="appearance_writing_vertical">竖排</string>
+    <string name="appearance_writing_horizontal">横排</string>
+    <string name="appearance_reading_pagination">分页阅读</string>
+    <string name="appearance_reading_continuous">连续滚动</string>
+    <string name="appearance_reader_theme_title">阅读器主题</string>
+    <string name="appearance_writing_direction_title">阅读方向</string>
+    <string name="appearance_writing_direction_summary">竖排或横排</string>
+    <string name="appearance_page_mode_title">翻页模式</string>
+    <string name="appearance_page_mode_summary">分页阅读或连续滚动</string>
+    <string name="appearance_hide_furigana_title">隐藏振假名</string>
+    <string name="appearance_fullscreen_title">全屏模式</string>
+    <string name="appearance_avoid_page_break_title">避免段落内分页</string>
+    <string name="appearance_avoid_page_break_on">段落尽量保持在同一页</string>
+    <string name="appearance_avoid_page_break_off">允许段落跨页拆分</string>
+    <string name="appearance_justify_title">两端对齐</string>
+    <string name="appearance_typography">排版</string>
+    <string name="appearance_font_size">字号</string>
+    <string name="appearance_horizontal_margin">水平边距</string>
+    <string name="appearance_vertical_margin">垂直边距</string>
+    <string name="appearance_line_height">行高</string>
+    <string name="appearance_character_spacing">字间距</string>
+    <string name="appearance_popup_title">词典弹窗</string>
+    <string name="appearance_popup_full_width_title">全宽弹窗</string>
+    <string name="appearance_popup_full_width_on">贴近底部全宽显示</string>
+    <string name="appearance_popup_full_width_off">按选词位置显示</string>
+    <string name="appearance_popup_swipe_dismiss_title">滑动关闭</string>
+    <string name="appearance_popup_swipe_dismiss_on">横向滑动关闭弹窗</string>
+    <string name="appearance_popup_swipe_dismiss_off">关闭滑动关闭</string>
+    <string name="appearance_popup_width">弹窗宽度</string>
+    <string name="appearance_popup_height">弹窗高度</string>
+    <string name="appearance_popup_swipe_threshold">滑动阈值</string>
+
+    <!-- ===================== Audio Settings ===================== -->
+    <string name="audio_title">音频</string>
+    <string name="audio_playback_title">播放</string>
+    <string name="audio_auto_play_title">自动播放</string>
+    <string name="audio_auto_play_summary">查词后播放第一条发音</string>
+    <string name="audio_background_title">后台音频</string>
+    <string name="audio_source_title">音源</string>
+    <string name="audio_add_source_title">添加音源</string>
+    <string name="audio_edit_source_title">编辑音源</string>
+    <string name="audio_name_label">名称</string>
+    <string name="audio_url_label">URL</string>
+    <string name="audio_dialog_summary">支持 Yomitan JSON 音源，URL 需要包含 {term} 或 {reading}。</string>
+    <string name="audio_local_title">本地音频</string>
+    <string name="audio_local_description">导入本地音频数据库，用于离线播放词典音频。启用后会自动添加本地音源。</string>
+    <string name="audio_local_importing">正在导入 android.db</string>
+    <string name="audio_local_not_imported">未导入</string>
+    <string name="audio_local_summary">本地 android.db 音频库</string>
+    <string name="audio_delete_source_title">删除音源</string>
+    <string name="audio_delete_source_summary">删除后需要重新添加才能恢复。</string>
+    <string name="audio_delete_source_confirm">确认删除「%s」吗？</string>
+    <string name="audio_delete_local_title">删除本地音频</string>
+    <string name="audio_delete_local_summary">删除后需要重新导入 android.db 才能恢复。</string>
+    <string name="audio_delete_local_confirm">确认删除本地音频数据库 android.db 吗？</string>
+
+    <!-- AudioPlaybackMode labels -->
+    <string name="audio_mode_interrupt">打断其他音频</string>
+    <string name="audio_mode_duck">降低其他音量</string>
+    <string name="audio_mode_mix">保持其他音量</string>
+
+    <!-- ===================== Dictionary Settings ===================== -->
+    <string name="dict_settings_title">词典</string>
+    <string name="dict_settings_dictionaries">词典</string>
+    <string name="dict_settings_options">设置</string>
+    <string name="dict_settings_term">Term 词典</string>
+    <string name="dict_settings_frequency">Frequency 词频</string>
+    <string name="dict_settings_pitch">Pitch 音调</string>
+    <string name="dict_settings_loading">正在加载词典</string>
+    <string name="dict_settings_empty">当前分类还没有导入词典。</string>
+    <string name="dict_settings_query_display">查询显示</string>
+    <string name="dict_settings_max_results">最大结果数</string>
+    <string name="dict_settings_scan_length">扫描长度</string>
+    <string name="dict_settings_collapse_title">折叠词典分组</string>
+    <string name="dict_settings_collapse_summary">默认仅展开第一本词典，其余词典折叠显示</string>
+    <string name="dict_settings_compact_title">紧凑释义</string>
+    <string name="dict_settings_compact_summary">将列表型释义压缩为更紧凑的单行显示</string>
+    <string name="dict_settings_show_tags_title">显示表达标签</string>
+    <string name="dict_settings_show_tags_summary">在词条顶部显示词性、用法等标签</string>
+    <string name="dict_settings_merge_freq_title">合并词频标签</string>
+    <string name="dict_settings_merge_freq_summary">将多个词频标签合并为一个平均标签，点按可展开原始标签</string>
+    <string name="dict_settings_dedup_pitch_title">去重音高标注</string>
+    <string name="dict_settings_dedup_pitch_summary">相同的音高位置只显示一次</string>
+    <string name="dict_settings_delete_title">删除词典</string>
+    <string name="dict_settings_delete_summary">删除后需要重新导入才能恢复。</string>
+    <string name="dict_settings_delete_confirm">确认删除「%s」吗？</string>
+    <string name="dict_settings_revision_prefix">revision </string>
+
+    <!-- ===================== Anki Settings ===================== -->
+    <string name="anki_title">Anki</string>
+    <string name="anki_connection_title">连接</string>
+    <string name="anki_deck_model_title">牌组与模板</string>
+    <string name="anki_duplicate_sync_title">重复与同步</string>
+    <string name="anki_tags_glossary_title">标签与释义</string>
+    <string name="anki_field_mapping_title">字段映射</string>
+    <string name="anki_field_mapping_hint">刷新并选择模板后可配置字段。</string>
+    <string name="anki_enable_title">启用 Anki</string>
+    <string name="anki_enable_summary">使用 AnkiDroid 创建卡片，词典条目显示加卡按钮</string>
+    <string name="anki_require_permission">需要安装 AnkiDroid 并授予读写权限。</string>
+    <string name="anki_deck_title">牌组</string>
+    <string name="anki_model_title">模板</string>
+    <string name="anki_not_selected">未选择</string>
+    <string name="anki_not_loaded">未加载</string>
+    <string name="anki_allow_duplicate_title">允许重复</string>
+    <string name="anki_duplicate_scope_title">重复范围</string>
+    <string name="anki_check_all_models_title">检查所有模板</string>
+    <string name="anki_sync_after_add_title">加卡后同步</string>
+    <string name="anki_tags_label">标签，空格分隔</string>
+    <string name="anki_compact_glossary_title">紧凑释义</string>
+    <string name="anki_compact_glossary_summary">加卡时将多条释义压缩为短文本</string>
+    <string name="anki_insert_token">插入 token</string>
+    <string name="anki_field_template_label">字段模板</string>
+    <string name="anki_token_title">Token</string>
+    <string name="anki_token_summary">插入模板 token</string>
+    <string name="anki_duplicate_scope_collection">整个集合</string>
+    <string name="anki_duplicate_scope_deck">当前牌组</string>
+    <string name="anki_duplicate_scope_deck_root">牌组根目录</string>
+
+    <!-- AnkiTemplateToken labels -->
+    <string name="anki_token_expression">表达</string>
+    <string name="anki_token_reading">读音</string>
+    <string name="anki_token_furigana_plain">纯文本注音</string>
+    <string name="anki_token_audio">音频</string>
+    <string name="anki_token_glossary">释义</string>
+    <string name="anki_token_glossary_first">首条释义</string>
+    <string name="anki_token_selected_glossary">选中释义</string>
+    <string name="anki_token_popup_selection_text">弹窗选词</string>
+    <string name="anki_token_sentence">例句</string>
+    <string name="anki_token_frequencies">词频</string>
+    <string name="anki_token_frequency_harmonic_rank">谐波词频</string>
+    <string name="anki_token_pitch_accent_positions">音高位置</string>
+    <string name="anki_token_pitch_accent_categories">音高分类</string>
+    <string name="anki_token_document_title">文档标题</string>
+
+    <!-- ===================== Theme Mode Labels ===================== -->
+    <string name="theme_follow_system">跟随系统</string>
+    <string name="theme_light">浅色模式</string>
+    <string name="theme_dark">深色模式</string>
+    <string name="reader_theme_follow_app">跟随应用主题</string>
+
+    <!-- ===================== Toast / Effect Messages ===================== -->
+    <!-- Blur -->
+    <string name="toast_blur_enabled">模糊效果已开启</string>
+    <string name="toast_blur_disabled">模糊效果已关闭</string>
+
+    <!-- Book -->
+    <string name="toast_book_imported">图书已导入</string>
+    <string name="toast_book_import_failed">图书导入失败</string>
+    <string name="toast_book_last_chapter">已经是最后一章</string>
+    <string name="toast_book_first_chapter">已经是第一章</string>
+
+    <!-- Category -->
+    <string name="toast_category_created">分类已创建</string>
+    <string name="toast_category_renamed">分类已重命名</string>
+    <string name="toast_category_deleted">分类已删除</string>
+    <string name="toast_category_sort_failed">分类排序失败</string>
+    <string name="toast_category_operation_failed">分类操作失败</string>
+    <string name="toast_book_categories_updated">图书分类已更新</string>
+    <string name="toast_book_deleted">图书已删除</string>
+
+    <!-- Anki -->
+    <string name="toast_anki_connected">AnkiDroid 连接成功</string>
+    <string name="toast_anki_unavailable">AnkiDroid 不可用</string>
+    <string name="toast_anki_connect_failed">AnkiDroid 连接失败</string>
+    <string name="toast_anki_catalog_refreshed">Anki 牌组和模板已刷新</string>
+    <string name="toast_anki_config_failed">Anki 配置拉取失败</string>
+    <string name="toast_anki_not_enabled">Anki 未启用</string>
+    <string name="toast_anki_select_deck_and_model">请先选择 Anki 牌组和模板</string>
+    <string name="toast_anki_duplicate_card">Anki 已存在重复卡片</string>
+    <string name="toast_anki_card_added">Anki 卡片已添加</string>
+    <string name="toast_anki_add_card_failed">Anki 加卡失败</string>
+
+    <!-- Audio -->
+    <string name="toast_audio_url_exists">音源 URL 已存在</string>
+    <string name="toast_audio_local_imported">本地音频已导入</string>
+    <string name="toast_audio_local_import_failed">本地音频导入失败</string>
+    <string name="toast_audio_local_deleted">本地音频已删除</string>
+    <string name="toast_audio_local_delete_failed">本地音频删除失败</string>
+
+    <!-- Dictionary -->
+    <string name="toast_dict_importing">正在导入词典</string>
+    <string name="toast_dict_imported">词典已导入</string>
+    <string name="toast_dict_import_failed">词典导入失败</string>
+    <string name="toast_dict_checking_updates">正在检查词典更新</string>
+    <string name="toast_dict_updates_complete">词典更新检查完成</string>
+    <string name="toast_dict_update_failed">词典更新失败</string>
+
+    <!-- Error messages -->
+    <string name="error_bookshelf_load_failed">书架加载失败</string>
+    <string name="error_dictionary_load_failed">词典加载失败</string>
+    <string name="error_search_failed">查词失败</string>
+    <string name="error_reader_load_failed">阅读器加载失败</string>
+    <string name="error_dictionary_operation_failed">词典操作失败</string>
+</resources>

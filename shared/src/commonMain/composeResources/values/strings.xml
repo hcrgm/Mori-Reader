@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ===================== Global / App Level ===================== -->
+    <!-- AppTab labels -->
+    <string name="tab_bookshelf">Bookshelf</string>
+    <string name="tab_dictionary">Dictionary</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Content descriptions -->
+    <string name="cd_sort_by">Sort by</string>
+    <string name="cd_import_book">Import book</string>
+    <string name="cd_category_manage">Manage categories</string>
+    <string name="cd_add_category">Add category</string>
+    <string name="cd_drag_sort">Drag to sort</string>
+    <string name="cd_rename">Rename</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_appearance">Appearance</string>
+    <string name="cd_table_of_contents">Table of contents</string>
+    <string name="cd_clear_search">Clear search</string>
+    <string name="cd_delete_source">Delete source</string>
+    <string name="cd_delete_dictionary">Delete dictionary</string>
+    <string name="cd_add_source">Add source</string>
+    <string name="cd_import_dictionary">Import dictionary</string>
+
+    <!-- Button labels -->
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_confirm">Confirm</string>
+    <string name="btn_delete">Delete</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_save">Save</string>
+    <string name="btn_import">Import</string>
+    <string name="btn_connect">Connect</string>
+    <string name="btn_refresh">Refresh</string>
+    <string name="btn_close">Close</string>
+    <string name="btn_dismiss">Dismiss</string>
+
+    <!-- ===================== Bookshelf (HomePage) ===================== -->
+    <string name="home_tab_all">All</string>
+    <string name="home_importing">Importing book</string>
+    <string name="home_loading">Loading bookshelf</string>
+    <string name="home_empty_bookshelf">Your bookshelf is empty</string>
+    <string name="home_empty_category">This category has no books</string>
+    <string name="home_adjust_category">Adjust category</string>
+    <string name="home_delete_book">Delete book</string>
+    <string name="home_category_manage">Manage categories</string>
+    <string name="home_no_categories">No categories</string>
+    <string name="home_no_categories_available">No categories available</string>
+    <string name="home_create_category">New category</string>
+    <string name="home_rename_category">Rename category</string>
+    <string name="home_delete_category">Delete category</string>
+    <string name="home_category_name_label">Category name</string>
+    <string name="home_category_name_hint">Category name</string>
+    <string name="home_delete_category_confirm">Delete "%s"? Books in this category will not be deleted, but will be moved out.</string>
+    <string name="home_delete_book_confirm">Delete "%s"?</string>
+    <string name="home_sort_recent">Recent</string>
+    <string name="home_sort_title">Title</string>
+
+    <!-- ===================== Dictionary (DictionaryPage) ===================== -->
+    <string name="dict_placeholder">Enter a term to look up</string>
+    <string name="dict_search_hint">Search terms</string>
+
+    <!-- ===================== Reader ===================== -->
+    <string name="reader_loading_epub">Loading EPUB</string>
+    <string name="reader_no_chapter">No chapters to read</string>
+    <string name="reader_chapter_sheet_title">Table of Contents</string>
+    <string name="reader_appearance_sheet_title">Appearance</string>
+
+    <!-- ===================== Settings ===================== -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="settings_appearance_summary">App theme, blur effects, and reader typography</string>
+    <string name="settings_dictionary_title">Dictionaries</string>
+    <string name="settings_dictionary_summary">Import, enable, reorder, and manage local dictionaries</string>
+    <string name="settings_audio_title">Audio</string>
+    <string name="settings_audio_summary">Configure term pronunciation, auto-play, and offline audio</string>
+
+    <!-- ===================== Appearance Settings ===================== -->
+    <string name="appearance_title">Appearance</string>
+    <string name="appearance_app_title">App</string>
+    <string name="appearance_reader_title">Reader</string>
+
+    <!-- Language -->
+    <string name="appearance_language_title">Language</string>
+    <string name="appearance_language_summary">App display language</string>
+    <string name="language_follow_system">Follow system</string>
+    <string name="language_english">English</string>
+    <string name="language_chinese">中文</string>
+    <string name="appearance_theme_title">App theme</string>
+    <string name="appearance_theme_summary">Choose system, light, or dark theme</string>
+    <string name="appearance_blur_title">Global blur effect</string>
+    <string name="appearance_blur_summary">Control blur effects for app components</string>
+    <string name="appearance_writing_vertical">Vertical</string>
+    <string name="appearance_writing_horizontal">Horizontal</string>
+    <string name="appearance_reading_pagination">Paginated</string>
+    <string name="appearance_reading_continuous">Continuous scroll</string>
+    <string name="appearance_reader_theme_title">Reader theme</string>
+    <string name="appearance_writing_direction_title">Reading direction</string>
+    <string name="appearance_writing_direction_summary">Vertical or horizontal</string>
+    <string name="appearance_page_mode_title">Page mode</string>
+    <string name="appearance_page_mode_summary">Paginated or continuous scroll</string>
+    <string name="appearance_hide_furigana_title">Hide furigana</string>
+    <string name="appearance_fullscreen_title">Fullscreen mode</string>
+    <string name="appearance_avoid_page_break_title">Avoid page breaks</string>
+    <string name="appearance_avoid_page_break_on">Keep paragraphs on the same page</string>
+    <string name="appearance_avoid_page_break_off">Allow paragraphs to split across pages</string>
+    <string name="appearance_justify_title">Justify text</string>
+    <string name="appearance_typography">Typography</string>
+    <string name="appearance_font_size">Font size</string>
+    <string name="appearance_horizontal_margin">Horizontal margin</string>
+    <string name="appearance_vertical_margin">Vertical margin</string>
+    <string name="appearance_line_height">Line height</string>
+    <string name="appearance_character_spacing">Character spacing</string>
+    <string name="appearance_popup_title">Dictionary popup</string>
+    <string name="appearance_popup_full_width_title">Full width popup</string>
+    <string name="appearance_popup_full_width_on">Full width at the bottom</string>
+    <string name="appearance_popup_full_width_off">Display at selection position</string>
+    <string name="appearance_popup_swipe_dismiss_title">Swipe to dismiss</string>
+    <string name="appearance_popup_swipe_dismiss_on">Swipe horizontally to dismiss popup</string>
+    <string name="appearance_popup_swipe_dismiss_off">Disable swipe to dismiss</string>
+    <string name="appearance_popup_width">Popup width</string>
+    <string name="appearance_popup_height">Popup height</string>
+    <string name="appearance_popup_swipe_threshold">Swipe threshold</string>
+
+    <!-- ===================== Audio Settings ===================== -->
+    <string name="audio_title">Audio</string>
+    <string name="audio_playback_title">Playback</string>
+    <string name="audio_auto_play_title">Auto-play</string>
+    <string name="audio_auto_play_summary">Play the first pronunciation automatically after lookup</string>
+    <string name="audio_background_title">Background audio</string>
+    <string name="audio_source_title">Audio sources</string>
+    <string name="audio_add_source_title">Add source</string>
+    <string name="audio_edit_source_title">Edit source</string>
+    <string name="audio_name_label">Name</string>
+    <string name="audio_url_label">URL</string>
+    <string name="audio_dialog_summary">Supports Yomitan JSON audio sources. The URL must contain {term} or {reading}.</string>
+    <string name="audio_local_title">Local audio</string>
+    <string name="audio_local_description">Import a local audio database for offline dictionary audio playback. A local source will be added automatically when enabled.</string>
+    <string name="audio_local_importing">Importing android.db</string>
+    <string name="audio_local_not_imported">Not imported</string>
+    <string name="audio_local_summary">Local android.db audio database</string>
+    <string name="audio_delete_source_title">Delete source</string>
+    <string name="audio_delete_source_summary">You will need to re-add the source to restore it.</string>
+    <string name="audio_delete_source_confirm">Delete "%s"?</string>
+    <string name="audio_delete_local_title">Delete local audio</string>
+    <string name="audio_delete_local_summary">You will need to re-import android.db to restore it.</string>
+    <string name="audio_delete_local_confirm">Delete the local audio database android.db?</string>
+
+    <!-- AudioPlaybackMode labels -->
+    <string name="audio_mode_interrupt">Interrupt others</string>
+    <string name="audio_mode_duck">Duck others</string>
+    <string name="audio_mode_mix">Keep others</string>
+
+    <!-- ===================== Dictionary Settings ===================== -->
+    <string name="dict_settings_title">Dictionaries</string>
+    <string name="dict_settings_dictionaries">Dictionaries</string>
+    <string name="dict_settings_options">Options</string>
+    <string name="dict_settings_term">Term dictionaries</string>
+    <string name="dict_settings_frequency">Frequency dictionaries</string>
+    <string name="dict_settings_pitch">Pitch dictionaries</string>
+    <string name="dict_settings_loading">Loading dictionaries</string>
+    <string name="dict_settings_empty">No dictionaries imported in this category.</string>
+    <string name="dict_settings_query_display">Query display</string>
+    <string name="dict_settings_max_results">Max results</string>
+    <string name="dict_settings_scan_length">Scan length</string>
+    <string name="dict_settings_collapse_title">Collapse groups</string>
+    <string name="dict_settings_collapse_summary">Only expand the first dictionary by default, collapse the rest</string>
+    <string name="dict_settings_compact_title">Compact glossaries</string>
+    <string name="dict_settings_compact_summary">Compress list-style glossaries into a compact single line</string>
+    <string name="dict_settings_show_tags_title">Show expression tags</string>
+    <string name="dict_settings_show_tags_summary">Display part of speech, usage, and other tags at the top of entries</string>
+    <string name="dict_settings_merge_freq_title">Merge frequency tags</string>
+    <string name="dict_settings_merge_freq_summary">Merge multiple frequency tags into one average tag; tap to expand</string>
+    <string name="dict_settings_dedup_pitch_title">Deduplicate pitch accents</string>
+    <string name="dict_settings_dedup_pitch_summary">Show identical pitch accent positions only once</string>
+    <string name="dict_settings_delete_title">Delete dictionary</string>
+    <string name="dict_settings_delete_summary">You will need to re-import the dictionary to restore it.</string>
+    <string name="dict_settings_delete_confirm">Delete "%s"?</string>
+    <string name="dict_settings_revision_prefix">revision </string>
+
+    <!-- ===================== Anki Settings ===================== -->
+    <string name="anki_title">Anki</string>
+    <string name="anki_connection_title">Connection</string>
+    <string name="anki_deck_model_title">Deck &amp; Note Type</string>
+    <string name="anki_duplicate_sync_title">Duplicates &amp; Sync</string>
+    <string name="anki_tags_glossary_title">Tags &amp; Glossary</string>
+    <string name="anki_field_mapping_title">Field mapping</string>
+    <string name="anki_field_mapping_hint">Refresh and select a note type to configure field mapping.</string>
+    <string name="anki_enable_title">Enable Anki</string>
+    <string name="anki_enable_summary">Create cards with AnkiDroid; dictionary entries show an add button</string>
+    <string name="anki_require_permission">AnkiDroid needs to be installed and granted read/write permissions.</string>
+    <string name="anki_deck_title">Deck</string>
+    <string name="anki_model_title">Note Type</string>
+    <string name="anki_not_selected">Not selected</string>
+    <string name="anki_not_loaded">Not loaded</string>
+    <string name="anki_allow_duplicate_title">Allow duplicates</string>
+    <string name="anki_duplicate_scope_title">Duplicate scope</string>
+    <string name="anki_check_all_models_title">Check all note types</string>
+    <string name="anki_sync_after_add_title">Sync after adding</string>
+    <string name="anki_tags_label">Tags, space-separated</string>
+    <string name="anki_compact_glossary_title">Compact glossary</string>
+    <string name="anki_compact_glossary_summary">Compress multiple glossaries into short text when adding cards</string>
+    <string name="anki_insert_token">Insert token</string>
+    <string name="anki_field_template_label">Field template</string>
+    <string name="anki_token_title">Token</string>
+    <string name="anki_token_summary">Insert template token</string>
+    <string name="anki_duplicate_scope_collection">Entire collection</string>
+    <string name="anki_duplicate_scope_deck">Current deck</string>
+    <string name="anki_duplicate_scope_deck_root">Deck root</string>
+
+    <!-- AnkiTemplateToken labels -->
+    <string name="anki_token_expression">Expression</string>
+    <string name="anki_token_reading">Reading</string>
+    <string name="anki_token_furigana_plain">Plain furigana</string>
+    <string name="anki_token_audio">Audio</string>
+    <string name="anki_token_glossary">Glossary</string>
+    <string name="anki_token_glossary_first">First glossary</string>
+    <string name="anki_token_selected_glossary">Selected glossary</string>
+    <string name="anki_token_popup_selection_text">Popup selection text</string>
+    <string name="anki_token_sentence">Sentence</string>
+    <string name="anki_token_frequencies">Frequencies</string>
+    <string name="anki_token_frequency_harmonic_rank">Harmonic rank</string>
+    <string name="anki_token_pitch_accent_positions">Pitch accent positions</string>
+    <string name="anki_token_pitch_accent_categories">Pitch accent categories</string>
+    <string name="anki_token_document_title">Document title</string>
+
+    <!-- ===================== Theme Mode Labels ===================== -->
+    <string name="theme_follow_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="reader_theme_follow_app">Follow app theme</string>
+
+    <!-- ===================== Toast / Effect Messages ===================== -->
+    <!-- Blur -->
+    <string name="toast_blur_enabled">Blur effect enabled</string>
+    <string name="toast_blur_disabled">Blur effect disabled</string>
+
+    <!-- Book -->
+    <string name="toast_book_imported">Book imported</string>
+    <string name="toast_book_import_failed">Book import failed</string>
+    <string name="toast_book_last_chapter">Already on the last chapter</string>
+    <string name="toast_book_first_chapter">Already on the first chapter</string>
+
+    <!-- Category -->
+    <string name="toast_category_created">Category created</string>
+    <string name="toast_category_renamed">Category renamed</string>
+    <string name="toast_category_deleted">Category deleted</string>
+    <string name="toast_category_sort_failed">Failed to sort categories</string>
+    <string name="toast_category_operation_failed">Category operation failed</string>
+    <string name="toast_book_categories_updated">Book categories updated</string>
+    <string name="toast_book_deleted">Book deleted</string>
+
+    <!-- Anki -->
+    <string name="toast_anki_connected">AnkiDroid connected</string>
+    <string name="toast_anki_unavailable">AnkiDroid unavailable</string>
+    <string name="toast_anki_connect_failed">AnkiDroid connection failed</string>
+    <string name="toast_anki_catalog_refreshed">Anki decks and note types refreshed</string>
+    <string name="toast_anki_config_failed">Failed to fetch Anki configuration</string>
+    <string name="toast_anki_not_enabled">Anki not enabled</string>
+    <string name="toast_anki_select_deck_and_model">Please select an Anki deck and note type first</string>
+    <string name="toast_anki_duplicate_card">Duplicate card already exists in Anki</string>
+    <string name="toast_anki_card_added">Anki card added</string>
+    <string name="toast_anki_add_card_failed">Failed to add Anki card</string>
+
+    <!-- Audio -->
+    <string name="toast_audio_url_exists">Audio source URL already exists</string>
+    <string name="toast_audio_local_imported">Local audio imported</string>
+    <string name="toast_audio_local_import_failed">Local audio import failed</string>
+    <string name="toast_audio_local_deleted">Local audio deleted</string>
+    <string name="toast_audio_local_delete_failed">Local audio deletion failed</string>
+
+    <!-- Dictionary -->
+    <string name="toast_dict_importing">Importing dictionary</string>
+    <string name="toast_dict_imported">Dictionary imported</string>
+    <string name="toast_dict_import_failed">Dictionary import failed</string>
+    <string name="toast_dict_checking_updates">Checking for dictionary updates</string>
+    <string name="toast_dict_updates_complete">Dictionary update check complete</string>
+    <string name="toast_dict_update_failed">Dictionary update failed</string>
+
+    <!-- Error messages -->
+    <string name="error_bookshelf_load_failed">Failed to load bookshelf</string>
+    <string name="error_dictionary_load_failed">Failed to load dictionary</string>
+    <string name="error_search_failed">Search failed</string>
+    <string name="error_reader_load_failed">Failed to load reader</string>
+    <string name="error_dictionary_operation_failed">Dictionary operation failed</string>
+</resources>
