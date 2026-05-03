@@ -1641,7 +1641,11 @@ if (window.swipeThreshold) {
 document.addEventListener('click', e => {
   if (window.enableInternalPopup && e.target.closest('#popup')) return;
   const target = e.target?.nodeType === Node.TEXT_NODE ? e.target.parentElement : e.target;
-  if (!target?.closest('.glossary-content') && !target?.closest('.expression') && !target?.closest('.expr-tag')) {
+  if (target?.closest('.expression')) {
+    if (window.enableInternalPopup) hidePopup();
+    return;
+  }
+  if (!target?.closest('.glossary-content') && !target?.closest('.expr-tag')) {
     if (window.enableInternalPopup) hidePopup();
     return;
   }
