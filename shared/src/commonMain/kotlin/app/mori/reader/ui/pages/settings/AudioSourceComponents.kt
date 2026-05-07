@@ -69,10 +69,10 @@ import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
+import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 internal val AudioSettingsHorizontalPadding = 12.dp
 
@@ -100,7 +100,7 @@ internal fun PlaybackCard(
             title = stringResource(Res.string.audio_auto_play_title),
             summary = stringResource(Res.string.audio_auto_play_summary),
         )
-        OverlaySpinnerPreference(
+        WindowSpinnerPreference(
             items = modeItems,
             selectedIndex = modes.indexOf(settings.audio.playbackMode).coerceAtLeast(0),
             title = stringResource(Res.string.audio_background_title),
@@ -283,7 +283,7 @@ private fun AudioSourceDialog(
     var name by remember(show, initialName) { mutableStateOf(initialName) }
     var url by remember(show, initialUrl) { mutableStateOf(initialUrl) }
 
-    OverlayDialog(
+    WindowDialog(
         title = title,
         summary = stringResource(Res.string.audio_dialog_summary),
         show = show,
@@ -426,7 +426,7 @@ internal fun DeleteAudioDialog(
             }
         }
 
-    OverlayDialog(
+    WindowDialog(
         title = title,
         summary = summary,
         show = true,

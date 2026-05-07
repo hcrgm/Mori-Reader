@@ -71,7 +71,6 @@ import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.SpinnerEntry
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
-import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
@@ -108,7 +107,7 @@ fun AppThemeSettingsCard(
         }
 
     Card(modifier = modifier.fillMaxWidth()) {
-        OverlaySpinnerPreference(
+        WindowSpinnerPreference(
             items = themeModeItems,
             selectedIndex = themeModes.indexOf(themeMode).coerceAtLeast(0),
             title = stringResource(Res.string.appearance_theme_title),
@@ -117,7 +116,7 @@ fun AppThemeSettingsCard(
                 onThemeModeSelected(themeModes[index])
             },
         )
-        OverlaySpinnerPreference(
+        WindowSpinnerPreference(
             items = languageModeItems,
             selectedIndex = languageModes.indexOf(languageMode).coerceAtLeast(0),
             title = stringResource(Res.string.appearance_language_title),

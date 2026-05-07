@@ -73,7 +73,7 @@ import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.SpinnerEntry
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
+import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowBottomSheet
 import top.yukonga.miuix.kmp.window.WindowDialog
@@ -137,7 +137,7 @@ fun AudiobookManagerSheet(
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     val modes = AudiobookStorageMode.entries
-                    OverlaySpinnerPreference(
+                    WindowSpinnerPreference(
                         items =
                             modes.map { mode ->
                                 SpinnerEntry(

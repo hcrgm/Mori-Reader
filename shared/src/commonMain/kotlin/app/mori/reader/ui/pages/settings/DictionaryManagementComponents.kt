@@ -74,10 +74,10 @@ import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
 import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
+import top.yukonga.miuix.kmp.window.WindowDialog
 
 internal val DictionarySettingsHorizontalPadding = 12.dp
 
@@ -464,7 +464,7 @@ internal fun DeleteDictionaryDialog(
     onConfirm: (PendingDictionaryDeletion) -> Unit,
 ) {
     val current = pendingDeletion ?: return
-    OverlayDialog(
+    WindowDialog(
         title = stringResource(Res.string.cd_delete_dictionary),
         summary = stringResource(Res.string.dict_settings_delete_summary),
         show = true,
