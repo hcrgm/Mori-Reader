@@ -23,6 +23,9 @@
     <string name="cd_delete_dictionary">Delete dictionary</string>
     <string name="cd_add_source">Add source</string>
     <string name="cd_import_dictionary">Import dictionary</string>
+    <string name="cd_play">Play</string>
+    <string name="cd_pause">Pause</string>
+    <string name="cd_play_pronunciation">Play pronunciation</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">Cancel</string>
@@ -43,6 +46,7 @@
     <string name="home_empty_bookshelf">Your bookshelf is empty</string>
     <string name="home_empty_category">This category has no books</string>
     <string name="home_adjust_category">Adjust category</string>
+    <string name="home_audiobook">Audiobook</string>
     <string name="home_delete_book">Delete book</string>
     <string name="home_category_manage">Manage categories</string>
     <string name="home_no_categories">No categories</string>
@@ -60,6 +64,8 @@
     <!-- ===================== Dictionary (DictionaryPage) ===================== -->
     <string name="dict_placeholder">Enter a term to look up</string>
     <string name="dict_search_hint">Search terms</string>
+    <string name="dict_searching">Searching...</string>
+    <string name="dict_no_results">No entries found</string>
 
     <!-- ===================== Reader ===================== -->
     <string name="reader_loading_epub">Loading EPUB</string>
@@ -152,6 +158,50 @@
     <string name="audio_mode_duck">Duck others</string>
     <string name="audio_mode_mix">Keep others</string>
 
+    <!-- ===================== Audiobook Import ===================== -->
+    <string name="cd_open_audiobook">Open audiobook</string>
+    <string name="audiobook_title">Audiobook</string>
+    <string name="audiobook_storage_title">Audio storage</string>
+    <string name="audiobook_storage_copy">Copy locally</string>
+    <string name="audiobook_storage_reference">Reference original</string>
+    <string name="audiobook_subtitle_storage_note">Applies only to audio; subtitles are always copied into the book and parsed as JSON</string>
+    <string name="audiobook_audio_title">Audio</string>
+    <string name="audiobook_subtitle_title">Subtitles</string>
+    <string name="audiobook_import_audio">Import audio</string>
+    <string name="audiobook_import_subtitle">Import subtitles</string>
+    <string name="audiobook_reimport">Reimport</string>
+    <string name="audiobook_delete">Delete</string>
+    <string name="audiobook_missing">Not imported</string>
+    <string name="audiobook_reference_invalid">Reference unavailable. Reimport required.</string>
+    <string name="audiobook_subtitle_parsed">Parsed</string>
+    <string name="audiobook_subtitle_cue_count">%d cues</string>
+    <string name="audiobook_description">Bind audio and SRT subtitles to this book. Copy mode saves files in the book directory; reference mode only stores system file permission and applies only to audio.</string>
+    <string name="audiobook_status_import_subtitle_first">Import SRT subtitles first</string>
+    <string name="audiobook_status_matching">Matching subtitles with text</string>
+    <string name="audiobook_status_not_matched">Not matched</string>
+    <string name="audiobook_status_matched">Matched %s</string>
+    <string name="audiobook_match_title">Subtitle matching</string>
+    <string name="audiobook_match_unmatched">Unmatched %d · Window %d</string>
+    <string name="audiobook_match_start">Start matching</string>
+    <string name="audiobook_match_rematch">Rematch</string>
+    <string name="audiobook_match_delete">Delete match</string>
+    <string name="audiobook_search_window">Search window</string>
+    <string name="audiobook_search_window_value">%d characters</string>
+    <string name="audiobook_character_unit">characters</string>
+    <string name="audiobook_asset_copied">Copied locally</string>
+    <string name="audiobook_asset_referenced">Reference original</string>
+    <string name="audiobook_subtitle_saved">Original file + parsed data saved</string>
+    <string name="audiobook_rematch_confirm">Rematching will overwrite the current sasayaki_match.json.</string>
+    <string name="audiobook_delete_match_confirm">Delete the current subtitle match result? Audio and subtitles will not be deleted.</string>
+    <string name="audiobook_delete_asset_confirm">Delete the current audiobook asset?</string>
+    <string name="audiobook_replace_asset_confirm">This asset type already exists. Continuing will overwrite the current file.</string>
+    <string name="toast_audiobook_audio_imported">Audiobook audio imported</string>
+    <string name="toast_audiobook_subtitle_imported">Audiobook subtitles imported</string>
+    <string name="toast_audiobook_import_failed">Audiobook import failed</string>
+    <string name="toast_audiobook_asset_deleted">Audiobook asset deleted</string>
+    <string name="toast_audiobook_match_complete">Subtitle matching complete: %d/%d</string>
+    <string name="toast_audiobook_match_deleted">Subtitle match deleted</string>
+
     <!-- ===================== Dictionary Settings ===================== -->
     <string name="dict_settings_title">Dictionaries</string>
     <string name="dict_settings_dictionaries">Dictionaries</string>
@@ -178,52 +228,9 @@
     <string name="dict_settings_delete_summary">You will need to re-import the dictionary to restore it.</string>
     <string name="dict_settings_delete_confirm">Delete "%s"?</string>
     <string name="dict_settings_revision_prefix">revision </string>
-
-    <!-- ===================== Anki Settings ===================== -->
-    <string name="anki_title">Anki</string>
-    <string name="anki_connection_title">Connection</string>
-    <string name="anki_deck_model_title">Deck &amp; Note Type</string>
-    <string name="anki_duplicate_sync_title">Duplicates &amp; Sync</string>
-    <string name="anki_tags_glossary_title">Tags &amp; Glossary</string>
-    <string name="anki_field_mapping_title">Field mapping</string>
-    <string name="anki_field_mapping_hint">Refresh and select a note type to configure field mapping.</string>
-    <string name="anki_enable_title">Enable Anki</string>
-    <string name="anki_enable_summary">Create cards with AnkiDroid; dictionary entries show an add button</string>
-    <string name="anki_require_permission">AnkiDroid needs to be installed and granted read/write permissions.</string>
-    <string name="anki_deck_title">Deck</string>
-    <string name="anki_model_title">Note Type</string>
-    <string name="anki_not_selected">Not selected</string>
-    <string name="anki_not_loaded">Not loaded</string>
-    <string name="anki_allow_duplicate_title">Allow duplicates</string>
-    <string name="anki_duplicate_scope_title">Duplicate scope</string>
-    <string name="anki_check_all_models_title">Check all note types</string>
-    <string name="anki_sync_after_add_title">Sync after adding</string>
-    <string name="anki_tags_label">Tags, space-separated</string>
-    <string name="anki_compact_glossary_title">Compact glossary</string>
-    <string name="anki_compact_glossary_summary">Compress multiple glossaries into short text when adding cards</string>
-    <string name="anki_insert_token">Insert token</string>
-    <string name="anki_field_template_label">Field template</string>
-    <string name="anki_token_title">Token</string>
-    <string name="anki_token_summary">Insert template token</string>
-    <string name="anki_duplicate_scope_collection">Entire collection</string>
-    <string name="anki_duplicate_scope_deck">Current deck</string>
-    <string name="anki_duplicate_scope_deck_root">Deck root</string>
-
-    <!-- AnkiTemplateToken labels -->
-    <string name="anki_token_expression">Expression</string>
-    <string name="anki_token_reading">Reading</string>
-    <string name="anki_token_furigana_plain">Plain furigana</string>
-    <string name="anki_token_audio">Audio</string>
-    <string name="anki_token_glossary">Glossary</string>
-    <string name="anki_token_glossary_first">First glossary</string>
-    <string name="anki_token_selected_glossary">Selected glossary</string>
-    <string name="anki_token_popup_selection_text">Popup selection text</string>
-    <string name="anki_token_sentence">Sentence</string>
-    <string name="anki_token_frequencies">Frequencies</string>
-    <string name="anki_token_frequency_harmonic_rank">Harmonic rank</string>
-    <string name="anki_token_pitch_accent_positions">Pitch accent positions</string>
-    <string name="anki_token_pitch_accent_categories">Pitch accent categories</string>
-    <string name="anki_token_document_title">Document title</string>
+    <string name="dict_settings_type_term">Term dictionaries</string>
+    <string name="dict_settings_type_frequency">Frequency dictionaries</string>
+    <string name="dict_settings_type_pitch">Pitch dictionaries</string>
 
     <!-- ===================== Theme Mode Labels ===================== -->
     <string name="theme_follow_system">Follow system</string>
@@ -251,20 +258,9 @@
     <string name="toast_book_categories_updated">Book categories updated</string>
     <string name="toast_book_deleted">Book deleted</string>
 
-    <!-- Anki -->
-    <string name="toast_anki_connected">AnkiDroid connected</string>
-    <string name="toast_anki_unavailable">AnkiDroid unavailable</string>
-    <string name="toast_anki_connect_failed">AnkiDroid connection failed</string>
-    <string name="toast_anki_catalog_refreshed">Anki decks and note types refreshed</string>
-    <string name="toast_anki_config_failed">Failed to fetch Anki configuration</string>
-    <string name="toast_anki_not_enabled">Anki not enabled</string>
-    <string name="toast_anki_select_deck_and_model">Please select an Anki deck and note type first</string>
-    <string name="toast_anki_duplicate_card">Duplicate card already exists in Anki</string>
-    <string name="toast_anki_card_added">Anki card added</string>
-    <string name="toast_anki_add_card_failed">Failed to add Anki card</string>
-
     <!-- Audio -->
     <string name="toast_audio_url_exists">Audio source URL already exists</string>
+    <string name="toast_audio_url_requires_term_or_reading">Audio source URL must contain {term} or {reading}</string>
     <string name="toast_audio_local_imported">Local audio imported</string>
     <string name="toast_audio_local_import_failed">Local audio import failed</string>
     <string name="toast_audio_local_deleted">Local audio deleted</string>
@@ -284,4 +280,29 @@
     <string name="error_search_failed">Search failed</string>
     <string name="error_reader_load_failed">Failed to load reader</string>
     <string name="error_dictionary_operation_failed">Dictionary operation failed</string>
+    <string name="error_book_import_failed">Failed to import book</string>
+    <string name="error_category_sort_failed">Failed to sort categories</string>
+    <string name="error_category_operation_failed">Category operation failed</string>
+    <string name="error_audiobook_asset_load_failed">Failed to load audiobook assets</string>
+    <string name="error_audiobook_audio_import_failed">Failed to import audiobook audio</string>
+    <string name="error_audiobook_subtitle_import_failed">Failed to import audiobook subtitles</string>
+    <string name="error_audiobook_asset_delete_failed">Failed to delete audiobook asset</string>
+    <string name="error_audiobook_match_failed">Subtitle matching failed</string>
+    <string name="error_audiobook_match_delete_failed">Failed to delete subtitle match</string>
+
+    <!-- ===================== Sasayaki Player ===================== -->
+    <string name="sasayaki_ready">Ready to play the current audiobook</string>
+    <string name="sasayaki_import_required">Import audio and complete subtitle matching first</string>
+    <string name="sasayaki_previous">Previous cue</string>
+    <string name="sasayaki_next">Next cue</string>
+    <string name="sasayaki_delay">Delay</string>
+    <string name="sasayaki_speed">Speed</string>
+    <string name="sasayaki_sync_position">Sync playback position</string>
+    <string name="sasayaki_auto_scroll">Auto-scroll chapters</string>
+    <string name="sasayaki_auto_pause_lookup">Auto-pause on lookup</string>
+    <string name="sasayaki_show_highlight">Show cue highlight</string>
+    <string name="sasayaki_highlight_color">Highlight color</string>
+    <string name="sasayaki_replay">Replay</string>
+    <string name="sasayaki_continue">Continue</string>
+    <string name="sasayaki_continue_from_cue">Play from this cue</string>
 </resources>

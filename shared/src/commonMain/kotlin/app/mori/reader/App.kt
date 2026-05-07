@@ -3,46 +3,58 @@ package app.mori.reader
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import app.mori.reader.data.anki.rememberAnkiRepository
-import app.mori.reader.data.audio.rememberAudioRepository
-import app.mori.reader.data.book.rememberBookRepository
-import app.mori.reader.data.dictionary.rememberDictionaryRepository
 import app.mori.reader.data.settings.AppSettings
-import app.mori.reader.data.settings.rememberSettingsRepository
-import app.mori.reader.ui.AppViewModel
+import app.mori.reader.features.audiobook.presentation.AudiobookViewModel
+import app.mori.reader.features.bookshelf.presentation.BookshelfViewModel
+import app.mori.reader.features.dictionary.presentation.DictionaryViewModel
+import app.mori.reader.features.settings.presentation.SettingsViewModel
+import app.mori.reader.ui.AppEffect
+import app.mori.reader.ui.RootViewModel
 import app.mori.reader.ui.theme.AppTheme
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun App(initialSettings: AppSettings? = null) {
-    val settingsRepository = rememberSettingsRepository()
-    val dictionaryRepository = rememberDictionaryRepository()
-    val audioRepository = rememberAudioRepository()
-    val ankiRepository = rememberAnkiRepository()
-    val bookRepository = rememberBookRepository()
-    val viewModel = viewModel<AppViewModel> {
-        AppViewModel(
-            settingsRepository = settingsRepository,
-            dictionaryRepository = dictionaryRepository,
-            audioRepository = audioRepository,
-            ankiRepository = ankiRepository,
-            bookRepository = bookRepository,
-            initialSettings = initialSettings,
-        )
-    }
+    val viewModel = koinViewModel<RootViewModel>(parameters = { parametersOf(initialSettings) })
+    val dictionaryViewModel = koinViewModel<DictionaryViewModel>()
+    val settingsViewModel = koinViewModel<SettingsViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val dictionaryState by dictionaryViewModel.state.collectAsStateWithLifecycle()
+    val settingsUi by settingsViewModel.state.collectAsStateWithLifecycle()
 
     if (!state.settingsLoaded) {
         return
     }
 
-    AppLocaleEnvironment(mode = state.settings.languageMode) {
-        ApplyLanguageModeEffect(state.settings.languageMode)
-        AppTheme(themeMode = state.settings.themeMode) {
+    val bookshelfViewModel = koinViewModel<BookshelfViewModel>()
+    val audiobookViewModel = koinViewModel<AudiobookViewModel>(
+        parameters = { parametersOf(state.settings.sasayaki.preferredStorageMode) },
+    )
+    val homeState by bookshelfViewModel.state.collectAsStateWithLifecycle()
+    val audiobookState by audiobookViewModel.state.collectAsStateWithLifecycle()
+
+    AppLocaleEnvironment(mode = state.settings.appearance.languageMode) {
+        ApplyLanguageModeEffect(state.settings.appearance.languageMode)
+        AppTheme(themeMode = state.settings.appearance.themeMode) {
             AppContent(
                 state = state,
-                effects = viewModel.effects,
+                homeState = homeState,
+                dictionaryState = dictionaryState,
+                audiobookState = audiobookState,
+                settingsUi = settingsUi,
+                effects = merge(
+                    viewModel.effects,
+                    settingsViewModel.effects,
+                    audiobookViewModel.effects.map { AppEffect.ShowMessage(it) },
+                ),
                 onIntent = viewModel::onIntent,
+                onBookshelfIntent = bookshelfViewModel::onIntent,
+                onDictionaryIntent = dictionaryViewModel::onIntent,
+                onSettingsIntent = settingsViewModel::onIntent,
+                onAudiobookIntent = audiobookViewModel::onIntent,
             )
         }
     }

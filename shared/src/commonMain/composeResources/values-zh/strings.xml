@@ -23,6 +23,9 @@
     <string name="cd_delete_dictionary">删除词典</string>
     <string name="cd_add_source">添加音源</string>
     <string name="cd_import_dictionary">导入词典</string>
+    <string name="cd_play">播放</string>
+    <string name="cd_pause">暂停</string>
+    <string name="cd_play_pronunciation">播放发音</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">取消</string>
@@ -43,6 +46,7 @@
     <string name="home_empty_bookshelf">书架里还没有图书</string>
     <string name="home_empty_category">这个分类还没有图书</string>
     <string name="home_adjust_category">调整分类</string>
+    <string name="home_audiobook">有声书</string>
     <string name="home_delete_book">删除图书</string>
     <string name="home_category_manage">分类管理</string>
     <string name="home_no_categories">暂无分类</string>
@@ -60,6 +64,8 @@
     <!-- ===================== Dictionary (DictionaryPage) ===================== -->
     <string name="dict_placeholder">输入词条开始查询</string>
     <string name="dict_search_hint">搜索词条</string>
+    <string name="dict_searching">正在搜索...</string>
+    <string name="dict_no_results">没有找到词条</string>
 
     <!-- ===================== Reader ===================== -->
     <string name="reader_loading_epub">正在加载 EPUB</string>
@@ -152,6 +158,50 @@
     <string name="audio_mode_duck">降低其他音量</string>
     <string name="audio_mode_mix">保持其他音量</string>
 
+    <!-- ===================== Audiobook Import ===================== -->
+    <string name="cd_open_audiobook">打开有声书</string>
+    <string name="audiobook_title">有声书</string>
+    <string name="audiobook_storage_title">音频存储方式</string>
+    <string name="audiobook_storage_copy">复制到本地</string>
+    <string name="audiobook_storage_reference">引用原文件</string>
+    <string name="audiobook_subtitle_storage_note">仅作用于音频；字幕始终导入书内并解析为 JSON</string>
+    <string name="audiobook_audio_title">音频</string>
+    <string name="audiobook_subtitle_title">字幕</string>
+    <string name="audiobook_import_audio">导入音频</string>
+    <string name="audiobook_import_subtitle">导入字幕</string>
+    <string name="audiobook_reimport">重新导入</string>
+    <string name="audiobook_delete">删除</string>
+    <string name="audiobook_missing">未导入</string>
+    <string name="audiobook_reference_invalid">引用已失效，需要重新导入</string>
+    <string name="audiobook_subtitle_parsed">已解析</string>
+    <string name="audiobook_subtitle_cue_count">%d 条字幕</string>
+    <string name="audiobook_description">为当前图书绑定音频和 SRT 字幕。复制模式会保存到书籍目录；引用模式只记录系统文件权限，且仅适用于音频。</string>
+    <string name="audiobook_status_import_subtitle_first">请先导入 SRT 字幕</string>
+    <string name="audiobook_status_matching">正在匹配字幕与正文</string>
+    <string name="audiobook_status_not_matched">尚未匹配</string>
+    <string name="audiobook_status_matched">已匹配 %s</string>
+    <string name="audiobook_match_title">字幕匹配</string>
+    <string name="audiobook_match_unmatched">未匹配 %d · 窗口 %d</string>
+    <string name="audiobook_match_start">开始匹配</string>
+    <string name="audiobook_match_rematch">重新匹配</string>
+    <string name="audiobook_match_delete">删除匹配</string>
+    <string name="audiobook_search_window">搜索窗口</string>
+    <string name="audiobook_search_window_value">%d 字符</string>
+    <string name="audiobook_character_unit">字符</string>
+    <string name="audiobook_asset_copied">已复制到本地</string>
+    <string name="audiobook_asset_referenced">引用原文件</string>
+    <string name="audiobook_subtitle_saved">原文件 + 解析数据已保存</string>
+    <string name="audiobook_rematch_confirm">重新匹配会覆盖当前 sasayaki_match.json。</string>
+    <string name="audiobook_delete_match_confirm">确认删除当前字幕匹配结果吗？音频和字幕不会被删除。</string>
+    <string name="audiobook_delete_asset_confirm">确认删除当前有声书资产吗？</string>
+    <string name="audiobook_replace_asset_confirm">当前类型已有资产，继续后会覆盖原有文件。</string>
+    <string name="toast_audiobook_audio_imported">有声书音频已导入</string>
+    <string name="toast_audiobook_subtitle_imported">有声书字幕已导入</string>
+    <string name="toast_audiobook_import_failed">有声书导入失败</string>
+    <string name="toast_audiobook_asset_deleted">有声书资产已删除</string>
+    <string name="toast_audiobook_match_complete">字幕匹配完成：%d/%d</string>
+    <string name="toast_audiobook_match_deleted">字幕匹配已删除</string>
+
     <!-- ===================== Dictionary Settings ===================== -->
     <string name="dict_settings_title">词典</string>
     <string name="dict_settings_dictionaries">词典</string>
@@ -178,52 +228,9 @@
     <string name="dict_settings_delete_summary">删除后需要重新导入才能恢复。</string>
     <string name="dict_settings_delete_confirm">确认删除「%s」吗？</string>
     <string name="dict_settings_revision_prefix">revision </string>
-
-    <!-- ===================== Anki Settings ===================== -->
-    <string name="anki_title">Anki</string>
-    <string name="anki_connection_title">连接</string>
-    <string name="anki_deck_model_title">牌组与模板</string>
-    <string name="anki_duplicate_sync_title">重复与同步</string>
-    <string name="anki_tags_glossary_title">标签与释义</string>
-    <string name="anki_field_mapping_title">字段映射</string>
-    <string name="anki_field_mapping_hint">刷新并选择模板后可配置字段。</string>
-    <string name="anki_enable_title">启用 Anki</string>
-    <string name="anki_enable_summary">使用 AnkiDroid 创建卡片，词典条目显示加卡按钮</string>
-    <string name="anki_require_permission">需要安装 AnkiDroid 并授予读写权限。</string>
-    <string name="anki_deck_title">牌组</string>
-    <string name="anki_model_title">模板</string>
-    <string name="anki_not_selected">未选择</string>
-    <string name="anki_not_loaded">未加载</string>
-    <string name="anki_allow_duplicate_title">允许重复</string>
-    <string name="anki_duplicate_scope_title">重复范围</string>
-    <string name="anki_check_all_models_title">检查所有模板</string>
-    <string name="anki_sync_after_add_title">加卡后同步</string>
-    <string name="anki_tags_label">标签，空格分隔</string>
-    <string name="anki_compact_glossary_title">紧凑释义</string>
-    <string name="anki_compact_glossary_summary">加卡时将多条释义压缩为短文本</string>
-    <string name="anki_insert_token">插入 token</string>
-    <string name="anki_field_template_label">字段模板</string>
-    <string name="anki_token_title">Token</string>
-    <string name="anki_token_summary">插入模板 token</string>
-    <string name="anki_duplicate_scope_collection">整个集合</string>
-    <string name="anki_duplicate_scope_deck">当前牌组</string>
-    <string name="anki_duplicate_scope_deck_root">牌组根目录</string>
-
-    <!-- AnkiTemplateToken labels -->
-    <string name="anki_token_expression">表达</string>
-    <string name="anki_token_reading">读音</string>
-    <string name="anki_token_furigana_plain">纯文本注音</string>
-    <string name="anki_token_audio">音频</string>
-    <string name="anki_token_glossary">释义</string>
-    <string name="anki_token_glossary_first">首条释义</string>
-    <string name="anki_token_selected_glossary">选中释义</string>
-    <string name="anki_token_popup_selection_text">弹窗选词</string>
-    <string name="anki_token_sentence">例句</string>
-    <string name="anki_token_frequencies">词频</string>
-    <string name="anki_token_frequency_harmonic_rank">谐波词频</string>
-    <string name="anki_token_pitch_accent_positions">音高位置</string>
-    <string name="anki_token_pitch_accent_categories">音高分类</string>
-    <string name="anki_token_document_title">文档标题</string>
+    <string name="dict_settings_type_term">Term 词典</string>
+    <string name="dict_settings_type_frequency">Frequency 词频</string>
+    <string name="dict_settings_type_pitch">Pitch 音调</string>
 
     <!-- ===================== Theme Mode Labels ===================== -->
     <string name="theme_follow_system">跟随系统</string>
@@ -251,20 +258,9 @@
     <string name="toast_book_categories_updated">图书分类已更新</string>
     <string name="toast_book_deleted">图书已删除</string>
 
-    <!-- Anki -->
-    <string name="toast_anki_connected">AnkiDroid 连接成功</string>
-    <string name="toast_anki_unavailable">AnkiDroid 不可用</string>
-    <string name="toast_anki_connect_failed">AnkiDroid 连接失败</string>
-    <string name="toast_anki_catalog_refreshed">Anki 牌组和模板已刷新</string>
-    <string name="toast_anki_config_failed">Anki 配置拉取失败</string>
-    <string name="toast_anki_not_enabled">Anki 未启用</string>
-    <string name="toast_anki_select_deck_and_model">请先选择 Anki 牌组和模板</string>
-    <string name="toast_anki_duplicate_card">Anki 已存在重复卡片</string>
-    <string name="toast_anki_card_added">Anki 卡片已添加</string>
-    <string name="toast_anki_add_card_failed">Anki 加卡失败</string>
-
     <!-- Audio -->
     <string name="toast_audio_url_exists">音源 URL 已存在</string>
+    <string name="toast_audio_url_requires_term_or_reading">音源 URL 需要包含 {term} 或 {reading}</string>
     <string name="toast_audio_local_imported">本地音频已导入</string>
     <string name="toast_audio_local_import_failed">本地音频导入失败</string>
     <string name="toast_audio_local_deleted">本地音频已删除</string>
@@ -284,4 +280,29 @@
     <string name="error_search_failed">查词失败</string>
     <string name="error_reader_load_failed">阅读器加载失败</string>
     <string name="error_dictionary_operation_failed">词典操作失败</string>
+    <string name="error_book_import_failed">图书导入失败</string>
+    <string name="error_category_sort_failed">分类排序失败</string>
+    <string name="error_category_operation_failed">分类操作失败</string>
+    <string name="error_audiobook_asset_load_failed">有声书资产加载失败</string>
+    <string name="error_audiobook_audio_import_failed">有声书音频导入失败</string>
+    <string name="error_audiobook_subtitle_import_failed">有声书字幕导入失败</string>
+    <string name="error_audiobook_asset_delete_failed">有声书资产删除失败</string>
+    <string name="error_audiobook_match_failed">字幕匹配失败</string>
+    <string name="error_audiobook_match_delete_failed">字幕匹配删除失败</string>
+
+    <!-- ===================== Sasayaki Player ===================== -->
+    <string name="sasayaki_ready">准备播放当前有声书</string>
+    <string name="sasayaki_import_required">请先导入音频并完成字幕匹配</string>
+    <string name="sasayaki_previous">上一句</string>
+    <string name="sasayaki_next">下一句</string>
+    <string name="sasayaki_delay">延迟</string>
+    <string name="sasayaki_speed">速度</string>
+    <string name="sasayaki_sync_position">同步播放位置</string>
+    <string name="sasayaki_auto_scroll">自动跳章</string>
+    <string name="sasayaki_auto_pause_lookup">查词时自动暂停</string>
+    <string name="sasayaki_show_highlight">显示 cue 高亮</string>
+    <string name="sasayaki_highlight_color">高亮颜色</string>
+    <string name="sasayaki_replay">重播</string>
+    <string name="sasayaki_continue">继续</string>
+    <string name="sasayaki_continue_from_cue">从此句播放</string>
 </resources>

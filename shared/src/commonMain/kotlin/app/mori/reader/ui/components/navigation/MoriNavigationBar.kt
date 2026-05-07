@@ -2,8 +2,13 @@ package app.mori.reader.ui.components.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.tab_bookshelf
+import app.mori.reader.shared.generated.resources.tab_dictionary
+import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.AppTab
 import app.mori.reader.ui.components.scaffold.BlurredBar
+import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.NavigationBar
 import top.yukonga.miuix.kmp.basic.NavigationBarItem
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -29,9 +34,16 @@ internal fun MoriNavigationBar(
                     selected = selectedTab == tab,
                     onClick = { onTabSelected(tab) },
                     icon = tab.icon,
-                    label = tab.label,
+                    label = tab.localizedLabel(),
                 )
             }
         }
     }
+}
+
+@Composable
+internal fun AppTab.localizedLabel(): String = when (this) {
+    AppTab.Home -> stringResource(Res.string.tab_bookshelf)
+    AppTab.Dictionary -> stringResource(Res.string.tab_dictionary)
+    AppTab.Settings -> stringResource(Res.string.tab_settings)
 }

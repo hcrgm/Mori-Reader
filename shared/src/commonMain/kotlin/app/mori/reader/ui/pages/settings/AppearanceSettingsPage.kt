@@ -9,13 +9,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
+import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.appearance_app_title
 import app.mori.reader.shared.generated.resources.appearance_reader_title
 import app.mori.reader.shared.generated.resources.cd_appearance
 import app.mori.reader.shared.generated.resources.cd_back
-import app.mori.reader.ui.AppIntent
-import app.mori.reader.ui.AppState
+import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.AppThemeSettingsCard
 import app.mori.reader.ui.components.settings.ReaderAppearanceSettingsCard
@@ -29,16 +29,14 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 @Composable
 fun AppearanceSettingsPage(
-    state: AppState,
-    message: String?,
-    onIntent: (AppIntent) -> Unit,
+    settings: AppSettings,
+    onSettingsIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
     MoriPageScaffold(
         title = stringResource(Res.string.cd_appearance),
         subtitle = "",
-        blurEnabled = state.settings.blurEnabled,
-        message = message,
+        blurEnabled = settings.appearance.blurEnabled,
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(MiuixIcons.Back, contentDescription = stringResource(Res.string.cd_back))
@@ -47,8 +45,8 @@ fun AppearanceSettingsPage(
         actions = {},
     ) { paddingValues, scrollBehavior ->
         AppearanceSettingsContent(
-            state = state,
-            onIntent = onIntent,
+            settings = settings,
+            onSettingsIntent = onSettingsIntent,
             modifier = Modifier
                 .fillMaxSize()
                 .overScrollVertical()
@@ -63,8 +61,8 @@ fun AppearanceSettingsPage(
 
 @Composable
 private fun AppearanceSettingsContent(
-    state: AppState,
-    onIntent: (AppIntent) -> Unit,
+    settings: AppSettings,
+    onSettingsIntent: (SettingsIntent) -> Unit,
     modifier: Modifier,
     contentPadding: PaddingValues,
 ) {
@@ -76,54 +74,64 @@ private fun AppearanceSettingsContent(
         item {
             SmallTitle(text = stringResource(Res.string.appearance_app_title))
             AppThemeSettingsCard(
-                themeMode = state.settings.themeMode,
-                languageMode = state.settings.languageMode,
-                blurEnabled = state.settings.blurEnabled,
+                themeMode = settings.appearance.themeMode,
+                languageMode = settings.appearance.languageMode,
+                blurEnabled = settings.appearance.blurEnabled,
                 modifier = Modifier.padding(horizontal = 12.dp),
-                onThemeModeSelected = { onIntent(AppIntent.SetThemeMode(it)) },
-                onLanguageModeSelected = { onIntent(AppIntent.SetLanguageMode(it)) },
-                onBlurEnabledChanged = { onIntent(AppIntent.SetBlurEnabled(it)) },
+                onThemeModeSelected = { onSettingsIntent(SettingsIntent.SetThemeMode(it)) },
+                onLanguageModeSelected = { onSettingsIntent(SettingsIntent.SetLanguageMode(it)) },
+                onBlurEnabledChanged = { onSettingsIntent(SettingsIntent.SetBlurEnabled(it)) },
             )
         }
 
         item {
             SmallTitle(text = stringResource(Res.string.appearance_reader_title))
             ReaderAppearanceSettingsCard(
-                readerThemeMode = state.settings.readerThemeMode,
-                verticalWriting = state.reader.verticalWriting,
-                continuousMode = state.settings.readerContinuousMode,
-                hideFurigana = state.settings.readerHideFurigana,
-                fullscreen = state.settings.readerFullscreen,
-                fontSize = state.settings.readerFontSize,
-                lineHeight = state.settings.readerLineHeight,
-                horizontalPadding = state.settings.readerHorizontalPadding,
-                verticalPadding = state.settings.readerVerticalPadding,
-                avoidPageBreak = state.settings.readerAvoidPageBreak,
-                justifyText = state.settings.readerJustifyText,
-                characterSpacing = state.settings.readerCharacterSpacing,
-                popupWidth = state.settings.popupWidth,
-                popupHeight = state.settings.popupHeight,
-                popupFullWidth = state.settings.popupFullWidth,
-                popupSwipeToDismiss = state.settings.popupSwipeToDismiss,
-                popupSwipeThreshold = state.settings.popupSwipeThreshold,
+                readerThemeMode = settings.appearance.readerThemeMode,
+                verticalWriting = settings.reader.verticalWriting,
+                continuousMode = settings.reader.continuousMode,
+                hideFurigana = settings.reader.hideFurigana,
+                fullscreen = settings.appearance.readerFullscreen,
+                fontSize = settings.reader.fontSize,
+                lineHeight = settings.reader.lineHeight,
+                horizontalPadding = settings.reader.horizontalPadding,
+                verticalPadding = settings.reader.verticalPadding,
+                avoidPageBreak = settings.reader.avoidPageBreak,
+                justifyText = settings.reader.justifyText,
+                characterSpacing = settings.reader.characterSpacing,
+                popupWidth = settings.popup.width,
+                popupHeight = settings.popup.height,
+                popupFullWidth = settings.popup.fullWidth,
+                popupSwipeToDismiss = settings.popup.swipeToDismiss,
+                popupSwipeThreshold = settings.popup.swipeThreshold,
                 modifier = Modifier.padding(horizontal = 12.dp),
-                onReaderThemeModeSelected = { onIntent(AppIntent.SetReaderThemeMode(it)) },
-                onToggleWritingMode = { onIntent(AppIntent.ToggleReaderWritingMode) },
-                onToggleContinuousMode = { onIntent(AppIntent.ToggleReaderContinuousMode) },
-                onToggleHideFurigana = { onIntent(AppIntent.ToggleReaderHideFurigana) },
-                onFullscreenChanged = { onIntent(AppIntent.SetReaderFullscreen(it)) },
-                onFontSizeChanged = { onIntent(AppIntent.SetReaderFontSize(it)) },
-                onLineHeightChanged = { onIntent(AppIntent.SetReaderLineHeight(it)) },
-                onHorizontalPaddingChanged = { onIntent(AppIntent.SetReaderHorizontalPadding(it)) },
-                onVerticalPaddingChanged = { onIntent(AppIntent.SetReaderVerticalPadding(it)) },
-                onAvoidPageBreakChanged = { onIntent(AppIntent.SetReaderAvoidPageBreak(it)) },
-                onJustifyTextChanged = { onIntent(AppIntent.SetReaderJustifyText(it)) },
-                onCharacterSpacingChanged = { onIntent(AppIntent.SetReaderCharacterSpacing(it)) },
-                onPopupWidthChanged = { onIntent(AppIntent.SetPopupWidth(it)) },
-                onPopupHeightChanged = { onIntent(AppIntent.SetPopupHeight(it)) },
-                onTogglePopupFullWidth = { onIntent(AppIntent.TogglePopupFullWidth) },
-                onTogglePopupSwipeToDismiss = { onIntent(AppIntent.TogglePopupSwipeToDismiss) },
-                onPopupSwipeThresholdChanged = { onIntent(AppIntent.SetPopupSwipeThreshold(it)) },
+                onReaderThemeModeSelected = { onSettingsIntent(SettingsIntent.SetReaderThemeMode(it)) },
+                onToggleWritingMode = {
+                    onSettingsIntent(SettingsIntent.SetReaderVerticalWriting(!settings.reader.verticalWriting))
+                },
+                onToggleContinuousMode = {
+                    onSettingsIntent(SettingsIntent.SetReaderContinuousMode(!settings.reader.continuousMode))
+                },
+                onToggleHideFurigana = {
+                    onSettingsIntent(SettingsIntent.SetReaderHideFurigana(!settings.reader.hideFurigana))
+                },
+                onFullscreenChanged = { onSettingsIntent(SettingsIntent.SetReaderFullscreen(it)) },
+                onFontSizeChanged = { onSettingsIntent(SettingsIntent.SetReaderFontSize(it)) },
+                onLineHeightChanged = { onSettingsIntent(SettingsIntent.SetReaderLineHeight(it)) },
+                onHorizontalPaddingChanged = { onSettingsIntent(SettingsIntent.SetReaderHorizontalPadding(it)) },
+                onVerticalPaddingChanged = { onSettingsIntent(SettingsIntent.SetReaderVerticalPadding(it)) },
+                onAvoidPageBreakChanged = { onSettingsIntent(SettingsIntent.SetReaderAvoidPageBreak(it)) },
+                onJustifyTextChanged = { onSettingsIntent(SettingsIntent.SetReaderJustifyText(it)) },
+                onCharacterSpacingChanged = { onSettingsIntent(SettingsIntent.SetReaderCharacterSpacing(it)) },
+                onPopupWidthChanged = { onSettingsIntent(SettingsIntent.SetPopupWidth(it)) },
+                onPopupHeightChanged = { onSettingsIntent(SettingsIntent.SetPopupHeight(it)) },
+                onTogglePopupFullWidth = {
+                    onSettingsIntent(SettingsIntent.SetPopupFullWidth(!settings.popup.fullWidth))
+                },
+                onTogglePopupSwipeToDismiss = {
+                    onSettingsIntent(SettingsIntent.SetPopupSwipeToDismiss(!settings.popup.swipeToDismiss))
+                },
+                onPopupSwipeThresholdChanged = { onSettingsIntent(SettingsIntent.SetPopupSwipeThreshold(it)) },
             )
         }
     }

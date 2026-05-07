@@ -38,11 +38,18 @@ kotlin {
             implementation(libs.miuix.blur)
             implementation(libs.miuix.preference)
             implementation(libs.reorderable)
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
         }
         androidMain.dependencies {
             implementation("androidx.appcompat:appcompat:1.7.0")
             implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.media3.exoplayer)
             implementation(libs.coil.compose)
+            implementation(libs.koin.android)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.cio)
         }
         androidMain {
             kotlin.srcDir("../external/hoshidicts-kotlin-bridge/app/src/main/java")

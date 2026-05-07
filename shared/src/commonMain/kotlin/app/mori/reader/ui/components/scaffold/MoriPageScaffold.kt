@@ -2,25 +2,22 @@ package app.mori.reader.ui.components.scaffold
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
+import androidx.compose.ui.platform.LocalLayoutDirection
 import top.yukonga.miuix.kmp.basic.MiuixScrollBehavior
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.basic.ScrollBehavior
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TopAppBar
 import top.yukonga.miuix.kmp.basic.rememberTopAppBarState
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
@@ -39,7 +36,6 @@ internal fun MoriPageScaffold(
     subtitle: String = "",
     blurEnabled: Boolean,
     fixedPadding: PaddingValues = PaddingValues(),
-    message: String? = null,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
     header: @Composable () -> Unit = {},
@@ -49,6 +45,9 @@ internal fun MoriPageScaffold(
     val backdrop = rememberMoriBlurBackdrop(blurEnabled)
     val barColor = if (backdrop != null) Color.Transparent else MiuixTheme.colorScheme.surface
     val scrollBehavior = MiuixScrollBehavior(rememberTopAppBarState())
+    val layoutDirection = LocalLayoutDirection.current
+    val fixedStartPadding = fixedPadding.calculateStartPadding(layoutDirection)
+    val fixedEndPadding = fixedPadding.calculateEndPadding(layoutDirection)
 
     Box(
         modifier = Modifier
@@ -59,7 +58,12 @@ internal fun MoriPageScaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 BlurredBar(backdrop, blurEnabled) {
-                    Column {
+                    Column(
+                        modifier = Modifier.padding(
+                            start = fixedStartPadding,
+                            end = fixedEndPadding,
+                        ),
+                    ) {
                         TopAppBar(
                             title = title,
                             largeTitle = title,
@@ -82,18 +86,13 @@ internal fun MoriPageScaffold(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(
+                        start = fixedStartPadding,
+                        end = fixedEndPadding,
+                    )
                     .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier),
             ) {
                 content(pagePaddingValues, scrollBehavior)
-
-                if (message != null) {
-                    EffectBanner(
-                        message = message,
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .padding(top = paddingValues.calculateTopPadding() + 12.dp),
-                    )
-                }
             }
         }
     }
@@ -103,46 +102,41 @@ internal fun MoriPageScaffold(
 internal fun BlurredBar(
     backdrop: LayerBackdrop?,
     blurEnabled: Boolean,
+    modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
     Box(
-        modifier = if (blurEnabled && backdrop != null) {
-            Modifier.textureBlur(
-                backdrop = backdrop,
-                shape = RectangleShape,
-                blurRadius = 25f * density.density,
-                colors = BlurColors(
-                    blendColors = listOf(
-                        BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(0.8f)),
+        modifier = modifier.then(
+            if (blurEnabled && backdrop != null) {
+                Modifier.textureBlur(
+                    backdrop = backdrop,
+                    shape = RectangleShape,
+                    blurRadius = 25f * density.density,
+                    colors = BlurColors(
+                        blendColors = listOf(
+                            BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(0.8f)),
+                        ),
                     ),
-                ),
-            )
-        } else {
-            Modifier
-        },
+                )
+            } else {
+                Modifier
+            },
+        ),
     ) {
         content()
     }
 }
 
 @Composable
-private fun EffectBanner(
-    message: String,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.defaultColors(
-            color = MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f),
-        ),
-    ) {
-        Text(
-            text = message,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-            fontWeight = FontWeight.Medium,
-        )
-    }
+internal fun Modifier.moriFixedHorizontalPadding(
+    fixedPadding: PaddingValues,
+): Modifier {
+    val layoutDirection = LocalLayoutDirection.current
+    return padding(
+        start = fixedPadding.calculateStartPadding(layoutDirection),
+        end = fixedPadding.calculateEndPadding(layoutDirection),
+    )
 }
 
 @Composable

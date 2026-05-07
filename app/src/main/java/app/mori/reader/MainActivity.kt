@@ -5,29 +5,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import app.mori.reader.data.settings.AppSettings
-import app.mori.reader.data.settings.createAndroidSettingsRepository
+import app.mori.reader.data.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.koin.core.context.GlobalContext
 
 class MainActivity : ComponentActivity() {
-    private var settingsReady = false
-
     override fun onCreate(savedInstanceState: Bundle?) {
-//        installSplashScreen().setKeepOnScreenCondition { !webViewReady || !settingsReady }
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         loadSettingsThenShowContent()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
     }
 
     private fun loadSettingsThenShowContent() {
         Thread {
             val initialSettings = readInitialSettings()
             runOnUiThread {
-                settingsReady = true
                 setContent {
                     App(initialSettings = initialSettings)
                 }
@@ -37,8 +30,9 @@ class MainActivity : ComponentActivity() {
 
     private fun readInitialSettings(): AppSettings =
         try {
+            val settingsRepository = GlobalContext.get().get<SettingsRepository>()
             runBlocking {
-                createAndroidSettingsRepository(applicationContext).settings.first()
+                settingsRepository.settings.first()
             }
         } catch (_: Throwable) {
             AppSettings()

@@ -2,11 +2,6 @@ package app.mori.reader.data.dictionary
 
 import android.content.Context
 import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import de.manhhao.hoshi.HoshiDicts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,179 +10,173 @@ import java.io.File
 import java.net.URL
 import java.util.UUID
 
-@Composable
-actual fun rememberDictionaryRepository(): DictionaryRepository {
-    val applicationContext = LocalContext.current.applicationContext
-    return remember(applicationContext) {
-        AndroidDictionaryRepository(applicationContext)
-    }
-}
-
-@Composable
-actual fun rememberDictionaryZipPicker(
-    onSelected: (List<String>) -> Unit,
-): () -> Unit {
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            onSelected(uris.map { it.toString() })
-        }
-    }
-    return {
-        launcher.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
-    }
-}
-
-private class AndroidDictionaryRepository(
+internal class AndroidDictionaryRepository(
     private val context: Context,
 ) : DictionaryRepository {
     private val dictionariesRoot: File = File(context.filesDir, "Dictionaries")
     private val configFile: File = File(dictionariesRoot, "config.json")
-    private val json = Json {
-        ignoreUnknownKeys = true
-        prettyPrint = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            prettyPrint = true
+            encodeDefaults = true
+        }
 
-    override suspend fun loadDictionaries(): DictionaryCatalog = withContext(Dispatchers.IO) {
-        dictionariesRoot.mkdirs()
-        val config = loadConfig()
-        val catalog = DictionaryCatalog(
-            termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
-            frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
-            pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
-        )
-        rebuildQuery(catalog)
-        catalog
-    }
+    override suspend fun loadDictionaries(): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            dictionariesRoot.mkdirs()
+            val config = loadConfig()
+            val catalog =
+                DictionaryCatalog(
+                    termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
+                    frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
+                    pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
+                )
+            rebuildQuery(catalog)
+            catalog
+        }
 
     override suspend fun importDictionaries(
         type: DictionaryType,
         uriStrings: List<String>,
-    ): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val outputDir = typeDirectory(type).also { it.mkdirs() }
-        val failures = mutableListOf<String>()
+    ): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val outputDir = typeDirectory(type).also { it.mkdirs() }
+            val failures = mutableListOf<String>()
 
-        uriStrings.forEachIndexed { index, uriString ->
-            val uri = Uri.parse(uriString)
-            val tempZip = File(context.cacheDir, "dictionary-import-${System.nanoTime()}-$index.zip")
-            try {
-                copyUriToFile(uri, tempZip)
-                val result = HoshiDicts.importDictionary(tempZip.absolutePath, outputDir.absolutePath)
-                if (!result.success) {
+            uriStrings.forEachIndexed { index, uriString ->
+                val uri = Uri.parse(uriString)
+                val tempZip = File(context.cacheDir, "dictionary-import-${System.nanoTime()}-$index.zip")
+                try {
+                    copyUriToFile(uri, tempZip)
+                    val result = HoshiDicts.importDictionary(tempZip.absolutePath, outputDir.absolutePath)
+                    if (!result.success) {
+                        failures += uri.lastPathSegment ?: uriString
+                    }
+                } catch (_: Throwable) {
                     failures += uri.lastPathSegment ?: uriString
+                } finally {
+                    tempZip.delete()
                 }
-            } catch (_: Throwable) {
-                failures += uri.lastPathSegment ?: uriString
-            } finally {
-                tempZip.delete()
             }
-        }
 
-        val catalog = scanAndPersist()
-        rebuildQuery(catalog)
-        if (failures.size == uriStrings.size) {
-            throw IllegalStateException("导入失败，请确认选择的是 Yomitan .zip 词典。")
+            val catalog = scanAndPersist()
+            rebuildQuery(catalog)
+            if (failures.size == uriStrings.size) {
+                throw IllegalStateException("导入失败，请确认选择的是 Yomitan .zip 词典。")
+            }
+            if (failures.isNotEmpty()) {
+                throw IllegalStateException("部分词典导入失败：${failures.joinToString(", ")}")
+            }
+            catalog
         }
-        if (failures.isNotEmpty()) {
-            throw IllegalStateException("部分词典导入失败：${failures.joinToString(", ")}")
-        }
-        catalog
-    }
 
     override suspend fun setEnabled(
         type: DictionaryType,
         id: String,
         enabled: Boolean,
-    ): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val catalog = mutate(type) { dictionaries ->
-            dictionaries.map { dictionary ->
-                if (dictionary.id == id) dictionary.copy(isEnabled = enabled) else dictionary
-            }
+    ): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val catalog =
+                mutate(type) { dictionaries ->
+                    dictionaries.map { dictionary ->
+                        if (dictionary.id == id) dictionary.copy(isEnabled = enabled) else dictionary
+                    }
+                }
+            rebuildQuery(catalog)
+            catalog
         }
-        rebuildQuery(catalog)
-        catalog
-    }
 
     override suspend fun move(
         type: DictionaryType,
         id: String,
         direction: MoveDirection,
-    ): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val catalog = mutate(type) { dictionaries ->
-            val currentIndex = dictionaries.indexOfFirst { it.id == id }
-            if (currentIndex == -1) return@mutate dictionaries
-            val targetIndex = when (direction) {
-                MoveDirection.Up -> currentIndex - 1
-                MoveDirection.Down -> currentIndex + 1
-            }
-            if (targetIndex !in dictionaries.indices) return@mutate dictionaries
+    ): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val catalog =
+                mutate(type) { dictionaries ->
+                    val currentIndex = dictionaries.indexOfFirst { it.id == id }
+                    if (currentIndex == -1) return@mutate dictionaries
+                    val targetIndex =
+                        when (direction) {
+                            MoveDirection.Up -> currentIndex - 1
+                            MoveDirection.Down -> currentIndex + 1
+                        }
+                    if (targetIndex !in dictionaries.indices) return@mutate dictionaries
 
-            dictionaries.toMutableList().also {
-                val moved = it.removeAt(currentIndex)
-                it.add(targetIndex, moved)
-            }.withOrder()
+                    dictionaries
+                        .toMutableList()
+                        .also {
+                            val moved = it.removeAt(currentIndex)
+                            it.add(targetIndex, moved)
+                        }.withOrder()
+                }
+            rebuildQuery(catalog)
+            catalog
         }
-        rebuildQuery(catalog)
-        catalog
-    }
 
     override suspend fun reorder(
         type: DictionaryType,
         ids: List<String>,
-    ): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val catalog = mutate(type) { dictionaries ->
-            val orderById = ids.withIndex().associate { (index, id) -> id to index }
-            dictionaries.sortedWith(
-                compareBy<DictionaryInfo> { orderById[it.id] ?: Int.MAX_VALUE }
-                    .thenBy { it.order },
-            )
+    ): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val catalog =
+                mutate(type) { dictionaries ->
+                    val orderById = ids.withIndex().associate { (index, id) -> id to index }
+                    dictionaries.sortedWith(
+                        compareBy<DictionaryInfo> { orderById[it.id] ?: Int.MAX_VALUE }
+                            .thenBy { it.order },
+                    )
+                }
+            rebuildQuery(catalog)
+            catalog
         }
-        rebuildQuery(catalog)
-        catalog
-    }
 
     override suspend fun delete(
         type: DictionaryType,
         id: String,
-    ): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val catalog = loadCatalogOnly()
-        val dictionary = catalog.dictionaries(type).firstOrNull { it.id == id }
-            ?: return@withContext catalog
-        File(dictionary.path).deleteRecursively()
-        val refreshed = scanAndPersist()
-        rebuildQuery(refreshed)
-        refreshed
-    }
-
-    override suspend fun updateDictionaries(): DictionaryCatalog = withContext(Dispatchers.IO) {
-        val before = loadCatalogOnly()
-        val updatable = DictionaryType.entries.flatMap { type ->
-            before.dictionaries(type).filter { it.isUpdatable }.map { type to it }
+    ): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val catalog = loadCatalogOnly()
+            val dictionary =
+                catalog.dictionaries(type).firstOrNull { it.id == id }
+                    ?: return@withContext catalog
+            File(dictionary.path).deleteRecursively()
+            val refreshed = scanAndPersist()
+            rebuildQuery(refreshed)
+            refreshed
         }
-        updatable.forEach { (type, dictionary) ->
-            runCatching {
-                val remoteIndex = URL(dictionary.index.indexUrl).readText().let {
-                    json.decodeFromString(DictionaryIndex.serializer(), it)
-                }
-                if (remoteIndex.revision == dictionary.index.revision || remoteIndex.downloadUrl.isBlank()) return@runCatching
 
-                val tempZip = File(context.cacheDir, "dictionary-update-${UUID.randomUUID()}.zip")
-                try {
-                    URL(remoteIndex.downloadUrl).openStream().use { input ->
-                        tempZip.outputStream().use { output -> input.copyTo(output) }
+    override suspend fun updateDictionaries(): DictionaryCatalog =
+        withContext(Dispatchers.IO) {
+            val before = loadCatalogOnly()
+            val updatable =
+                DictionaryType.entries.flatMap { type ->
+                    before.dictionaries(type).filter { it.isUpdatable }.map { type to it }
+                }
+            updatable.forEach { (type, dictionary) ->
+                runCatching {
+                    val remoteIndex =
+                        URL(dictionary.index.indexUrl).readText().let {
+                            json.decodeFromString(DictionaryIndex.serializer(), it)
+                        }
+                    if (remoteIndex.revision == dictionary.index.revision || remoteIndex.downloadUrl.isBlank()) return@runCatching
+
+                    val tempZip = File(context.cacheDir, "dictionary-update-${UUID.randomUUID()}.zip")
+                    try {
+                        URL(remoteIndex.downloadUrl).openStream().use { input ->
+                            tempZip.outputStream().use { output -> input.copyTo(output) }
+                        }
+                        HoshiDicts.importDictionary(tempZip.absolutePath, typeDirectory(type).absolutePath)
+                    } finally {
+                        tempZip.delete()
                     }
-                    HoshiDicts.importDictionary(tempZip.absolutePath, typeDirectory(type).absolutePath)
-                } finally {
-                    tempZip.delete()
                 }
             }
+            val catalog = scanAndPersist()
+            rebuildQuery(catalog)
+            catalog
         }
-        val catalog = scanAndPersist()
-        rebuildQuery(catalog)
-        catalog
-    }
 
     override suspend fun rebuildQuery(catalog: DictionaryCatalog) {
         withContext(Dispatchers.IO) {
@@ -200,62 +189,75 @@ private class AndroidDictionaryRepository(
         }
     }
 
-    override suspend fun lookup(text: String, maxResults: Int): DictionaryLookupResult =
+    override suspend fun lookup(
+        text: String,
+        maxResults: Int,
+    ): DictionaryLookupResult =
         withContext(Dispatchers.IO) {
             val trimmed = text.trim()
             if (trimmed.isEmpty()) {
                 return@withContext DictionaryLookupResult()
             }
-            val entries = HoshiDicts.lookup(HoshiDicts.lookupObject, trimmed, maxResults, scanLength = 16)
-                .map { result ->
-                    val term = result.term
-                    DictionaryLookupEntry(
-                        expression = term.expression,
-                        reading = term.reading,
-                        matched = result.matched,
-                        deinflectionTrace = result.process.reversed().map {
-                            DictionaryTraceStep(name = it)
-                        },
-                        glossaries = term.glossaries.map {
-                            DictionaryGlossary(
-                                dictionary = it.dictName,
-                                content = it.glossary,
-                                definitionTags = it.definitionTags,
-                                termTags = it.termTags,
-                            )
-                        },
-                        frequencies = term.frequencies.map {
-                            DictionaryFrequencyGroup(
-                                dictionary = it.dictName,
-                                frequencies = it.frequencies.map { frequency ->
-                                    DictionaryFrequency(
-                                        value = frequency.value,
-                                        displayValue = frequency.displayValue,
+            val entries =
+                HoshiDicts
+                    .lookup(HoshiDicts.lookupObject, trimmed, maxResults, scanLength = 16)
+                    .map { result ->
+                        val term = result.term
+                        DictionaryLookupEntry(
+                            expression = term.expression,
+                            reading = term.reading,
+                            matched = result.matched,
+                            deinflectionTrace =
+                                result.process.reversed().map {
+                                    DictionaryTraceStep(name = it)
+                                },
+                            glossaries =
+                                term.glossaries.map {
+                                    DictionaryGlossary(
+                                        dictionary = it.dictName,
+                                        content = it.glossary,
+                                        definitionTags = it.definitionTags,
+                                        termTags = it.termTags,
                                     )
                                 },
-                            )
-                        },
-                        pitches = term.pitches.map {
-                            DictionaryPitchGroup(
-                                dictionary = it.dictName,
-                                pitchPositions = it.pitchPositions.toList().distinct(),
-                            )
-                        },
-                        rules = term.rules.split(' ').filter { it.isNotBlank() },
-                    )
-                }
-            val styles = HoshiDicts.getStyles(HoshiDicts.lookupObject)
-                .associate { it.dictName to it.styles }
+                            frequencies =
+                                term.frequencies.map {
+                                    DictionaryFrequencyGroup(
+                                        dictionary = it.dictName,
+                                        frequencies =
+                                            it.frequencies.map { frequency ->
+                                                DictionaryFrequency(
+                                                    value = frequency.value,
+                                                    displayValue = frequency.displayValue,
+                                                )
+                                            },
+                                    )
+                                },
+                            pitches =
+                                term.pitches.map {
+                                    DictionaryPitchGroup(
+                                        dictionary = it.dictName,
+                                        pitchPositions = it.pitchPositions.toList().distinct(),
+                                    )
+                                },
+                            rules = term.rules.split(' ').filter { it.isNotBlank() },
+                        )
+                    }
+            val styles =
+                HoshiDicts
+                    .getStyles(HoshiDicts.lookupObject)
+                    .associate { it.dictName to it.styles }
             DictionaryLookupResult(entries = entries, styles = styles)
         }
 
     private fun scanAndPersist(): DictionaryCatalog {
         val config = loadConfig()
-        val catalog = DictionaryCatalog(
-            termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
-            frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
-            pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
-        )
+        val catalog =
+            DictionaryCatalog(
+                termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
+                frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
+                pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
+            )
         saveConfig(catalog)
         return catalog
     }
@@ -265,11 +267,12 @@ private class AndroidDictionaryRepository(
         block: (List<DictionaryInfo>) -> List<DictionaryInfo>,
     ): DictionaryCatalog {
         val catalog = loadCatalogOnly()
-        val updated = when (type) {
-            DictionaryType.Term -> catalog.copy(termDictionaries = block(catalog.termDictionaries).withOrder())
-            DictionaryType.Frequency -> catalog.copy(frequencyDictionaries = block(catalog.frequencyDictionaries).withOrder())
-            DictionaryType.Pitch -> catalog.copy(pitchDictionaries = block(catalog.pitchDictionaries).withOrder())
-        }
+        val updated =
+            when (type) {
+                DictionaryType.Term -> catalog.copy(termDictionaries = block(catalog.termDictionaries).withOrder())
+                DictionaryType.Frequency -> catalog.copy(frequencyDictionaries = block(catalog.frequencyDictionaries).withOrder())
+                DictionaryType.Pitch -> catalog.copy(pitchDictionaries = block(catalog.pitchDictionaries).withOrder())
+            }
         saveConfig(updated)
         return updated
     }
@@ -293,10 +296,11 @@ private class AndroidDictionaryRepository(
 
         configEntries.sortedBy { it.order }.forEach { entry ->
             val dictionary = byFileName[entry.fileName] ?: return@forEach
-            result += dictionary.copy(
-                isEnabled = entry.isEnabled,
-                order = result.size,
-            )
+            result +=
+                dictionary.copy(
+                    isEnabled = entry.isEnabled,
+                    order = result.size,
+                )
         }
 
         val configured = result.mapTo(mutableSetOf()) { it.fileName }
@@ -311,7 +315,8 @@ private class AndroidDictionaryRepository(
 
     private fun readStoredDictionaries(type: DictionaryType): List<DictionaryInfo> {
         val directory = typeDirectory(type).also { it.mkdirs() }
-        return directory.listFiles()
+        return directory
+            .listFiles()
             ?.filter { it.isDirectory }
             ?.mapNotNull { dictionaryDirectory ->
                 val marker = File(dictionaryDirectory, ".hoshidicts_1")
@@ -320,9 +325,10 @@ private class AndroidDictionaryRepository(
                     dictionaryDirectory.deleteRecursively()
                     return@mapNotNull null
                 }
-                val index = runCatching {
-                    json.decodeFromString(DictionaryIndex.serializer(), indexFile.readText())
-                }.getOrNull()
+                val index =
+                    runCatching {
+                        json.decodeFromString(DictionaryIndex.serializer(), indexFile.readText())
+                    }.getOrNull()
                 if (index == null || index.title.isBlank()) {
                     dictionaryDirectory.deleteRecursively()
                     return@mapNotNull null
@@ -333,8 +339,7 @@ private class AndroidDictionaryRepository(
                     path = dictionaryDirectory.absolutePath,
                     fileName = dictionaryDirectory.name,
                 )
-            }
-            ?.sortedBy { it.index.title.lowercase() }
+            }?.sortedBy { it.index.title.lowercase() }
             .orEmpty()
     }
 
@@ -349,18 +354,21 @@ private class AndroidDictionaryRepository(
 
     private fun saveConfig(catalog: DictionaryCatalog) {
         dictionariesRoot.mkdirs()
-        val config = DictionaryConfig(
-            termDictionaries = catalog.termDictionaries.toConfigEntries(),
-            frequencyDictionaries = catalog.frequencyDictionaries.toConfigEntries(),
-            pitchDictionaries = catalog.pitchDictionaries.toConfigEntries(),
-        )
+        val config =
+            DictionaryConfig(
+                termDictionaries = catalog.termDictionaries.toConfigEntries(),
+                frequencyDictionaries = catalog.frequencyDictionaries.toConfigEntries(),
+                pitchDictionaries = catalog.pitchDictionaries.toConfigEntries(),
+            )
         configFile.writeText(json.encodeToString(DictionaryConfig.serializer(), config))
     }
 
-    private fun typeDirectory(type: DictionaryType): File =
-        File(dictionariesRoot, type.directoryName)
+    private fun typeDirectory(type: DictionaryType): File = File(dictionariesRoot, type.directoryName)
 
-    private fun copyUriToFile(uri: Uri, target: File) {
+    private fun copyUriToFile(
+        uri: Uri,
+        target: File,
+    ) {
         context.contentResolver.openInputStream(uri).use { input ->
             requireNotNull(input) { "无法读取词典文件" }
             target.outputStream().use { output -> input.copyTo(output) }
@@ -368,8 +376,7 @@ private class AndroidDictionaryRepository(
     }
 }
 
-private fun List<DictionaryInfo>.withOrder(): List<DictionaryInfo> =
-    mapIndexed { index, dictionary -> dictionary.copy(order = index) }
+private fun List<DictionaryInfo>.withOrder(): List<DictionaryInfo> = mapIndexed { index, dictionary -> dictionary.copy(order = index) }
 
 private fun List<DictionaryInfo>.toConfigEntries(): List<DictionaryConfigEntry> =
     mapIndexed { index, dictionary ->

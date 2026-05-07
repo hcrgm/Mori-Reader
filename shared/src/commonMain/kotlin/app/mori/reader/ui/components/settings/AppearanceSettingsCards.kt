@@ -19,7 +19,6 @@ import app.mori.reader.data.settings.ThemeMode
 import app.mori.reader.data.settings.LanguageMode
 
 import app.mori.reader.shared.generated.resources.*
-import app.mori.reader.ui.label
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -46,9 +45,7 @@ fun AppThemeSettingsCard(
     onBlurEnabledChanged: (Boolean) -> Unit,
 ) {
     val themeModes = remember { ThemeMode.entries.toList() }
-    val themeModeItems = remember(themeModes) {
-        themeModes.map { SpinnerEntry(title = it.label) }
-    }
+    val themeModeItems = themeModes.map { SpinnerEntry(title = it.localizedLabel()) }
     val languageModes = remember { LanguageMode.entries.toList() }
     val followSystemLabel = stringResource(Res.string.language_follow_system)
     val englishLabel = stringResource(Res.string.language_english)
@@ -134,9 +131,7 @@ fun ReaderAppearanceSettingsCard(
     onPopupSwipeThresholdChanged: (Int) -> Unit,
 ) {
     val readerThemeModes = remember { ReaderThemeMode.entries.toList() }
-    val readerThemeModeItems = remember(readerThemeModes) {
-        readerThemeModes.map { SpinnerEntry(title = it.label) }
-    }
+    val readerThemeModeItems = readerThemeModes.map { SpinnerEntry(title = it.localizedLabel()) }
     val verticalWritingLabel = stringResource(Res.string.appearance_writing_vertical)
     val horizontalWritingLabel = stringResource(Res.string.appearance_writing_horizontal)
     val paginationLabel = stringResource(Res.string.appearance_reading_pagination)
@@ -358,4 +353,18 @@ private fun Double.formatOneDecimal(): String {
 private fun Double.formatTwoDecimals(): String {
     val rounded = (this * 100.0).roundToInt() / 100.0
     return "%.2f".format(rounded)
+}
+
+@Composable
+private fun ThemeMode.localizedLabel(): String = when (this) {
+    ThemeMode.System -> stringResource(Res.string.theme_follow_system)
+    ThemeMode.Light -> stringResource(Res.string.theme_light)
+    ThemeMode.Dark -> stringResource(Res.string.theme_dark)
+}
+
+@Composable
+private fun ReaderThemeMode.localizedLabel(): String = when (this) {
+    ReaderThemeMode.FollowApp -> stringResource(Res.string.reader_theme_follow_app)
+    ReaderThemeMode.Light -> stringResource(Res.string.theme_light)
+    ReaderThemeMode.Dark -> stringResource(Res.string.theme_dark)
 }

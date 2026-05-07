@@ -1,49 +1,84 @@
 package app.mori.reader.data.settings
 
-import app.mori.reader.data.anki.AnkiSettings
+import app.mori.reader.data.audiobook.AudiobookStorageMode
 import kotlinx.serialization.Serializable
 
-data class AppSettings(
-    val bookshelfSortMode: BookshelfSortMode = BookshelfSortMode.Recent,
+data class BookshelfSettings(
+    val sortMode: BookshelfSortMode = BookshelfSortMode.Recent,
+)
+
+data class AppearanceSettings(
     val themeMode: ThemeMode = ThemeMode.System,
+    val languageMode: LanguageMode = LanguageMode.System,
     val readerThemeMode: ReaderThemeMode = ReaderThemeMode.FollowApp,
     val blurEnabled: Boolean = true,
-    val maxResults: Int = 16,
-    val languageMode: LanguageMode = LanguageMode.System,
-
-    val scanLength: Int = 16,
-    val readerFontSize: Int = 22,
-    val readerLineHeight: Double = 1.65,
-    val readerHorizontalPadding: Int = 5,
-    val readerVerticalPadding: Int = 0,
-    val readerAvoidPageBreak: Boolean = false,
-    val readerJustifyText: Boolean = false,
-    val readerLayoutAdvanced: Boolean = false,
-    val readerCharacterSpacing: Double = 0.0,
-    val readerContinuousMode: Boolean = false,
-    val readerHideFurigana: Boolean = false,
     val readerFullscreen: Boolean = false,
-    val popupWidth: Int = 320,
-    val popupHeight: Int = 250,
-    val popupFullWidth: Boolean = false,
-    val popupSwipeToDismiss: Boolean = false,
-    val popupSwipeThreshold: Int = 40,
+)
+
+data class ReaderSettings(
+    val verticalWriting: Boolean = true,
+    val fontSize: Int = 22,
+    val lineHeight: Double = 1.65,
+    val horizontalPadding: Int = 5,
+    val verticalPadding: Int = 0,
+    val avoidPageBreak: Boolean = false,
+    val justifyText: Boolean = false,
+    val layoutAdvanced: Boolean = false,
+    val characterSpacing: Double = 0.0,
+    val continuousMode: Boolean = false,
+    val hideFurigana: Boolean = false,
+)
+
+data class PopupSettings(
+    val width: Int = 320,
+    val height: Int = 250,
+    val fullWidth: Boolean = false,
+    val swipeToDismiss: Boolean = false,
+    val swipeThreshold: Int = 40,
+)
+
+data class DictionarySettings(
+    val maxResults: Int = 16,
+    val scanLength: Int = 16,
     val collapseDictionaries: Boolean = false,
     val compactGlossaries: Boolean = true,
     val showExpressionTags: Boolean = false,
     val harmonicFrequency: Boolean = false,
     val deduplicatePitchAccents: Boolean = false,
-    val audioSources: List<AudioSource> = listOf(AudioSource.Local.copy(isEnabled = false), AudioSource.Default),
-    val enableLocalAudio: Boolean = false,
-    val audioEnableAutoplay: Boolean = false,
-    val audioPlaybackMode: AudioPlaybackMode = AudioPlaybackMode.Duck,
-    val localAudioDatabaseSizeBytes: Long = 0L,
-    val anki: AnkiSettings = AnkiSettings(),
 )
 
-enum class BookshelfSortMode(val wireName: String, val label: String) {
-    Recent("recent", "最近阅读"),
-    Title("title", "书名"),
+data class AudioSettings(
+    val sources: List<AudioSource> = listOf(AudioSource.Local.copy(isEnabled = false), AudioSource.Default),
+    val enableLocalAudio: Boolean = false,
+    val enableAutoplay: Boolean = false,
+    val playbackMode: AudioPlaybackMode = AudioPlaybackMode.Duck,
+    val localAudioDatabaseSizeBytes: Long = 0L,
+)
+
+data class SasayakiSettings(
+    val preferredStorageMode: AudiobookStorageMode = AudiobookStorageMode.Copy,
+    val syncEnabled: Boolean = false,
+    val autoScroll: Boolean = true,
+    val autoPauseOnLookup: Boolean = true,
+    val highlightEnabled: Boolean = true,
+    val highlightColor: String = "#FFC0485C",
+)
+
+data class AppSettings(
+    val bookshelf: BookshelfSettings = BookshelfSettings(),
+    val appearance: AppearanceSettings = AppearanceSettings(),
+    val reader: ReaderSettings = ReaderSettings(),
+    val popup: PopupSettings = PopupSettings(),
+    val dictionary: DictionarySettings = DictionarySettings(),
+    val audio: AudioSettings = AudioSettings(),
+    val sasayaki: SasayakiSettings = SasayakiSettings(),
+)
+
+enum class BookshelfSortMode(
+    val wireName: String,
+) {
+    Recent("recent"),
+    Title("title"),
 }
 
 enum class ThemeMode {
@@ -57,7 +92,6 @@ enum class LanguageMode {
     English,
     Chinese,
 }
-
 
 enum class ReaderThemeMode {
     FollowApp,
@@ -79,23 +113,27 @@ data class AudioSource(
         get() = url == Local.url
 
     companion object {
-        val Default = AudioSource(
-            name = "Default",
-            url = "https://hoshi-reader.manhhaoo-do.workers.dev/?term={term}&reading={reading}",
-            isEnabled = true,
-            isDefault = true,
-        )
+        val Default =
+            AudioSource(
+                name = "Default",
+                url = "https://hoshi-reader.manhhaoo-do.workers.dev/?term={term}&reading={reading}",
+                isEnabled = true,
+                isDefault = true,
+            )
 
-        val Local = AudioSource(
-            name = "Local",
-            url = "local://audio?term={term}&reading={reading}",
-            isEnabled = true,
-        )
+        val Local =
+            AudioSource(
+                name = "Local",
+                url = "local://audio?term={term}&reading={reading}",
+                isEnabled = true,
+            )
     }
 }
 
-enum class AudioPlaybackMode(val wireName: String, val label: String) {
-    Interrupt("interrupt", "打断其他音频"),
-    Duck("duck", "降低其他音量"),
-    Mix("mix", "保持其他音量"),
+enum class AudioPlaybackMode(
+    val wireName: String,
+) {
+    Interrupt("interrupt"),
+    Duck("duck"),
+    Mix("mix"),
 }

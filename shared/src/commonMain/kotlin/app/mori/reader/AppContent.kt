@@ -1,69 +1,67 @@
 package app.mori.reader
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplayTransitionEffects
+import app.mori.reader.app.navigation.AppNavigationState
+import app.mori.reader.features.audiobook.presentation.AudiobookIntent
+import app.mori.reader.features.audiobook.presentation.AudiobookState
+import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
+import app.mori.reader.features.bookshelf.presentation.HomeState
+import app.mori.reader.features.dictionary.presentation.DictionaryIntent
+import app.mori.reader.features.dictionary.presentation.DictionaryState
+import app.mori.reader.features.reader.presentation.ReaderViewModel
+import app.mori.reader.features.settings.presentation.SettingsIntent
+import app.mori.reader.features.settings.presentation.SettingsUiState
 import app.mori.reader.ui.AppEffect
 import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppState
-import app.mori.reader.ui.AppTab
-import app.mori.reader.ui.components.navigation.MoriNavigationBar
-import app.mori.reader.ui.components.navigation.MoriNavigationRail
-import app.mori.reader.ui.layout.shouldShowWideLayout
 import app.mori.reader.ui.navigation.AppRoute
-import app.mori.reader.ui.navigation.toRoute
-import app.mori.reader.ui.pages.dictionary.DictionaryPage
-import app.mori.reader.ui.pages.home.HomePage
+import app.mori.reader.ui.navigation.MainTabsContent
 import app.mori.reader.ui.pages.reader.ReaderPage
-import app.mori.reader.ui.pages.settings.AnkiSettingsPage
 import app.mori.reader.ui.pages.settings.AppearanceSettingsPage
 import app.mori.reader.ui.pages.settings.AudioSettingsPage
 import app.mori.reader.ui.pages.settings.DictionarySettingsPage
-import app.mori.reader.ui.pages.settings.SettingsPage
-import kotlinx.coroutines.CoroutineScope
+import app.mori.reader.ui.text.resolveString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
+import top.yukonga.miuix.kmp.basic.Surface
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun AppContent(
     state: AppState,
+    homeState: HomeState,
+    dictionaryState: DictionaryState,
+    audiobookState: AudiobookState,
+    settingsUi: SettingsUiState,
     effects: Flow<AppEffect>,
     onIntent: (AppIntent) -> Unit,
+    onBookshelfIntent: (BookshelfIntent) -> Unit,
+    onDictionaryIntent: (DictionaryIntent) -> Unit,
+    onSettingsIntent: (SettingsIntent) -> Unit,
+    onAudiobookIntent: (AudiobookIntent) -> Unit,
 ) {
     val showToast = rememberSystemToast()
-    var rootBackStack by remember { mutableStateOf(listOf<NavKey>(AppRoute.Main)) }
+    val navigationState = remember { AppNavigationState() }
 
     LaunchedEffect(effects, showToast) {
         effects.collectLatest { effect ->
             when (effect) {
-                is AppEffect.ShowMessage -> showToast(effect.message)
-                is AppEffect.OpenReader -> {
-                    rootBackStack = rootBackStack + AppRoute.Reader(effect.bookId)
-                }
+                is AppEffect.ShowMessage -> showToast(effect.message.resolveString())
+                is AppEffect.OpenReader -> navigationState.openReader(effect.bookId)
             }
         }
     }
@@ -78,282 +76,76 @@ fun AppContent(
     }
 
     val rootEntries = rememberDecoratedNavEntries(
-        backStack = rootBackStack,
+        backStack = navigationState.rootBackStack,
         entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
         entryProvider = entryProvider<NavKey> {
             entry<AppRoute.Main> {
                 MainTabsContent(
-                    state = state,
-                    message = null,
+                    home = homeState,
+                    dictionary = dictionaryState,
+                    settings = state.settings,
+                    audiobook = audiobookState,
+                    navigationState = navigationState,
                     onIntent = onIntent,
-                    onOpenAppearanceSettings = {
-                        rootBackStack = rootBackStack + AppRoute.AppearanceSettings
-                    },
-                    onOpenDictionarySettings = {
-                        rootBackStack = rootBackStack + AppRoute.DictionarySettings
-                    },
-                    onOpenAudioSettings = {
-                        rootBackStack = rootBackStack + AppRoute.AudioSettings
-                    },
-                    onOpenAnkiSettings = { rootBackStack = rootBackStack + AppRoute.AnkiSettings },
+                    onBookshelfIntent = onBookshelfIntent,
+                    onDictionaryIntent = onDictionaryIntent,
+                    onSettingsIntent = onSettingsIntent,
+                    onAudiobookIntent = onAudiobookIntent,
+                    onOpenAppearanceSettings = { navigationState.pushRoot(AppRoute.AppearanceSettings) },
+                    onOpenDictionarySettings = { navigationState.pushRoot(AppRoute.DictionarySettings) },
+                    onOpenAudioSettings = { navigationState.pushRoot(AppRoute.AudioSettings) },
                 )
             }
             entry<AppRoute.Reader> { route ->
+                val readerViewModel = koinViewModel<ReaderViewModel>(
+                    key = "reader-${route.bookId}",
+                    parameters = { parametersOf(route.bookId) },
+                )
+                val readerState by readerViewModel.state.collectAsStateWithLifecycle()
                 ReaderPage(
-                    state = state,
+                    reader = readerState,
+                    settings = state.settings,
                     bookId = route.bookId,
-                    onIntent = onIntent,
-                    onBack = {
-                        if (rootBackStack.size > 1) {
-                            rootBackStack = rootBackStack.dropLast(1)
-                        }
-                    },
+                    onReaderIntent = readerViewModel::onIntent,
+                    onSettingsIntent = onSettingsIntent,
+                    onBack = navigationState::popRoot,
                 )
             }
             entry<AppRoute.DictionarySettings> {
                 DictionarySettingsPage(
-                    state = state,
-                    message = null,
-                    onIntent = onIntent,
-                    onBack = {
-                        if (rootBackStack.size > 1) {
-                            rootBackStack = rootBackStack.dropLast(1)
-                        }
-                    },
+                    settings = state.settings,
+                    dictionaryState = settingsUi.dictionaryManagement,
+                    onIntent = onSettingsIntent,
+                    onBack = navigationState::popRoot,
                 )
             }
             entry<AppRoute.AppearanceSettings> {
                 AppearanceSettingsPage(
-                    state = state,
-                    message = null,
-                    onIntent = onIntent,
-                    onBack = {
-                        if (rootBackStack.size > 1) {
-                            rootBackStack = rootBackStack.dropLast(1)
-                        }
-                    },
+                    settings = state.settings,
+                    onSettingsIntent = onSettingsIntent,
+                    onBack = navigationState::popRoot,
                 )
             }
             entry<AppRoute.AudioSettings> {
                 AudioSettingsPage(
-                    state = state,
-                    message = null,
-                    onIntent = onIntent,
-                    onBack = {
-                        if (rootBackStack.size > 1) {
-                            rootBackStack = rootBackStack.dropLast(1)
-                        }
-                    },
-                )
-            }
-            entry<AppRoute.AnkiSettings> {
-                AnkiSettingsPage(
-                    state = state,
-                    message = null,
-                    onIntent = onIntent,
-                    onBack = {
-                        if (rootBackStack.size > 1) {
-                            rootBackStack = rootBackStack.dropLast(1)
-                        }
-                    },
+                    settings = state.settings,
+                    settingsUi = settingsUi,
+                    onIntent = onSettingsIntent,
+                    onBack = navigationState::popRoot,
                 )
             }
         },
     )
 
-    NavDisplay(
-        entries = rootEntries,
+    Surface(
         modifier = Modifier.fillMaxSize(),
-        onBack = {
-            if (rootBackStack.size > 1) {
-                rootBackStack = rootBackStack.dropLast(1)
-            }
-        },
-        transitionEffects = rootTransitionEffects,
-    )
-}
-
-@Composable
-private fun MainTabsContent(
-    state: AppState,
-    message: String?,
-    onIntent: (AppIntent) -> Unit,
-    onOpenAppearanceSettings: () -> Unit,
-    onOpenDictionarySettings: () -> Unit,
-    onOpenAudioSettings: () -> Unit,
-    onOpenAnkiSettings: () -> Unit,
-) {
-    val pagerState = rememberPagerState(
-        initialPage = state.currentTab.ordinal,
-        pageCount = { AppTab.entries.size },
-    )
-    val isWideScreen = shouldShowWideLayout()
-    val coroutineScope = rememberCoroutineScope()
-    val routes = remember { AppTab.entries.map { it.toRoute() } }
-    var selectedPage by remember { mutableIntStateOf(pagerState.currentPage) }
-    var dictionaryVerticalScrollActive by remember { mutableStateOf(false) }
-    val surfaceColor = MiuixTheme.colorScheme.surface
-    val navigationBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
-    }
-
-    LaunchedEffect(pagerState.currentPage) {
-        selectedPage = pagerState.currentPage
-        val currentTab = AppTab.entries[pagerState.currentPage]
-        if (state.currentTab != currentTab) {
-            onIntent(AppIntent.SelectTab(currentTab))
-        }
-    }
-
-    LaunchedEffect(selectedPage) {
-        if (AppTab.entries[selectedPage] != AppTab.Dictionary) {
-            dictionaryVerticalScrollActive = false
-        }
-    }
-
-    val onTabSelected: (AppTab) -> Unit = { tab ->
-        selectedPage = tab.ordinal
-        if (state.currentTab != tab) {
-            onIntent(AppIntent.SelectTab(tab))
-        }
-        coroutineScope.animateToTab(pagerState, tab)
-    }
-
-    if (isWideScreen) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            MoriNavigationRail(
-                selectedTab = AppTab.entries[selectedPage],
-                backdrop = navigationBackdrop,
-                blurEnabled = state.settings.blurEnabled,
-                onTabSelected = onTabSelected,
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .layerBackdrop(navigationBackdrop),
-            ) {
-                MainTabsPager(
-                    state = state,
-                    message = message,
-                    fixedPadding = PaddingValues(),
-                    pagerState = pagerState,
-                    routes = routes,
-                    dictionaryVerticalScrollActive = dictionaryVerticalScrollActive,
-                    onIntent = onIntent,
-                    onOpenAppearanceSettings = onOpenAppearanceSettings,
-                    onOpenDictionarySettings = onOpenDictionarySettings,
-                    onOpenAudioSettings = onOpenAudioSettings,
-                    onOpenAnkiSettings = onOpenAnkiSettings,
-                    onWebViewVerticalScrollActiveChange = { dictionaryVerticalScrollActive = it },
-                )
-            }
-        }
-    } else {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            bottomBar = {
-                MoriNavigationBar(
-                    selectedTab = AppTab.entries[selectedPage],
-                    backdrop = navigationBackdrop,
-                    blurEnabled = state.settings.blurEnabled,
-                    onTabSelected = onTabSelected,
-                )
-            },
-        ) { fixedPadding ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .layerBackdrop(navigationBackdrop),
-            ) {
-                MainTabsPager(
-                    state = state,
-                    message = message,
-                    fixedPadding = fixedPadding,
-                    pagerState = pagerState,
-                    routes = routes,
-                    dictionaryVerticalScrollActive = dictionaryVerticalScrollActive,
-                    onIntent = onIntent,
-                    onOpenAppearanceSettings = onOpenAppearanceSettings,
-                    onOpenDictionarySettings = onOpenDictionarySettings,
-                    onOpenAudioSettings = onOpenAudioSettings,
-                    onOpenAnkiSettings = onOpenAnkiSettings,
-                    onWebViewVerticalScrollActiveChange = { dictionaryVerticalScrollActive = it },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MainTabsPager(
-    state: AppState,
-    message: String?,
-    fixedPadding: PaddingValues,
-    pagerState: PagerState,
-    routes: List<AppRoute>,
-    dictionaryVerticalScrollActive: Boolean,
-    onIntent: (AppIntent) -> Unit,
-    onOpenAppearanceSettings: () -> Unit,
-    onOpenDictionarySettings: () -> Unit,
-    onOpenAudioSettings: () -> Unit,
-    onOpenAnkiSettings: () -> Unit,
-    onWebViewVerticalScrollActiveChange: (Boolean) -> Unit,
-) {
-    HorizontalPager(
-        state = pagerState,
-        modifier = Modifier.fillMaxSize(),
-        beyondViewportPageCount = 0,
-        userScrollEnabled = !dictionaryVerticalScrollActive && state.dictionary.popupStack.isEmpty(),
-        verticalAlignment = androidx.compose.ui.Alignment.Top,
-    ) { page ->
+        color = MiuixTheme.colorScheme.surface,
+    ) {
         NavDisplay(
-            backStack = listOf(routes[page]),
+            entries = rootEntries,
             modifier = Modifier.fillMaxSize(),
-            onBack = {},
-            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
-            entryProvider = entryProvider<NavKey> {
-                entry<AppRoute.Home> {
-                    HomePage(
-                        state = state,
-                        message = message,
-                        fixedPadding = fixedPadding,
-                        onIntent = onIntent,
-                    )
-                }
-                entry<AppRoute.Dictionary> {
-                    DictionaryPage(
-                        state = state,
-                        message = message,
-                        fixedPadding = fixedPadding,
-                        onIntent = onIntent,
-                        onWebViewVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
-                    )
-                }
-                entry<AppRoute.Settings> {
-                    SettingsPage(
-                        state = state,
-                        message = message,
-                        fixedPadding = fixedPadding,
-                        onIntent = onIntent,
-                        onOpenAppearanceSettings = onOpenAppearanceSettings,
-                        onOpenDictionarySettings = onOpenDictionarySettings,
-                        onOpenAudioSettings = onOpenAudioSettings,
-                        onOpenAnkiSettings = onOpenAnkiSettings,
-                    )
-                }
-            },
+            onBack = navigationState::popRoot,
+            transitionEffects = rootTransitionEffects,
         )
-    }
-}
-
-private fun CoroutineScope.animateToTab(
-    pagerState: PagerState,
-    tab: AppTab,
-) {
-    if (pagerState.currentPage == tab.ordinal) return
-
-    launch {
-        pagerState.animateScrollToPage(tab.ordinal)
     }
 }

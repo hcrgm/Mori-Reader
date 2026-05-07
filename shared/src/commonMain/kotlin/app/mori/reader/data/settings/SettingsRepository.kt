@@ -8,8 +8,7 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import app.mori.reader.data.anki.AnkiSettings
-import app.mori.reader.data.settings.ReaderThemeMode
+import app.mori.reader.data.audiobook.AudiobookStorageMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -20,283 +19,270 @@ import okio.IOException
 class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
-    private val json = Json {
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
+    private val json =
+        Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+        }
 
-    val settings: Flow<AppSettings> = dataStore.data
-        .catch { throwable ->
-            if (throwable is IOException) {
-                emit(emptyPreferences())
-            } else {
-                throw throwable
+    val settings: Flow<AppSettings> =
+        dataStore.data
+            .catch { throwable ->
+                if (throwable is IOException) {
+                    emit(emptyPreferences())
+                } else {
+                    throw throwable
+                }
+            }.map { preferences ->
+                val localAudioDatabaseSizeBytes = preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L
+                val enableLocalAudio =
+                    (preferences[Keys.EnableLocalAudio] ?: false) &&
+                        localAudioDatabaseSizeBytes > 0L
+                val audioSources =
+                    normalizeAudioSources(
+                        sources =
+                            preferences[Keys.AudioSources]?.toAudioSources(json)
+                                ?: listOf(AudioSource.Default),
+                        enableLocalAudio = enableLocalAudio,
+                        hasLocalAudioDatabase = localAudioDatabaseSizeBytes > 0L,
+                    )
+                AppSettings(
+                    bookshelf =
+                        BookshelfSettings(
+                            sortMode =
+                                preferences[Keys.BookshelfSortMode]?.toBookshelfSortMode()
+                                    ?: BookshelfSortMode.Recent,
+                        ),
+                    appearance =
+                        AppearanceSettings(
+                            themeMode = preferences[Keys.ThemeMode]?.toThemeMode() ?: ThemeMode.System,
+                            languageMode =
+                                preferences[Keys.LanguageMode]?.toLanguageMode()
+                                    ?: LanguageMode.System,
+                            readerThemeMode =
+                                preferences[Keys.ReaderThemeMode]?.toReaderThemeMode()
+                                    ?: ReaderThemeMode.FollowApp,
+                            blurEnabled = preferences[Keys.BlurEnabled] ?: true,
+                            readerFullscreen = preferences[Keys.ReaderFullscreen] ?: false,
+                        ),
+                    reader =
+                        ReaderSettings(
+                            verticalWriting = preferences[Keys.ReaderVerticalWriting] ?: true,
+                            fontSize = (preferences[Keys.ReaderFontSize] ?: 22).coerceIn(16, 40),
+                            lineHeight =
+                                (preferences[Keys.ReaderLineHeight] ?: "1.65")
+                                    .toDoubleOrNull()
+                                    ?.coerceIn(1.0, 2.5) ?: 1.65,
+                            horizontalPadding = (preferences[Keys.ReaderHorizontalPadding] ?: 5).coerceIn(0, 50),
+                            verticalPadding = (preferences[Keys.ReaderVerticalPadding] ?: 0).coerceIn(0, 50),
+                            avoidPageBreak = preferences[Keys.ReaderAvoidPageBreak] ?: false,
+                            justifyText = preferences[Keys.ReaderJustifyText] ?: false,
+                            layoutAdvanced = preferences[Keys.ReaderLayoutAdvanced] ?: false,
+                            characterSpacing =
+                                (preferences[Keys.ReaderCharacterSpacing] ?: "0.0")
+                                    .toDoubleOrNull()
+                                    ?.coerceIn(-10.0, 10.0) ?: 0.0,
+                            continuousMode = preferences[Keys.ReaderContinuousMode] ?: false,
+                            hideFurigana = preferences[Keys.ReaderHideFurigana] ?: false,
+                        ),
+                    popup =
+                        PopupSettings(
+                            width = (preferences[Keys.PopupWidth] ?: 320).coerceIn(100, 700),
+                            height = (preferences[Keys.PopupHeight] ?: 250).coerceIn(100, 500),
+                            fullWidth = preferences[Keys.PopupFullWidth] ?: false,
+                            swipeToDismiss = preferences[Keys.PopupSwipeToDismiss] ?: false,
+                            swipeThreshold = (preferences[Keys.PopupSwipeThreshold] ?: 40).coerceIn(20, 80),
+                        ),
+                    dictionary =
+                        DictionarySettings(
+                            maxResults = (preferences[Keys.MaxResults] ?: 16).coerceIn(1, 50),
+                            scanLength = (preferences[Keys.ScanLength] ?: 16).coerceIn(1, 64),
+                            collapseDictionaries = preferences[Keys.CollapseDictionaries] ?: false,
+                            compactGlossaries = preferences[Keys.CompactGlossaries] ?: true,
+                            showExpressionTags = preferences[Keys.ShowExpressionTags] ?: false,
+                            harmonicFrequency = preferences[Keys.HarmonicFrequency] ?: false,
+                            deduplicatePitchAccents = preferences[Keys.DeduplicatePitchAccents] ?: false,
+                        ),
+                    audio =
+                        AudioSettings(
+                            sources = audioSources,
+                            enableLocalAudio = enableLocalAudio,
+                            enableAutoplay = preferences[Keys.AudioEnableAutoplay] ?: false,
+                            playbackMode =
+                                preferences[Keys.AudioPlaybackMode]?.toAudioPlaybackMode()
+                                    ?: AudioPlaybackMode.Duck,
+                            localAudioDatabaseSizeBytes = localAudioDatabaseSizeBytes,
+                        ),
+                    sasayaki =
+                        SasayakiSettings(
+                            preferredStorageMode =
+                                preferences[Keys.PreferredAudiobookStorageMode]
+                                    ?.toAudiobookStorageMode() ?: AudiobookStorageMode.Copy,
+                            syncEnabled = preferences[Keys.SasayakiSyncEnabled] ?: false,
+                            autoScroll = preferences[Keys.SasayakiAutoScroll] ?: true,
+                            autoPauseOnLookup = preferences[Keys.SasayakiAutoPauseOnLookup] ?: true,
+                            highlightEnabled = preferences[Keys.SasayakiHighlightEnabled] ?: true,
+                            highlightColor =
+                                preferences[Keys.SasayakiHighlightColor]
+                                    ?.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) }
+                                    ?: "#FFC0485C",
+                        ),
+                )
             }
-        }
-        .map { preferences ->
-            val localAudioDatabaseSizeBytes = preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] ?: 0L
-            val enableLocalAudio = (preferences[SettingsKeys.EnableLocalAudio] ?: false) &&
-                localAudioDatabaseSizeBytes > 0L
-            val audioSources = normalizeAudioSources(
-                sources = preferences[SettingsKeys.AudioSources]?.toAudioSources(json)
-                    ?: listOf(AudioSource.Default),
-                enableLocalAudio = enableLocalAudio,
-                hasLocalAudioDatabase = localAudioDatabaseSizeBytes > 0L,
-            )
-            AppSettings(
-                bookshelfSortMode = preferences[SettingsKeys.BookshelfSortMode]?.toBookshelfSortMode()
-                    ?: BookshelfSortMode.Recent,
-                themeMode = preferences[SettingsKeys.ThemeMode]?.toThemeMode() ?: ThemeMode.System,
-                languageMode = preferences[SettingsKeys.LanguageMode]?.toLanguageMode()
-                    ?: LanguageMode.System,
-
-                readerThemeMode = preferences[SettingsKeys.ReaderThemeMode]?.toReaderThemeMode()
-                    ?: ReaderThemeMode.FollowApp,
-                blurEnabled = preferences[SettingsKeys.BlurEnabled] ?: true,
-                maxResults = (preferences[SettingsKeys.MaxResults] ?: 16).coerceIn(1, 50),
-                scanLength = (preferences[SettingsKeys.ScanLength] ?: 16).coerceIn(1, 64),
-                readerFontSize = (preferences[SettingsKeys.ReaderFontSize] ?: 22).coerceIn(16, 40),
-                readerLineHeight = (preferences[SettingsKeys.ReaderLineHeight] ?: "1.65").toDoubleOrNull()
-                    ?.coerceIn(1.0, 2.5) ?: 1.65,
-                readerHorizontalPadding = (preferences[SettingsKeys.ReaderHorizontalPadding] ?: 5).coerceIn(0, 50),
-                readerVerticalPadding = (preferences[SettingsKeys.ReaderVerticalPadding] ?: 0).coerceIn(0, 50),
-                readerAvoidPageBreak = preferences[SettingsKeys.ReaderAvoidPageBreak] ?: false,
-                readerJustifyText = preferences[SettingsKeys.ReaderJustifyText] ?: false,
-                readerLayoutAdvanced = preferences[SettingsKeys.ReaderLayoutAdvanced] ?: false,
-                readerCharacterSpacing = (preferences[SettingsKeys.ReaderCharacterSpacing] ?: "0.0").toDoubleOrNull()
-                    ?.coerceIn(-10.0, 10.0) ?: 0.0,
-                readerContinuousMode = preferences[SettingsKeys.ReaderContinuousMode] ?: false,
-                readerHideFurigana = preferences[SettingsKeys.ReaderHideFurigana] ?: false,
-                readerFullscreen = preferences[SettingsKeys.ReaderFullscreen] ?: false,
-                popupWidth = (preferences[SettingsKeys.PopupWidth] ?: 320).coerceIn(100, 700),
-                popupHeight = (preferences[SettingsKeys.PopupHeight] ?: 250).coerceIn(100, 500),
-                popupFullWidth = preferences[SettingsKeys.PopupFullWidth] ?: false,
-                popupSwipeToDismiss = preferences[SettingsKeys.PopupSwipeToDismiss] ?: false,
-                popupSwipeThreshold = (preferences[SettingsKeys.PopupSwipeThreshold] ?: 40).coerceIn(20, 80),
-                collapseDictionaries = preferences[SettingsKeys.CollapseDictionaries] ?: false,
-                compactGlossaries = preferences[SettingsKeys.CompactGlossaries] ?: true,
-                showExpressionTags = preferences[SettingsKeys.ShowExpressionTags] ?: false,
-                harmonicFrequency = preferences[SettingsKeys.HarmonicFrequency] ?: false,
-                deduplicatePitchAccents = preferences[SettingsKeys.DeduplicatePitchAccents] ?: false,
-                audioSources = audioSources,
-                enableLocalAudio = enableLocalAudio,
-                audioEnableAutoplay = preferences[SettingsKeys.AudioEnableAutoplay] ?: false,
-                audioPlaybackMode = preferences[SettingsKeys.AudioPlaybackMode]?.toAudioPlaybackMode()
-                    ?: AudioPlaybackMode.Duck,
-                localAudioDatabaseSizeBytes = localAudioDatabaseSizeBytes,
-                anki = preferences[SettingsKeys.AnkiSettings]?.toAnkiSettings(json) ?: AnkiSettings(),
-            )
-        }
 
     suspend fun setThemeMode(mode: ThemeMode) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ThemeMode] = mode.name
-        }
+        dataStore.edit { it[Keys.ThemeMode] = mode.name }
     }
 
     suspend fun setLanguageMode(mode: LanguageMode) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.LanguageMode] = mode.name
-        }
+        dataStore.edit { it[Keys.LanguageMode] = mode.name }
     }
 
-
     suspend fun setBookshelfSortMode(mode: BookshelfSortMode) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.BookshelfSortMode] = mode.wireName
-        }
+        dataStore.edit { it[Keys.BookshelfSortMode] = mode.wireName }
     }
 
     suspend fun setReaderThemeMode(mode: ReaderThemeMode) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderThemeMode] = mode.name
-        }
+        dataStore.edit { it[Keys.ReaderThemeMode] = mode.name }
     }
 
     suspend fun setBlurEnabled(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.BlurEnabled] = enabled
-        }
+        dataStore.edit { it[Keys.BlurEnabled] = enabled }
     }
 
     suspend fun setMaxResults(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.MaxResults] = value.coerceIn(1, 50)
-        }
+        dataStore.edit { it[Keys.MaxResults] = value.coerceIn(1, 50) }
     }
 
     suspend fun setScanLength(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ScanLength] = value.coerceIn(1, 64)
-        }
+        dataStore.edit { it[Keys.ScanLength] = value.coerceIn(1, 64) }
     }
 
     suspend fun setReaderFontSize(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderFontSize] = value.coerceIn(16, 40)
-        }
+        dataStore.edit { it[Keys.ReaderFontSize] = value.coerceIn(16, 40) }
+    }
+
+    suspend fun setReaderVerticalWriting(enabled: Boolean) {
+        dataStore.edit { it[Keys.ReaderVerticalWriting] = enabled }
     }
 
     suspend fun setReaderLineHeight(value: Double) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderLineHeight] = value.coerceIn(1.0, 2.5).toString()
-        }
+        dataStore.edit { it[Keys.ReaderLineHeight] = value.coerceIn(1.0, 2.5).toString() }
     }
 
     suspend fun setReaderHorizontalPadding(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderHorizontalPadding] = value.coerceIn(0, 50)
-        }
+        dataStore.edit { it[Keys.ReaderHorizontalPadding] = value.coerceIn(0, 50) }
     }
 
     suspend fun setReaderVerticalPadding(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderVerticalPadding] = value.coerceIn(0, 50)
-        }
+        dataStore.edit { it[Keys.ReaderVerticalPadding] = value.coerceIn(0, 50) }
     }
 
     suspend fun setReaderAvoidPageBreak(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderAvoidPageBreak] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderAvoidPageBreak] = enabled }
     }
 
     suspend fun setReaderJustifyText(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderJustifyText] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderJustifyText] = enabled }
     }
 
     suspend fun setReaderLayoutAdvanced(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderLayoutAdvanced] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderLayoutAdvanced] = enabled }
     }
 
     suspend fun setReaderCharacterSpacing(value: Double) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderCharacterSpacing] = value.coerceIn(-10.0, 10.0).toString()
-        }
+        dataStore.edit { it[Keys.ReaderCharacterSpacing] = value.coerceIn(-10.0, 10.0).toString() }
     }
 
     suspend fun setReaderContinuousMode(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderContinuousMode] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderContinuousMode] = enabled }
     }
 
     suspend fun setReaderHideFurigana(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderHideFurigana] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderHideFurigana] = enabled }
     }
 
     suspend fun setReaderFullscreen(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ReaderFullscreen] = enabled
-        }
+        dataStore.edit { it[Keys.ReaderFullscreen] = enabled }
     }
 
     suspend fun setPopupWidth(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.PopupWidth] = value.coerceIn(100, 700)
-        }
+        dataStore.edit { it[Keys.PopupWidth] = value.coerceIn(100, 700) }
     }
 
     suspend fun setPopupHeight(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.PopupHeight] = value.coerceIn(100, 500)
-        }
+        dataStore.edit { it[Keys.PopupHeight] = value.coerceIn(100, 500) }
     }
 
     suspend fun setPopupFullWidth(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.PopupFullWidth] = enabled
-        }
+        dataStore.edit { it[Keys.PopupFullWidth] = enabled }
     }
 
     suspend fun setPopupSwipeToDismiss(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.PopupSwipeToDismiss] = enabled
-        }
+        dataStore.edit { it[Keys.PopupSwipeToDismiss] = enabled }
     }
 
     suspend fun setPopupSwipeThreshold(value: Int) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.PopupSwipeThreshold] = value.coerceIn(20, 80)
-        }
+        dataStore.edit { it[Keys.PopupSwipeThreshold] = value.coerceIn(20, 80) }
     }
 
     suspend fun setCollapseDictionaries(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.CollapseDictionaries] = enabled
-        }
+        dataStore.edit { it[Keys.CollapseDictionaries] = enabled }
     }
 
     suspend fun setCompactGlossaries(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.CompactGlossaries] = enabled
-        }
+        dataStore.edit { it[Keys.CompactGlossaries] = enabled }
     }
 
     suspend fun setShowExpressionTags(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.ShowExpressionTags] = enabled
-        }
+        dataStore.edit { it[Keys.ShowExpressionTags] = enabled }
     }
 
     suspend fun setHarmonicFrequency(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.HarmonicFrequency] = enabled
-        }
+        dataStore.edit { it[Keys.HarmonicFrequency] = enabled }
     }
 
     suspend fun setDeduplicatePitchAccents(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.DeduplicatePitchAccents] = enabled
-        }
+        dataStore.edit { it[Keys.DeduplicatePitchAccents] = enabled }
     }
 
     suspend fun setAudioSources(sources: List<AudioSource>) {
         dataStore.edit { preferences ->
-            val enableLocalAudio = (preferences[SettingsKeys.EnableLocalAudio] ?: false) &&
-                (preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
-            val hasLocalAudioDatabase = (preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
-            preferences[SettingsKeys.AudioSources] =
+            val enableLocalAudio =
+                (preferences[Keys.EnableLocalAudio] ?: false) &&
+                    (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
+            val hasLocalAudioDatabase = (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
+            preferences[Keys.AudioSources] =
                 normalizeAudioSources(sources, enableLocalAudio, hasLocalAudioDatabase).toAudioSourcesJson(json)
         }
     }
 
     suspend fun setEnableLocalAudio(enabled: Boolean) {
         dataStore.edit { preferences ->
-            val effectiveEnabled = enabled && (preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
-            val hasLocalAudioDatabase = (preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
-            preferences[SettingsKeys.EnableLocalAudio] = effectiveEnabled
-            val sources = preferences[SettingsKeys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
-            preferences[SettingsKeys.AudioSources] =
+            val effectiveEnabled = enabled && (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
+            val hasLocalAudioDatabase = (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
+            preferences[Keys.EnableLocalAudio] = effectiveEnabled
+            val sources = preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
+            preferences[Keys.AudioSources] =
                 normalizeAudioSources(sources, effectiveEnabled, hasLocalAudioDatabase).toAudioSourcesJson(json)
         }
     }
 
     suspend fun setAudioEnableAutoplay(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.AudioEnableAutoplay] = enabled
-        }
+        dataStore.edit { it[Keys.AudioEnableAutoplay] = enabled }
     }
 
     suspend fun setAudioPlaybackMode(mode: AudioPlaybackMode) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.AudioPlaybackMode] = mode.wireName
-        }
+        dataStore.edit { it[Keys.AudioPlaybackMode] = mode.wireName }
     }
 
     suspend fun setLocalAudioDatabaseSizeBytes(sizeBytes: Long) {
         dataStore.edit { preferences ->
-            preferences[SettingsKeys.LocalAudioDatabaseSizeBytes] = sizeBytes.coerceAtLeast(0L)
-            val enableLocalAudio = (preferences[SettingsKeys.EnableLocalAudio] ?: false) && sizeBytes > 0L
-            preferences[SettingsKeys.EnableLocalAudio] = enableLocalAudio
-            val sources = preferences[SettingsKeys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
-            preferences[SettingsKeys.AudioSources] =
+            preferences[Keys.LocalAudioDatabaseSizeBytes] = sizeBytes.coerceAtLeast(0L)
+            val enableLocalAudio = (preferences[Keys.EnableLocalAudio] ?: false) && sizeBytes > 0L
+            preferences[Keys.EnableLocalAudio] = enableLocalAudio
+            val sources = preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
+            preferences[Keys.AudioSources] =
                 normalizeAudioSources(
                     sources = sources,
                     enableLocalAudio = enableLocalAudio,
@@ -305,29 +291,41 @@ class SettingsRepository(
         }
     }
 
-    suspend fun setAnkiSettings(settings: AnkiSettings) {
-        dataStore.edit { preferences ->
-            preferences[SettingsKeys.AnkiSettings] = json.encodeToString(AnkiSettings.serializer(), settings)
-        }
+    suspend fun setPreferredAudiobookStorageMode(mode: AudiobookStorageMode) {
+        dataStore.edit { it[Keys.PreferredAudiobookStorageMode] = mode.wireName }
     }
 
-    suspend fun updateAnkiSettings(block: (AnkiSettings) -> AnkiSettings) {
-        dataStore.edit { preferences ->
-            val current = preferences[SettingsKeys.AnkiSettings]?.toAnkiSettings(json) ?: AnkiSettings()
-            preferences[SettingsKeys.AnkiSettings] = json.encodeToString(AnkiSettings.serializer(), block(current))
-        }
+    suspend fun setSasayakiSyncEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.SasayakiSyncEnabled] = enabled }
+    }
+
+    suspend fun setSasayakiAutoScroll(enabled: Boolean) {
+        dataStore.edit { it[Keys.SasayakiAutoScroll] = enabled }
+    }
+
+    suspend fun setSasayakiAutoPauseOnLookup(enabled: Boolean) {
+        dataStore.edit { it[Keys.SasayakiAutoPauseOnLookup] = enabled }
+    }
+
+    suspend fun setSasayakiHighlightEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.SasayakiHighlightEnabled] = enabled }
+    }
+
+    suspend fun setSasayakiHighlightColor(value: String) {
+        val normalized = value.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
+        dataStore.edit { it[Keys.SasayakiHighlightColor] = normalized }
     }
 }
 
-private object SettingsKeys {
+private object Keys {
     val BookshelfSortMode = stringPreferencesKey("bookshelf_sort_mode")
     val ThemeMode = stringPreferencesKey("theme_mode")
     val LanguageMode = stringPreferencesKey("language_mode")
-
     val ReaderThemeMode = stringPreferencesKey("reader_theme_mode")
     val BlurEnabled = booleanPreferencesKey("blur_enabled")
     val MaxResults = intPreferencesKey("dictionary_max_results")
     val ScanLength = intPreferencesKey("dictionary_scan_length")
+    val ReaderVerticalWriting = booleanPreferencesKey("reader_vertical_writing")
     val ReaderFontSize = intPreferencesKey("reader_font_size")
     val ReaderLineHeight = stringPreferencesKey("reader_line_height")
     val ReaderHorizontalPadding = intPreferencesKey("reader_horizontal_padding")
@@ -354,14 +352,17 @@ private object SettingsKeys {
     val AudioEnableAutoplay = booleanPreferencesKey("audio_enable_autoplay")
     val AudioPlaybackMode = stringPreferencesKey("audio_playback_mode")
     val LocalAudioDatabaseSizeBytes = longPreferencesKey("audio_local_database_size_bytes")
-    val AnkiSettings = stringPreferencesKey("anki_settings")
+    val PreferredAudiobookStorageMode = stringPreferencesKey("audiobook_preferred_storage_mode")
+    val SasayakiSyncEnabled = booleanPreferencesKey("sasayaki_sync_enabled")
+    val SasayakiAutoScroll = booleanPreferencesKey("sasayaki_auto_scroll")
+    val SasayakiAutoPauseOnLookup = booleanPreferencesKey("sasayaki_auto_pause_lookup")
+    val SasayakiHighlightEnabled = booleanPreferencesKey("sasayaki_highlight_enabled")
+    val SasayakiHighlightColor = stringPreferencesKey("sasayaki_highlight_color")
 }
 
-private fun String.toThemeMode(): ThemeMode =
-    ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.System
+private fun String.toThemeMode(): ThemeMode = ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.System
 
-private fun String.toLanguageMode(): LanguageMode =
-    LanguageMode.entries.firstOrNull { it.name == this } ?: LanguageMode.System
+private fun String.toLanguageMode(): LanguageMode = LanguageMode.entries.firstOrNull { it.name == this } ?: LanguageMode.System
 
 private fun String.toBookshelfSortMode(): BookshelfSortMode =
     BookshelfSortMode.entries.firstOrNull { it.wireName == this || it.name == this }
@@ -374,18 +375,16 @@ private fun String.toAudioPlaybackMode(): AudioPlaybackMode =
     AudioPlaybackMode.entries.firstOrNull { it.wireName == this || it.name == this }
         ?: AudioPlaybackMode.Duck
 
+private fun String.toAudiobookStorageMode(): AudiobookStorageMode =
+    AudiobookStorageMode.entries.firstOrNull { it.wireName == this || it.name == this }
+        ?: AudiobookStorageMode.Copy
+
 private fun String.toAudioSources(json: Json): List<AudioSource> =
     runCatching {
         json.decodeFromString(ListSerializer(AudioSource.serializer()), this)
     }.getOrDefault(listOf(AudioSource.Default))
 
-private fun String.toAnkiSettings(json: Json): AnkiSettings =
-    runCatching {
-        json.decodeFromString(AnkiSettings.serializer(), this)
-    }.getOrDefault(AnkiSettings())
-
-private fun List<AudioSource>.toAudioSourcesJson(json: Json): String =
-    json.encodeToString(ListSerializer(AudioSource.serializer()), this)
+private fun List<AudioSource>.toAudioSourcesJson(json: Json): String = json.encodeToString(ListSerializer(AudioSource.serializer()), this)
 
 private fun normalizeAudioSources(
     sources: List<AudioSource>,
@@ -393,11 +392,12 @@ private fun normalizeAudioSources(
     hasLocalAudioDatabase: Boolean,
 ): List<AudioSource> {
     val withoutLocal = sources.filterNot { it.isLocal }
-    val withDefault = if (withoutLocal.any { it.isDefault }) {
-        withoutLocal
-    } else {
-        listOf(AudioSource.Default) + withoutLocal.filterNot { it.url == AudioSource.Default.url }
-    }
+    val withDefault =
+        if (withoutLocal.any { it.isDefault }) {
+            withoutLocal
+        } else {
+            listOf(AudioSource.Default) + withoutLocal.filterNot { it.url == AudioSource.Default.url }
+        }
     val local = AudioSource.Local.copy(isEnabled = enableLocalAudio && hasLocalAudioDatabase)
     return (listOf(local) + withDefault).distinctBy { it.url }
 }

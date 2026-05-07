@@ -76,4 +76,5 @@ dependencies {
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.miuix.blur.android)
+    implementation(libs.koin.android)
 }

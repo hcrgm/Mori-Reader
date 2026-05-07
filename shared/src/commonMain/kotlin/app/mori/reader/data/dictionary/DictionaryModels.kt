@@ -57,14 +57,10 @@ data class DictionaryCatalog(
     val frequencyDictionaries: List<DictionaryInfo> = emptyList(),
     val pitchDictionaries: List<DictionaryInfo> = emptyList(),
 ) {
-    fun dictionaries(type: DictionaryType): List<DictionaryInfo> = when (type) {
-        DictionaryType.Term -> termDictionaries
-        DictionaryType.Frequency -> frequencyDictionaries
-        DictionaryType.Pitch -> pitchDictionaries
-    }
-
-    val updatableCount: Int
-        get() = termDictionaries.count { it.isUpdatable } +
-            frequencyDictionaries.count { it.isUpdatable } +
-            pitchDictionaries.count { it.isUpdatable }
+    fun dictionaries(type: DictionaryType): List<DictionaryInfo> =
+        when (type) {
+            DictionaryType.Term -> termDictionaries
+            DictionaryType.Frequency -> frequencyDictionaries
+            DictionaryType.Pitch -> pitchDictionaries
+        }
 }

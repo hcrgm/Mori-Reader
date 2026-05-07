@@ -39,9 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.mori.reader.data.dictionary.DictionaryInfo
 import app.mori.reader.data.dictionary.DictionaryType
-import app.mori.reader.data.dictionary.rememberDictionaryZipPicker
-import app.mori.reader.ui.AppIntent
-import app.mori.reader.ui.AppState
+import app.mori.reader.core.platform.rememberDictionaryZipPicker
+import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.settings.presentation.DictionaryManagementState
+import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.SettingSlider
 import kotlinx.coroutines.launch
@@ -76,32 +77,24 @@ import top.yukonga.miuix.kmp.window.WindowListPopup
 import app.mori.reader.shared.generated.resources.*
 import org.jetbrains.compose.resources.stringResource
 
-private val DictionarySettingsHorizontalPadding = 12.dp
-
-private data class PendingDictionaryDeletion(
-    val type: DictionaryType,
-    val dictionary: DictionaryInfo,
-)
-
 @Composable
 fun DictionarySettingsPage(
-    state: AppState,
-    message: String?,
-    onIntent: (AppIntent) -> Unit,
+    settings: AppSettings,
+    dictionaryState: DictionaryManagementState,
+    onIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
     val dictionarySettingsPages = listOf(
         stringResource(Res.string.tab_dictionary),
         stringResource(Res.string.tab_settings),
     )
-    val dictionaryState = state.settings.dictionaryManagement
     val selectedType = dictionaryState.selectedType
     val dictionaries = dictionaryState.dictionaries()
     val isBusy = dictionaryState.isImporting || dictionaryState.isUpdating
     var importType by remember { mutableStateOf(DictionaryType.Term) }
     var showImportPopup by remember { mutableStateOf(false) }
     val launchZipPicker = rememberDictionaryZipPicker { uris ->
-        onIntent(AppIntent.ImportDictionaries(importType, uris))
+        onIntent(SettingsIntent.ImportDictionaries(importType, uris))
     }
     val pagerState = rememberPagerState(pageCount = { dictionarySettingsPages.size })
     val pagerCoroutineScope = rememberCoroutineScope()
@@ -131,7 +124,7 @@ fun DictionarySettingsPage(
         } else {
             var index = 0
             if (dictionaryState.errorMessage != null) index += 1
-            if (dictionaryState.statusText.isNotBlank() || dictionaryState.isLoading) index += 1
+            if (dictionaryState.statusText != null || dictionaryState.isLoading) index += 1
             index += 1 // DictionaryTypeTabs
             index
         }
@@ -163,7 +156,7 @@ fun DictionarySettingsPage(
         if (!reorderableState.isAnyItemDragging) {
             val updatedIds = localDictionaries.map(DictionaryInfo::id)
             if (updatedIds != dictionaries.map(DictionaryInfo::id)) {
-                onIntentState(AppIntent.ReorderDictionaries(selectedType, updatedIds))
+                onIntentState(SettingsIntent.ReorderDictionaries(selectedType, updatedIds))
             }
         }
     }
@@ -171,8 +164,7 @@ fun DictionarySettingsPage(
     MoriPageScaffold(
         title = stringResource(Res.string.tab_dictionary),
         subtitle = "",
-        blurEnabled = state.settings.blurEnabled,
-        message = message,
+        blurEnabled = settings.appearance.blurEnabled,
         navigationIcon = {
             IconButton(onClick = onBack) {
                 Icon(MiuixIcons.Back, contentDescription = stringResource(Res.string.cd_back))
@@ -212,11 +204,7 @@ fun DictionarySettingsPage(
                         ListPopupColumn {
                             DictionaryType.entries.forEachIndexed { index, type ->
                                 DropdownImpl(
-                                    text = when (type) {
-                                        DictionaryType.Term -> "Term 词典"
-                                        DictionaryType.Frequency -> "Frequency 词频"
-                                        DictionaryType.Pitch -> "Pitch 音调"
-                                    },
+                                    text = type.localizedLabel(),
                                     optionSize = DictionaryType.entries.size,
                                     isSelected = false,
                                     index = index,
@@ -275,7 +263,7 @@ fun DictionarySettingsPage(
                     )
 
                     else -> DictionaryLookupSettingsPage(
-                        state = state,
+                        settings = settings,
                         paddingValues = paddingValues,
                         scrollBehavior = scrollBehavior,
                         onIntent = onIntent,
@@ -287,419 +275,10 @@ fun DictionarySettingsPage(
                 pendingDeletion = pendingDeletion,
                 onDismiss = { pendingDeletion = null },
                 onConfirm = { deletion ->
-                    onIntent(AppIntent.DeleteDictionary(deletion.type, deletion.dictionary.id))
+                    onIntent(SettingsIntent.DeleteDictionary(deletion.type, deletion.dictionary.id))
                     pendingDeletion = null
                 },
             )
-        }
-    }
-}
-
-@Composable
-private fun PageTabs(
-    pagerState: PagerState,
-    tabs: List<String>,
-    onSelectedPageChange: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TabRowWithContour(
-        tabs = tabs,
-        selectedTabIndex = pagerState.currentPage,
-        onTabSelected = onSelectedPageChange,
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun DictionaryManagementPage(
-    paddingValues: PaddingValues,
-    scrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
-    listState: androidx.compose.foundation.lazy.LazyListState,
-    errorMessage: String?,
-    statusText: String,
-    isLoading: Boolean,
-    selectedType: DictionaryType,
-    dictionaries: List<DictionaryInfo>,
-    localDictionaries: List<DictionaryInfo>,
-    isBusy: Boolean,
-    reorderableState: sh.calvin.reorderable.ReorderableLazyListState,
-    onIntent: (AppIntent) -> Unit,
-    onDeleteRequest: (DictionaryType, DictionaryInfo) -> Unit,
-) {
-    LazyColumn(
-        state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .overScrollVertical()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding = PaddingValues(
-            top = 14.dp,
-            bottom = paddingValues.calculateBottomPadding() + 96.dp,
-        ),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        errorMessage?.let { message ->
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = DictionarySettingsHorizontalPadding)
-                        .fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text(text = message, color = MiuixTheme.colorScheme.error)
-                        TextButton(
-                            text = stringResource(Res.string.cd_close),
-                            onClick = { onIntent(AppIntent.DismissDictionaryError) },
-                        )
-                    }
-                }
-            }
-        }
-
-        if (statusText.isNotBlank() || isLoading) {
-            item {
-                LoadingRow(
-                    text = statusText.ifBlank { stringResource(Res.string.dict_settings_loading) },
-                    modifier = Modifier.padding(horizontal = DictionarySettingsHorizontalPadding),
-                )
-            }
-        }
-
-        item {
-            DictionaryTypeTabs(
-                selectedType = selectedType,
-                enabled = !isBusy,
-                onSelectType = { onIntent(AppIntent.SelectDictionaryType(it)) },
-                modifier = Modifier.padding(horizontal = DictionarySettingsHorizontalPadding),
-            )
-        }
-
-        if (dictionaries.isEmpty() && !isLoading) {
-            item {
-                Card(
-                    modifier = Modifier
-                        .padding(horizontal = DictionarySettingsHorizontalPadding)
-                        .fillMaxWidth(),
-                ) {
-                    Text(
-                        text = stringResource(Res.string.dict_settings_empty),
-                        modifier = Modifier.padding(18.dp),
-                        color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                    )
-                }
-            }
-        } else {
-            dictionaryItems(
-                dictionaries = localDictionaries,
-                type = selectedType,
-                enabled = !isBusy,
-                reorderableState = reorderableState,
-                onIntent = onIntent,
-                onDeleteRequest = onDeleteRequest,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DictionaryLookupSettingsPage(
-    state: AppState,
-    paddingValues: PaddingValues,
-    scrollBehavior: top.yukonga.miuix.kmp.basic.ScrollBehavior,
-    onIntent: (AppIntent) -> Unit,
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .overScrollVertical()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding = PaddingValues(
-            bottom = paddingValues.calculateBottomPadding() + 96.dp,
-        ),
-    ) {
-        item {
-            SmallTitle(text = stringResource(Res.string.dict_settings_query_display))
-        }
-        item {
-            DictionaryLookupSettingsCard(
-                state = state,
-                modifier = Modifier.padding(horizontal = DictionarySettingsHorizontalPadding),
-                onIntent = onIntent,
-            )
-        }
-    }
-}
-
-@Composable
-private fun DictionaryTypeTabs(
-    selectedType: DictionaryType,
-    enabled: Boolean,
-    onSelectType: (DictionaryType) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    TabRowWithContour(
-        tabs = DictionaryType.entries.map { it.label },
-        selectedTabIndex = DictionaryType.entries.indexOf(selectedType),
-        onTabSelected = { index ->
-            if (enabled) {
-                onSelectType(DictionaryType.entries[index])
-            }
-        },
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-@Composable
-private fun LoadingRow(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        LinearProgressIndicator()
-        Text(
-            text = text,
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        )
-    }
-}
-
-@Composable
-private fun DictionaryLookupSettingsCard(
-    state: AppState,
-    modifier: Modifier = Modifier,
-    onIntent: (AppIntent) -> Unit,
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column {
-            Column(
-                modifier = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                SettingSlider(
-                    label = stringResource(Res.string.dict_settings_max_results),
-                    value = state.settings.maxResults.toFloat(),
-                    range = 1f..50f,
-                    steps = 48,
-                    keyPoints = listOf(1f, 8f, 16f, 24f, 32f, 40f, 50f),
-                    valueText = { it.toInt().toString() },
-                    onCommit = { onIntent(AppIntent.SetMaxResults(it.toInt())) },
-                )
-                SettingSlider(
-                    label = stringResource(Res.string.dict_settings_scan_length),
-                    value = state.settings.scanLength.toFloat(),
-                    range = 1f..64f,
-                    steps = 62,
-                    keyPoints = listOf(1f, 8f, 16f, 24f, 32f, 48f, 64f),
-                    valueText = { it.toInt().toString() },
-                    onCommit = { onIntent(AppIntent.SetScanLength(it.toInt())) },
-                )
-            }
-            SwitchPreference(
-                checked = state.settings.collapseDictionaries,
-                onCheckedChange = { onIntent(AppIntent.SetCollapseDictionaries(it)) },
-                title = stringResource(Res.string.dict_settings_collapse_title),
-                summary = stringResource(Res.string.dict_settings_collapse_summary),
-            )
-            SwitchPreference(
-                checked = state.settings.compactGlossaries,
-                onCheckedChange = { onIntent(AppIntent.SetCompactGlossaries(it)) },
-                title = stringResource(Res.string.dict_settings_compact_title),
-                summary = stringResource(Res.string.dict_settings_compact_summary),
-            )
-            SwitchPreference(
-                checked = state.settings.showExpressionTags,
-                onCheckedChange = { onIntent(AppIntent.SetShowExpressionTags(it)) },
-                title = stringResource(Res.string.dict_settings_show_tags_title),
-                summary = stringResource(Res.string.dict_settings_show_tags_summary),
-            )
-            SwitchPreference(
-                checked = state.settings.harmonicFrequency,
-                onCheckedChange = { onIntent(AppIntent.SetHarmonicFrequency(it)) },
-                title = stringResource(Res.string.dict_settings_merge_freq_title),
-                summary = stringResource(Res.string.dict_settings_merge_freq_summary),
-            )
-            SwitchPreference(
-                checked = state.settings.deduplicatePitchAccents,
-                onCheckedChange = { onIntent(AppIntent.SetDeduplicatePitchAccents(it)) },
-                title = stringResource(Res.string.dict_settings_dedup_pitch_title),
-                summary = stringResource(Res.string.dict_settings_dedup_pitch_summary),
-            )
-        }
-    }
-}
-
-private fun LazyListScope.dictionaryItems(
-    dictionaries: List<DictionaryInfo>,
-    type: DictionaryType,
-    enabled: Boolean,
-    reorderableState: sh.calvin.reorderable.ReorderableLazyListState,
-    onIntent: (AppIntent) -> Unit,
-    onDeleteRequest: (DictionaryType, DictionaryInfo) -> Unit,
-) {
-    items(
-        items = dictionaries,
-        key = { it.id },
-    ) { dictionary ->
-        DictionaryRow(
-            dictionary = dictionary,
-            type = type,
-            enabled = enabled,
-            reorderableState = reorderableState,
-            onIntent = onIntent,
-            onDeleteRequest = onDeleteRequest,
-        )
-    }
-}
-
-@Composable
-private fun LazyItemScope.DictionaryRow(
-    dictionary: DictionaryInfo,
-    type: DictionaryType,
-    enabled: Boolean,
-    reorderableState: sh.calvin.reorderable.ReorderableLazyListState,
-    onIntent: (AppIntent) -> Unit,
-    onDeleteRequest: (DictionaryType, DictionaryInfo) -> Unit,
-) {
-    val hapticFeedback = LocalHapticFeedback.current
-
-    ReorderableItem(
-        state = reorderableState,
-        key = dictionary.id,
-    ) {
-        Card(
-            modifier = Modifier
-                .padding(horizontal = DictionarySettingsHorizontalPadding)
-                .fillMaxWidth()
-                .then(
-                    with(this) {
-                        Modifier.longPressDraggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(
-                                    HapticFeedbackType.GestureThresholdActivate,
-                                )
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                            },
-                        )
-                    },
-                )
-                .animateItem(),
-        ) {
-            Row(
-                modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = dictionary.index.title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        fontWeight = FontWeight.Medium,
-                        color = if (dictionary.isEnabled) {
-                            MiuixTheme.colorScheme.onSurface
-                        } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        },
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            text = "revision ${dictionary.index.revision.ifBlank { "-" }}",
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            fontSize = 13.sp,
-                        )
-//                        if (dictionary.isUpdatable) {
-//                            Text(
-//                                text = "可更新",
-//                                color = MiuixTheme.colorScheme.primary,
-//                                fontWeight = FontWeight.Medium,
-//                            )
-//                        }
-                    }
-                }
-                Icon(
-                    imageVector = MiuixIcons.Sort,
-                    contentDescription = stringResource(Res.string.cd_drag_sort),
-                    tint = if (enabled) {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    } else {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.55f)
-                    },
-                )
-                Switch(
-                    checked = dictionary.isEnabled,
-                    onCheckedChange = {
-                        onIntent(AppIntent.SetDictionaryEnabled(type, dictionary.id, it))
-                    },
-                    enabled = enabled,
-                )
-                IconButton(
-                    enabled = enabled,
-                    onClick = { onDeleteRequest(type, dictionary) },
-                ) {
-                    Icon(
-                        imageVector = MiuixIcons.Delete,
-                        contentDescription = stringResource(Res.string.cd_delete_dictionary),
-                        tint = if (enabled) MiuixTheme.colorScheme.error else Color.Gray,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun DeleteDictionaryDialog(
-    pendingDeletion: PendingDictionaryDeletion?,
-    onDismiss: () -> Unit,
-    onConfirm: (PendingDictionaryDeletion) -> Unit,
-) {
-    val current = pendingDeletion ?: return
-    OverlayDialog(
-        title = stringResource(Res.string.cd_delete_dictionary),
-        summary = stringResource(Res.string.dict_settings_delete_summary),
-        show = true,
-        onDismissRequest = onDismiss,
-        onDismissFinished = onDismiss,
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "确认删除「${current.dictionary.index.title}」吗？",
-                modifier = Modifier.fillMaxWidth(),
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                textAlign = TextAlign.Center,
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                TextButton(
-                    text = stringResource(Res.string.btn_cancel),
-                    onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(
-                    text = stringResource(Res.string.btn_delete),
-                    onClick = { onConfirm(current) },
-                    colors = ButtonDefaults.textButtonColorsPrimary(),
-                    modifier = Modifier.weight(1f),
-                )
-            }
         }
     }
 }
