@@ -6,7 +6,7 @@ import app.mori.reader.data.audiobook.AudiobookSubtitleData
 import app.mori.reader.data.audiobook.SasayakiMatchData
 import app.mori.reader.ui.text.UiText
 
-data class AudiobookState(
+data class AudiobookUiState(
     val selectedBookId: String? = null,
     val audioAssetInfo: AudiobookAssetInfo? = null,
     val subtitleAssetInfo: AudiobookAssetInfo? = null,

@@ -39,14 +39,16 @@ fun SettingsPage(
         fixedPadding = fixedPadding,
     ) { paddingValues, scrollBehavior ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding() + 24.dp,
-            ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+            contentPadding =
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding() + 24.dp,
+                ),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {

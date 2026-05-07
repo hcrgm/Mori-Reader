@@ -7,10 +7,25 @@ internal fun String.filteredReaderText(): String {
         ?.let { text = it.value }
     text =
         text
-            .replace(Regex("<rt\\b[^>]*>.*?</rt>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)), "")
-            .replace(Regex("<rp\\b[^>]*>.*?</rp>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)), "")
-            .replace(Regex("<(script|style)\\b[^>]*>.*?</\\1>", setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)), "")
-            .replace(Regex("<[^>]+>"), "")
+            .replace(
+                Regex(
+                    "<rt\\b[^>]*>.*?</rt>",
+                    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+                ),
+                "",
+            ).replace(
+                Regex(
+                    "<rp\\b[^>]*>.*?</rp>",
+                    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+                ),
+                "",
+            ).replace(
+                Regex(
+                    "<(script|style)\\b[^>]*>.*?</\\1>",
+                    setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+                ),
+                "",
+            ).replace(Regex("<[^>]+>"), "")
             .replace("&nbsp;", " ")
             .replace("&amp;", "&")
             .replace("&lt;", "<")

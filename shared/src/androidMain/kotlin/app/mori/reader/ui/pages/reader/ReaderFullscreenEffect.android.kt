@@ -24,7 +24,8 @@ actual fun ReaderFullscreenEffect(
     }
 
     DisposableEffect(activity, enabled) {
-        val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+        val controller =
+            WindowCompat.getInsetsController(activity.window, activity.window.decorView)
         if (enabled) {
             controller.systemBarsBehavior =
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -39,8 +40,9 @@ actual fun ReaderFullscreenEffect(
     }
 }
 
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
+private tailrec fun Context.findActivity(): Activity? =
+    when (this) {
+        is Activity -> this
+        is ContextWrapper -> baseContext.findActivity()
+        else -> null
+    }

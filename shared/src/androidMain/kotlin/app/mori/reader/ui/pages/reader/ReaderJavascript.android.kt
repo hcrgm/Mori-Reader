@@ -200,7 +200,8 @@ internal fun readerBootstrapScript(
         }
     val sasayakiCueJson = sasayakiCues.toJsonArrayString()
     val highlightedCueJs = highlightedSasayakiCueId?.jsString() ?: "null"
-    val cueHighlightColor = sasayakiHighlightColor.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
+    val cueHighlightColor =
+        sasayakiHighlightColor.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
     return """
         (function() {
           var viewport = document.querySelector('meta[name="viewport"]');

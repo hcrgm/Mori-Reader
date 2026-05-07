@@ -42,8 +42,9 @@ internal fun MoriNavigationBar(
 }
 
 @Composable
-internal fun AppTab.localizedLabel(): String = when (this) {
-    AppTab.Home -> stringResource(Res.string.tab_bookshelf)
-    AppTab.Dictionary -> stringResource(Res.string.tab_dictionary)
-    AppTab.Settings -> stringResource(Res.string.tab_settings)
-}
+internal fun AppTab.localizedLabel(): String =
+    when (this) {
+        AppTab.Home -> stringResource(Res.string.tab_bookshelf)
+        AppTab.Dictionary -> stringResource(Res.string.tab_dictionary)
+        AppTab.Settings -> stringResource(Res.string.tab_settings)
+    }

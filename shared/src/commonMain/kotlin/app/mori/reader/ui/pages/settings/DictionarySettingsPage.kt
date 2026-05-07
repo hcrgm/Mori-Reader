@@ -1,22 +1,14 @@
 package app.mori.reader.ui.pages.settings
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,56 +18,38 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import app.mori.reader.core.platform.rememberDictionaryZipPicker
 import app.mori.reader.data.dictionary.DictionaryInfo
 import app.mori.reader.data.dictionary.DictionaryType
-import app.mori.reader.core.platform.rememberDictionaryZipPicker
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.settings.presentation.DictionaryManagementState
 import app.mori.reader.features.settings.presentation.SettingsIntent
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.cd_back
+import app.mori.reader.shared.generated.resources.cd_import_dictionary
+import app.mori.reader.shared.generated.resources.tab_dictionary
+import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
-import app.mori.reader.ui.components.settings.SettingSlider
 import kotlinx.coroutines.launch
-import sh.calvin.reorderable.ReorderableItem
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.icon.extended.Delete
-import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.LocalDismissState
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.window.WindowListPopup
-import app.mori.reader.shared.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun DictionarySettingsPage(
@@ -84,18 +58,20 @@ fun DictionarySettingsPage(
     onIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
-    val dictionarySettingsPages = listOf(
-        stringResource(Res.string.tab_dictionary),
-        stringResource(Res.string.tab_settings),
-    )
+    val dictionarySettingsPages =
+        listOf(
+            stringResource(Res.string.tab_dictionary),
+            stringResource(Res.string.tab_settings),
+        )
     val selectedType = dictionaryState.selectedType
     val dictionaries = dictionaryState.dictionaries()
     val isBusy = dictionaryState.isImporting || dictionaryState.isUpdating
     var importType by remember { mutableStateOf(DictionaryType.Term) }
     var showImportPopup by remember { mutableStateOf(false) }
-    val launchZipPicker = rememberDictionaryZipPicker { uris ->
-        onIntent(SettingsIntent.ImportDictionaries(importType, uris))
-    }
+    val launchZipPicker =
+        rememberDictionaryZipPicker { uris ->
+            onIntent(SettingsIntent.ImportDictionaries(importType, uris))
+        }
     val pagerState = rememberPagerState(pageCount = { dictionarySettingsPages.size })
     val pagerCoroutineScope = rememberCoroutineScope()
     val selectedPage = pagerState.currentPage
@@ -113,45 +89,48 @@ fun DictionarySettingsPage(
     }
 
     val listState = rememberLazyListState()
-    val dictionaryListStartIndex = remember(
-        selectedPage,
-        dictionaryState.errorMessage,
-        dictionaryState.statusText,
-        dictionaryState.isLoading,
-    ) {
-        if (selectedPage != 0) {
-            -1
-        } else {
-            var index = 0
-            if (dictionaryState.errorMessage != null) index += 1
-            if (dictionaryState.statusText != null || dictionaryState.isLoading) index += 1
-            index += 1 // DictionaryTypeTabs
-            index
-        }
-    }
-    val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
-        if (dictionaryListStartIndex < 0) return@rememberReorderableLazyListState
-
-        val fromRelative = from.index - dictionaryListStartIndex
-        val toRelative = to.index - dictionaryListStartIndex
-        if (
-            fromRelative !in localDictionaries.indices ||
-            toRelative !in localDictionaries.indices
+    val dictionaryListStartIndex =
+        remember(
+            selectedPage,
+            dictionaryState.errorMessage,
+            dictionaryState.statusText,
+            dictionaryState.isLoading,
         ) {
-            return@rememberReorderableLazyListState
+            if (selectedPage != 0) {
+                -1
+            } else {
+                var index = 0
+                if (dictionaryState.errorMessage != null) index += 1
+                if (dictionaryState.statusText != null || dictionaryState.isLoading) index += 1
+                index += 1 // DictionaryTypeTabs
+                index
+            }
         }
+    val reorderableState =
+        rememberReorderableLazyListState(listState) { from, to ->
+            if (dictionaryListStartIndex < 0) return@rememberReorderableLazyListState
 
-        localDictionaries = localDictionaries.toMutableList().apply {
-            add(toRelative, removeAt(fromRelative))
+            val fromRelative = from.index - dictionaryListStartIndex
+            val toRelative = to.index - dictionaryListStartIndex
+            if (
+                fromRelative !in localDictionaries.indices ||
+                toRelative !in localDictionaries.indices
+            ) {
+                return@rememberReorderableLazyListState
+            }
+
+            localDictionaries =
+                localDictionaries.toMutableList().apply {
+                    add(toRelative, removeAt(fromRelative))
+                }
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
         }
-        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-    }
 
     LaunchedEffect(
         reorderableState.isAnyItemDragging,
         dictionaries,
         localDictionaries,
-        selectedType
+        selectedType,
     ) {
         if (!reorderableState.isAnyItemDragging) {
             val updatedIds = localDictionaries.map(DictionaryInfo::id)
@@ -175,9 +154,10 @@ fun DictionarySettingsPage(
             if (selectedPage == 0) {
                 Box {
                     FloatingActionButton(
-                        modifier = Modifier
-                            .navigationBarsPadding()
-                            .padding(end = 6.dp, bottom = 6.dp),
+                        modifier =
+                            Modifier
+                                .navigationBarsPadding()
+                                .padding(end = 6.dp, bottom = 6.dp),
                         onClick = {
                             if (!isBusy) {
                                 showImportPopup = true
@@ -221,9 +201,10 @@ fun DictionarySettingsPage(
         },
     ) { paddingValues, scrollBehavior ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = paddingValues.calculateTopPadding()),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(top = paddingValues.calculateTopPadding()),
         ) {
             PageTabs(
                 pagerState = pagerState,
@@ -237,37 +218,42 @@ fun DictionarySettingsPage(
             )
             HorizontalPager(
                 state = pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
                 beyondViewportPageCount = 1, // avoid page reloading
                 key = { it },
             ) { page ->
                 when (page) {
-                    0 -> DictionaryManagementPage(
-                        paddingValues = paddingValues,
-                        scrollBehavior = scrollBehavior,
-                        listState = listState,
-                        errorMessage = dictionaryState.errorMessage,
-                        statusText = dictionaryState.statusText,
-                        isLoading = dictionaryState.isLoading,
-                        selectedType = selectedType,
-                        dictionaries = dictionaries,
-                        localDictionaries = localDictionaries,
-                        isBusy = isBusy,
-                        reorderableState = reorderableState,
-                        onIntent = onIntent,
-                        onDeleteRequest = { type, dictionary ->
-                            pendingDeletion = PendingDictionaryDeletion(type, dictionary)
-                        },
-                    )
+                    0 -> {
+                        DictionaryManagementPage(
+                            paddingValues = paddingValues,
+                            scrollBehavior = scrollBehavior,
+                            listState = listState,
+                            errorMessage = dictionaryState.errorMessage,
+                            statusText = dictionaryState.statusText,
+                            isLoading = dictionaryState.isLoading,
+                            selectedType = selectedType,
+                            dictionaries = dictionaries,
+                            localDictionaries = localDictionaries,
+                            isBusy = isBusy,
+                            reorderableState = reorderableState,
+                            onIntent = onIntent,
+                            onDeleteRequest = { type, dictionary ->
+                                pendingDeletion = PendingDictionaryDeletion(type, dictionary)
+                            },
+                        )
+                    }
 
-                    else -> DictionaryLookupSettingsPage(
-                        settings = settings,
-                        paddingValues = paddingValues,
-                        scrollBehavior = scrollBehavior,
-                        onIntent = onIntent,
-                    )
+                    else -> {
+                        DictionaryLookupSettingsPage(
+                            settings = settings,
+                            paddingValues = paddingValues,
+                            scrollBehavior = scrollBehavior,
+                            onIntent = onIntent,
+                        )
+                    }
                 }
             }
 

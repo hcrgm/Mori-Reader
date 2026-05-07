@@ -3,7 +3,6 @@ package app.mori.reader.ui.pages.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -153,29 +152,30 @@ private fun LazyItemScope.AudioSourceRow(
         key = source.url,
     ) {
         Card(
-            modifier = Modifier
-                .padding(horizontal = AudioSettingsHorizontalPadding)
-                .fillMaxWidth()
-                .then(
-                    with(this) {
-                        Modifier.longPressDraggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(
-                                    HapticFeedbackType.GestureThresholdActivate,
-                                )
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                            },
-                        )
-                    },
-                )
-                .animateItem(),
+            modifier =
+                Modifier
+                    .padding(horizontal = AudioSettingsHorizontalPadding)
+                    .fillMaxWidth()
+                    .then(
+                        with(this) {
+                            Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    hapticFeedback.performHapticFeedback(
+                                        HapticFeedbackType.GestureThresholdActivate,
+                                    )
+                                },
+                                onDragStopped = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                },
+                            )
+                        },
+                    ).animateItem(),
         ) {
             Row(
-                modifier = Modifier
-                    .clickable(enabled = !source.isLocal) { onEdit(source) }
-                    .padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
+                modifier =
+                    Modifier
+                        .clickable(enabled = !source.isLocal) { onEdit(source) }
+                        .padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
@@ -188,11 +188,12 @@ private fun LazyItemScope.AudioSourceRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Medium,
-                        color = if (source.isEnabled) {
-                            MiuixTheme.colorScheme.onSurface
-                        } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        },
+                        color =
+                            if (source.isEnabled) {
+                                MiuixTheme.colorScheme.onSurface
+                            } else {
+                                MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            },
                     )
                     Text(
                         text = audioSourceSummary(source),
@@ -210,7 +211,14 @@ private fun LazyItemScope.AudioSourceRow(
                 Switch(
                     checked = source.isEnabled,
                     enabled = enabled,
-                    onCheckedChange = { onIntent(SettingsIntent.SetAudioSourceEnabled(source.url, it)) },
+                    onCheckedChange = {
+                        onIntent(
+                            SettingsIntent.SetAudioSourceEnabled(
+                                source.url,
+                                it,
+                            ),
+                        )
+                    },
                 )
                 IconButton(
                     enabled = !source.isDefault && !source.isLocal,
@@ -342,9 +350,10 @@ internal fun LocalAudioCard(
     Column {
         if (isImporting) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 LinearProgressIndicator()
@@ -355,9 +364,10 @@ internal fun LocalAudioCard(
             }
         }
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -392,21 +402,29 @@ internal fun DeleteAudioDialog(
     onConfirm: (PendingAudioDeletion) -> Unit,
 ) {
     val current = pendingDeletion ?: return
-    val title = when (current.type) {
-        PendingAudioDeletionType.Source -> stringResource(Res.string.cd_delete_source)
-        PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_title)
-    }
-    val summary = when (current.type) {
-        PendingAudioDeletionType.Source -> stringResource(Res.string.audio_delete_source_summary)
-        PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_summary)
-    }
-    val message = when (current.type) {
-        PendingAudioDeletionType.Source -> stringResource(
-            Res.string.audio_delete_source_confirm,
-            current.source?.name.orEmpty(),
-        )
-        PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_confirm)
-    }
+    val title =
+        when (current.type) {
+            PendingAudioDeletionType.Source -> stringResource(Res.string.cd_delete_source)
+            PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_title)
+        }
+    val summary =
+        when (current.type) {
+            PendingAudioDeletionType.Source -> stringResource(Res.string.audio_delete_source_summary)
+            PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_summary)
+        }
+    val message =
+        when (current.type) {
+            PendingAudioDeletionType.Source -> {
+                stringResource(
+                    Res.string.audio_delete_source_confirm,
+                    current.source?.name.orEmpty(),
+                )
+            }
+
+            PendingAudioDeletionType.LocalDatabase -> {
+                stringResource(Res.string.audio_delete_local_confirm)
+            }
+        }
 
     OverlayDialog(
         title = title,
@@ -442,23 +460,26 @@ internal fun DeleteAudioDialog(
     }
 }
 
-private fun audioSourceTitle(source: AudioSource): String = when {
-    source.isLocal -> "Local"
-    else -> source.name
-}
+private fun audioSourceTitle(source: AudioSource): String =
+    when {
+        source.isLocal -> "Local"
+        else -> source.name
+    }
 
 @Composable
-private fun AudioPlaybackMode.localizedLabel(): String = when (this) {
-    AudioPlaybackMode.Interrupt -> stringResource(Res.string.audio_mode_interrupt)
-    AudioPlaybackMode.Duck -> stringResource(Res.string.audio_mode_duck)
-    AudioPlaybackMode.Mix -> stringResource(Res.string.audio_mode_mix)
-}
+private fun AudioPlaybackMode.localizedLabel(): String =
+    when (this) {
+        AudioPlaybackMode.Interrupt -> stringResource(Res.string.audio_mode_interrupt)
+        AudioPlaybackMode.Duck -> stringResource(Res.string.audio_mode_duck)
+        AudioPlaybackMode.Mix -> stringResource(Res.string.audio_mode_mix)
+    }
 
 @Composable
-private fun audioSourceSummary(source: AudioSource): String = when {
-    source.isLocal -> stringResource(Res.string.audio_local_summary)
-    else -> source.url
-}
+private fun audioSourceSummary(source: AudioSource): String =
+    when {
+        source.isLocal -> stringResource(Res.string.audio_local_summary)
+        else -> source.url
+    }
 
 @Composable
 private fun formatBytes(bytes: Long): String {
@@ -471,7 +492,7 @@ private fun formatBytes(bytes: Long): String {
         unitIndex++
     }
     return if (unitIndex == 0) {
-        "${bytes} B"
+        "$bytes B"
     } else {
         "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
     }

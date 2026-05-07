@@ -2,9 +2,6 @@ package app.mori.reader.data.audiobook
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackParameters
@@ -241,14 +238,20 @@ internal class AndroidAudiobookPlayerRepository(
                 updatedAt = System.currentTimeMillis(),
             )
         runCatching {
-            File(bookDir, PLAYBACK_FILE).writeText(json.encodeToString(SasayakiPlaybackData.serializer(), data))
+            File(
+                bookDir,
+                PLAYBACK_FILE,
+            ).writeText(json.encodeToString(SasayakiPlaybackData.serializer(), data))
         }
     }
 
     private fun loadPlayback(bookId: String): SasayakiPlaybackData {
         val bookDir = findBookDirectory(bookId) ?: return SasayakiPlaybackData()
         return runCatching {
-            json.decodeFromString(SasayakiPlaybackData.serializer(), File(bookDir, PLAYBACK_FILE).readText())
+            json.decodeFromString(
+                SasayakiPlaybackData.serializer(),
+                File(bookDir, PLAYBACK_FILE).readText(),
+            )
         }.getOrDefault(SasayakiPlaybackData())
     }
 
@@ -272,7 +275,10 @@ internal class AndroidAudiobookPlayerRepository(
 
     private fun loadBookMetadata(bookDir: File): PlayerBookMetadataStorage? =
         runCatching {
-            json.decodeFromString(PlayerBookMetadataStorage.serializer(), File(bookDir, METADATA_FILE).readText())
+            json.decodeFromString(
+                PlayerBookMetadataStorage.serializer(),
+                File(bookDir, METADATA_FILE).readText(),
+            )
         }.getOrNull()
 }
 

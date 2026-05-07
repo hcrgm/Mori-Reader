@@ -1,19 +1,13 @@
 package app.mori.reader.ui.pages.settings
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,50 +16,39 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import app.mori.reader.core.platform.rememberLocalAudioDatabasePicker
 import app.mori.reader.data.settings.AppSettings
-import app.mori.reader.data.settings.AudioPlaybackMode
 import app.mori.reader.data.settings.AudioSource
-import app.mori.reader.features.settings.presentation.SettingsUiState
 import app.mori.reader.features.settings.presentation.SettingsIntent
+import app.mori.reader.features.settings.presentation.SettingsUiState
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.audio_local_description
+import app.mori.reader.shared.generated.resources.audio_local_title
+import app.mori.reader.shared.generated.resources.audio_playback_title
+import app.mori.reader.shared.generated.resources.audio_source_title
+import app.mori.reader.shared.generated.resources.audio_title
+import app.mori.reader.shared.generated.resources.cd_add_source
+import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
-import sh.calvin.reorderable.ReorderableItem
+import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
-import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
 import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.SpinnerEntry
-import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.TextField
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
-import top.yukonga.miuix.kmp.icon.extended.Delete
-import top.yukonga.miuix.kmp.icon.extended.Sort
-import top.yukonga.miuix.kmp.overlay.OverlayDialog
-import top.yukonga.miuix.kmp.preference.OverlaySpinnerPreference
-import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
-import app.mori.reader.shared.generated.resources.*
-import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun AudioSettingsPage(
@@ -74,9 +57,10 @@ fun AudioSettingsPage(
     onIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
 ) {
-    val launchDbPicker = rememberLocalAudioDatabasePicker { uri ->
-        onIntent(SettingsIntent.ImportLocalAudioDatabase(uri))
-    }
+    val launchDbPicker =
+        rememberLocalAudioDatabasePicker { uri ->
+            onIntent(SettingsIntent.ImportLocalAudioDatabase(uri))
+        }
     val isImportingLocalAudio = settingsUi.isImportingLocalAudio
     val listState = rememberLazyListState()
     val hapticFeedback = LocalHapticFeedback.current
@@ -90,22 +74,24 @@ fun AudioSettingsPage(
         localSources = settings.audio.sources
     }
 
-    val reorderableState = rememberReorderableLazyListState(listState) { from, to ->
-        val listStartIndex = 4
-        val fromRelative = from.index - listStartIndex
-        val toRelative = to.index - listStartIndex
-        if (
-            fromRelative !in localSources.indices ||
-            toRelative !in localSources.indices
-        ) {
-            return@rememberReorderableLazyListState
-        }
+    val reorderableState =
+        rememberReorderableLazyListState(listState) { from, to ->
+            val listStartIndex = 4
+            val fromRelative = from.index - listStartIndex
+            val toRelative = to.index - listStartIndex
+            if (
+                fromRelative !in localSources.indices ||
+                toRelative !in localSources.indices
+            ) {
+                return@rememberReorderableLazyListState
+            }
 
-        localSources = localSources.toMutableList().apply {
-            add(toRelative, removeAt(fromRelative))
+            localSources =
+                localSources.toMutableList().apply {
+                    add(toRelative, removeAt(fromRelative))
+                }
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
         }
-        hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-    }
 
     LaunchedEffect(reorderableState.isAnyItemDragging, settings.audio.sources, localSources) {
         if (!reorderableState.isAnyItemDragging) {
@@ -117,7 +103,7 @@ fun AudioSettingsPage(
     }
 
     MoriPageScaffold(
-title = stringResource(Res.string.audio_title),
+        title = stringResource(Res.string.audio_title),
         blurEnabled = settings.appearance.blurEnabled,
         navigationIcon = {
             IconButton(onClick = onBack) {
@@ -126,9 +112,10 @@ title = stringResource(Res.string.audio_title),
         },
         floatingActionButton = {
             FloatingActionButton(
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(end = 6.dp, bottom = 6.dp),
+                modifier =
+                    Modifier
+                        .navigationBarsPadding()
+                        .padding(end = 6.dp, bottom = 6.dp),
                 onClick = {
                     if (!isImportingLocalAudio) {
                         showAddSourceDialog = true
@@ -148,14 +135,16 @@ title = stringResource(Res.string.audio_title),
         Box(modifier = Modifier.fillMaxSize()) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .overScrollVertical()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
-                contentPadding = PaddingValues(
-                    top = paddingValues.calculateTopPadding(),
-                    bottom = paddingValues.calculateBottomPadding() + 96.dp,
-                ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .overScrollVertical()
+                        .nestedScroll(scrollBehavior.nestedScrollConnection),
+                contentPadding =
+                    PaddingValues(
+                        top = paddingValues.calculateTopPadding(),
+                        bottom = paddingValues.calculateBottomPadding() + 96.dp,
+                    ),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 item {
@@ -176,10 +165,11 @@ title = stringResource(Res.string.audio_title),
                     onIntent = onIntent,
                     onEdit = { source -> editingSource = source },
                     onDeleteRequest = { source ->
-                        pendingDeletion = PendingAudioDeletion(
-                            type = PendingAudioDeletionType.Source,
-                            source = source,
-                        )
+                        pendingDeletion =
+                            PendingAudioDeletion(
+                                type = PendingAudioDeletionType.Source,
+                                source = source,
+                            )
                     },
                 )
                 item {
@@ -188,14 +178,15 @@ title = stringResource(Res.string.audio_title),
                 item {
                     Card(
                         modifier = Modifier.padding(horizontal = AudioSettingsHorizontalPadding),
-                        colors = CardDefaults.defaultColors(
-                            color = MiuixTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                            contentColor = MiuixTheme.colorScheme.onSurface
-                        ),
+                        colors =
+                            CardDefaults.defaultColors(
+                                color = MiuixTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
+                                contentColor = MiuixTheme.colorScheme.onSurface,
+                            ),
                         insideMargin = PaddingValues(16.dp),
                     ) {
                         Text(
-text = stringResource(Res.string.audio_local_description),
+                            text = stringResource(Res.string.audio_local_description),
                             color = MiuixTheme.colorScheme.primary,
                         )
                     }
@@ -207,9 +198,10 @@ text = stringResource(Res.string.audio_local_description),
                             onImport = launchDbPicker,
                             isImporting = isImportingLocalAudio,
                             onDeleteRequest = {
-                                pendingDeletion = PendingAudioDeletion(
-                                    type = PendingAudioDeletionType.LocalDatabase,
-                                )
+                                pendingDeletion =
+                                    PendingAudioDeletion(
+                                        type = PendingAudioDeletionType.LocalDatabase,
+                                    )
                             },
                         )
                     }

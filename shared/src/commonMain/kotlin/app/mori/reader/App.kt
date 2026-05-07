@@ -30,9 +30,10 @@ fun App(initialSettings: AppSettings? = null) {
     }
 
     val bookshelfViewModel = koinViewModel<BookshelfViewModel>()
-    val audiobookViewModel = koinViewModel<AudiobookViewModel>(
-        parameters = { parametersOf(state.settings.sasayaki.preferredStorageMode) },
-    )
+    val audiobookViewModel =
+        koinViewModel<AudiobookViewModel>(
+            parameters = { parametersOf(state.settings.sasayaki.preferredStorageMode) },
+        )
     val homeState by bookshelfViewModel.state.collectAsStateWithLifecycle()
     val audiobookState by audiobookViewModel.state.collectAsStateWithLifecycle()
 
@@ -41,15 +42,16 @@ fun App(initialSettings: AppSettings? = null) {
         AppTheme(themeMode = state.settings.appearance.themeMode) {
             AppContent(
                 state = state,
-                homeState = homeState,
+                bookshelfState = homeState,
                 dictionaryState = dictionaryState,
-                audiobookState = audiobookState,
+                audiobookUiState = audiobookState,
                 settingsUi = settingsUi,
-                effects = merge(
-                    viewModel.effects,
-                    settingsViewModel.effects,
-                    audiobookViewModel.effects.map { AppEffect.ShowMessage(it) },
-                ),
+                effects =
+                    merge(
+                        viewModel.effects,
+                        settingsViewModel.effects,
+                        audiobookViewModel.effects.map { AppEffect.ShowMessage(it) },
+                    ),
                 onIntent = viewModel::onIntent,
                 onBookshelfIntent = bookshelfViewModel::onIntent,
                 onDictionaryIntent = dictionaryViewModel::onIntent,

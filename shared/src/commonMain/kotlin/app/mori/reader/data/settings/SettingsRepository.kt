@@ -34,7 +34,8 @@ class SettingsRepository(
                     throw throwable
                 }
             }.map { preferences ->
-                val localAudioDatabaseSizeBytes = preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L
+                val localAudioDatabaseSizeBytes =
+                    preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L
                 val enableLocalAudio =
                     (preferences[Keys.EnableLocalAudio] ?: false) &&
                         localAudioDatabaseSizeBytes > 0L
@@ -55,7 +56,9 @@ class SettingsRepository(
                         ),
                     appearance =
                         AppearanceSettings(
-                            themeMode = preferences[Keys.ThemeMode]?.toThemeMode() ?: ThemeMode.System,
+                            themeMode =
+                                preferences[Keys.ThemeMode]?.toThemeMode()
+                                    ?: ThemeMode.System,
                             languageMode =
                                 preferences[Keys.LanguageMode]?.toLanguageMode()
                                     ?: LanguageMode.System,
@@ -73,8 +76,16 @@ class SettingsRepository(
                                 (preferences[Keys.ReaderLineHeight] ?: "1.65")
                                     .toDoubleOrNull()
                                     ?.coerceIn(1.0, 2.5) ?: 1.65,
-                            horizontalPadding = (preferences[Keys.ReaderHorizontalPadding] ?: 5).coerceIn(0, 50),
-                            verticalPadding = (preferences[Keys.ReaderVerticalPadding] ?: 0).coerceIn(0, 50),
+                            horizontalPadding =
+                                (
+                                    preferences[Keys.ReaderHorizontalPadding]
+                                        ?: 5
+                                ).coerceIn(0, 50),
+                            verticalPadding =
+                                (
+                                    preferences[Keys.ReaderVerticalPadding]
+                                        ?: 0
+                                ).coerceIn(0, 50),
                             avoidPageBreak = preferences[Keys.ReaderAvoidPageBreak] ?: false,
                             justifyText = preferences[Keys.ReaderJustifyText] ?: false,
                             layoutAdvanced = preferences[Keys.ReaderLayoutAdvanced] ?: false,
@@ -91,7 +102,11 @@ class SettingsRepository(
                             height = (preferences[Keys.PopupHeight] ?: 250).coerceIn(100, 500),
                             fullWidth = preferences[Keys.PopupFullWidth] ?: false,
                             swipeToDismiss = preferences[Keys.PopupSwipeToDismiss] ?: false,
-                            swipeThreshold = (preferences[Keys.PopupSwipeThreshold] ?: 40).coerceIn(20, 80),
+                            swipeThreshold =
+                                (preferences[Keys.PopupSwipeThreshold] ?: 40).coerceIn(
+                                    20,
+                                    80,
+                                ),
                         ),
                     dictionary =
                         DictionarySettings(
@@ -101,7 +116,9 @@ class SettingsRepository(
                             compactGlossaries = preferences[Keys.CompactGlossaries] ?: true,
                             showExpressionTags = preferences[Keys.ShowExpressionTags] ?: false,
                             harmonicFrequency = preferences[Keys.HarmonicFrequency] ?: false,
-                            deduplicatePitchAccents = preferences[Keys.DeduplicatePitchAccents] ?: false,
+                            deduplicatePitchAccents =
+                                preferences[Keys.DeduplicatePitchAccents]
+                                    ?: false,
                         ),
                     audio =
                         AudioSettings(
@@ -253,18 +270,28 @@ class SettingsRepository(
                     (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
             val hasLocalAudioDatabase = (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
             preferences[Keys.AudioSources] =
-                normalizeAudioSources(sources, enableLocalAudio, hasLocalAudioDatabase).toAudioSourcesJson(json)
+                normalizeAudioSources(
+                    sources,
+                    enableLocalAudio,
+                    hasLocalAudioDatabase,
+                ).toAudioSourcesJson(json)
         }
     }
 
     suspend fun setEnableLocalAudio(enabled: Boolean) {
         dataStore.edit { preferences ->
-            val effectiveEnabled = enabled && (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
+            val effectiveEnabled =
+                enabled && (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
             val hasLocalAudioDatabase = (preferences[Keys.LocalAudioDatabaseSizeBytes] ?: 0L) > 0L
             preferences[Keys.EnableLocalAudio] = effectiveEnabled
-            val sources = preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
+            val sources =
+                preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
             preferences[Keys.AudioSources] =
-                normalizeAudioSources(sources, effectiveEnabled, hasLocalAudioDatabase).toAudioSourcesJson(json)
+                normalizeAudioSources(
+                    sources,
+                    effectiveEnabled,
+                    hasLocalAudioDatabase,
+                ).toAudioSourcesJson(json)
         }
     }
 
@@ -281,7 +308,8 @@ class SettingsRepository(
             preferences[Keys.LocalAudioDatabaseSizeBytes] = sizeBytes.coerceAtLeast(0L)
             val enableLocalAudio = (preferences[Keys.EnableLocalAudio] ?: false) && sizeBytes > 0L
             preferences[Keys.EnableLocalAudio] = enableLocalAudio
-            val sources = preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
+            val sources =
+                preferences[Keys.AudioSources]?.toAudioSources(json) ?: listOf(AudioSource.Default)
             preferences[Keys.AudioSources] =
                 normalizeAudioSources(
                     sources = sources,

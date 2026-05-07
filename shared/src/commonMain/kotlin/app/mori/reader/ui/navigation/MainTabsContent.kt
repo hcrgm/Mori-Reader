@@ -20,9 +20,9 @@ import androidx.compose.ui.platform.LocalDensity
 import app.mori.reader.app.navigation.AppNavigationState
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.audiobook.presentation.AudiobookIntent
-import app.mori.reader.features.audiobook.presentation.AudiobookState
+import app.mori.reader.features.audiobook.presentation.AudiobookUiState
 import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
-import app.mori.reader.features.bookshelf.presentation.HomeState
+import app.mori.reader.features.bookshelf.presentation.BookshelfState
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryState
 import app.mori.reader.features.settings.presentation.SettingsIntent
@@ -34,18 +34,18 @@ import app.mori.reader.ui.layout.shouldShowWideLayout
 import app.mori.reader.ui.pages.dictionary.DictionaryPage
 import app.mori.reader.ui.pages.home.HomePage
 import app.mori.reader.ui.pages.settings.SettingsPage
+import kotlinx.coroutines.launch
 import top.yukonga.miuix.kmp.basic.Scaffold
 import top.yukonga.miuix.kmp.blur.layerBackdrop
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import kotlinx.coroutines.launch
 
 @Composable
 internal fun MainTabsContent(
-    home: HomeState,
+    home: BookshelfState,
     dictionary: DictionaryState,
     settings: AppSettings,
-    audiobook: AudiobookState,
+    audiobook: AudiobookUiState,
     navigationState: AppNavigationState,
     onIntent: (AppIntent) -> Unit,
     onBookshelfIntent: (BookshelfIntent) -> Unit,
@@ -56,18 +56,20 @@ internal fun MainTabsContent(
     onOpenDictionarySettings: () -> Unit,
     onOpenAudioSettings: () -> Unit,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = AppTab.Home.ordinal,
-        pageCount = { AppTab.entries.size },
-    )
+    val pagerState =
+        rememberPagerState(
+            initialPage = AppTab.Home.ordinal,
+            pageCount = { AppTab.entries.size },
+        )
     val coroutineScope = rememberCoroutineScope()
     val isWideScreen = shouldShowWideLayout()
     val density = LocalDensity.current
     val surfaceColor = MiuixTheme.colorScheme.surface
-    val navigationBackdrop = rememberLayerBackdrop {
-        drawRect(surfaceColor)
-        drawContent()
-    }
+    val navigationBackdrop =
+        rememberLayerBackdrop {
+            drawRect(surfaceColor)
+            drawContent()
+        }
     val selectedTab = AppTab.entries[pagerState.currentPage]
 
     LaunchedEffect(selectedTab, navigationState) {
@@ -82,19 +84,22 @@ internal fun MainTabsContent(
 
     if (isWideScreen) {
         var navigationRailWidthPx by remember { mutableIntStateOf(0) }
-        val navigationRailPadding = PaddingValues(
-            start = with(density) { navigationRailWidthPx.toDp() },
-        )
+        val navigationRailPadding =
+            PaddingValues(
+                start = with(density) { navigationRailWidthPx.toDp() },
+            )
 
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(surfaceColor),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(surfaceColor),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .layerBackdrop(navigationBackdrop),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .layerBackdrop(navigationBackdrop),
             ) {
                 MainTabsPager(
                     home = home,
@@ -136,9 +141,10 @@ internal fun MainTabsContent(
             },
         ) { fixedPadding ->
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .layerBackdrop(navigationBackdrop),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .layerBackdrop(navigationBackdrop),
             ) {
                 MainTabsPager(
                     home = home,
@@ -165,10 +171,10 @@ internal fun MainTabsContent(
 
 @Composable
 private fun MainTabsPager(
-    home: HomeState,
+    home: BookshelfState,
     dictionary: DictionaryState,
     settings: AppSettings,
-    audiobook: AudiobookState,
+    audiobook: AudiobookUiState,
     fixedPadding: PaddingValues,
     pagerState: PagerState,
     navigationState: AppNavigationState,
@@ -186,37 +192,44 @@ private fun MainTabsPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
         beyondViewportPageCount = 0,
-        userScrollEnabled = navigationState.canSwipeTabs(
-            hasDictionaryPopup = dictionary.popupStack.isNotEmpty(),
-        ),
+        userScrollEnabled =
+            navigationState.canSwipeTabs(
+                hasDictionaryPopup = dictionary.popupStack.isNotEmpty(),
+            ),
         verticalAlignment = androidx.compose.ui.Alignment.Top,
     ) { page ->
         when (AppTab.entries[page]) {
-            AppTab.Home -> HomePage(
-                home = home,
-                settings = settings,
-                audiobook = audiobook,
-                fixedPadding = fixedPadding,
-                onBookshelfIntent = onBookshelfIntent,
-                onAudiobookIntent = onAudiobookIntent,
-                onOpenBook = { onIntent(AppIntent.OpenBook(it)) },
-            )
+            AppTab.Home -> {
+                HomePage(
+                    home = home,
+                    settings = settings,
+                    audiobook = audiobook,
+                    fixedPadding = fixedPadding,
+                    onBookshelfIntent = onBookshelfIntent,
+                    onAudiobookIntent = onAudiobookIntent,
+                    onOpenBook = { onIntent(AppIntent.OpenBook(it)) },
+                )
+            }
 
-            AppTab.Dictionary -> DictionaryPage(
-                dictionaryState = dictionary,
-                settings = settings,
-                fixedPadding = fixedPadding,
-                onDictionaryIntent = onDictionaryIntent,
-                onWebViewVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
-            )
+            AppTab.Dictionary -> {
+                DictionaryPage(
+                    dictionaryState = dictionary,
+                    settings = settings,
+                    fixedPadding = fixedPadding,
+                    onDictionaryIntent = onDictionaryIntent,
+                    onWebViewVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
+                )
+            }
 
-            AppTab.Settings -> SettingsPage(
-                settings = settings,
-                fixedPadding = fixedPadding,
-                onOpenAppearanceSettings = onOpenAppearanceSettings,
-                onOpenDictionarySettings = onOpenDictionarySettings,
-                onOpenAudioSettings = onOpenAudioSettings,
-            )
+            AppTab.Settings -> {
+                SettingsPage(
+                    settings = settings,
+                    fixedPadding = fixedPadding,
+                    onOpenAppearanceSettings = onOpenAppearanceSettings,
+                    onOpenDictionarySettings = onOpenDictionarySettings,
+                    onOpenAudioSettings = onOpenAudioSettings,
+                )
+            }
         }
     }
 }

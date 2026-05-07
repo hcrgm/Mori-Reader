@@ -151,7 +151,8 @@ internal class AndroidAudiobookRepository(
     ): AudiobookAssetBundle =
         withContext(Dispatchers.IO) {
             val bookDir = findBookDirectory(bookId) ?: throw IllegalArgumentException("图书不存在")
-            val subtitleData = loadSubtitleData(bookDir) ?: throw IllegalArgumentException("请先导入 SRT 字幕")
+            val subtitleData =
+                loadSubtitleData(bookDir) ?: throw IllegalArgumentException("请先导入 SRT 字幕")
             val chapters = loadMatchChapters(bookDir)
             require(chapters.isNotEmpty()) { "没有可匹配章节" }
             val clampedWindow = searchWindow.coerceIn(MIN_SEARCH_WINDOW, MAX_SEARCH_WINDOW)
@@ -217,49 +218,73 @@ internal class AndroidAudiobookRepository(
 
     private fun loadBookMetadata(bookDir: File): BookMetadataStorage? =
         runCatching {
-            json.decodeFromString(BookMetadataStorage.serializer(), File(bookDir, METADATA_FILE).readText())
+            json.decodeFromString(
+                BookMetadataStorage.serializer(),
+                File(bookDir, METADATA_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun loadAssetsStorage(bookDir: File): AudiobookAssetsStorage =
         runCatching {
-            json.decodeFromString(AudiobookAssetsStorage.serializer(), File(bookDir, ASSETS_FILE).readText())
+            json.decodeFromString(
+                AudiobookAssetsStorage.serializer(),
+                File(bookDir, ASSETS_FILE).readText(),
+            )
         }.getOrDefault(AudiobookAssetsStorage())
 
     private fun saveAssetsStorage(
         bookDir: File,
         assets: AudiobookAssetsStorage,
     ) {
-        File(bookDir, ASSETS_FILE).writeText(json.encodeToString(AudiobookAssetsStorage.serializer(), assets))
+        File(
+            bookDir,
+            ASSETS_FILE,
+        ).writeText(json.encodeToString(AudiobookAssetsStorage.serializer(), assets))
     }
 
     private fun loadSubtitleData(bookDir: File): AudiobookSubtitleData? =
         runCatching {
-            json.decodeFromString(AudiobookSubtitleData.serializer(), File(bookDir, SUBTITLE_DATA_FILE).readText())
+            json.decodeFromString(
+                AudiobookSubtitleData.serializer(),
+                File(bookDir, SUBTITLE_DATA_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveSubtitleData(
         bookDir: File,
         data: AudiobookSubtitleData,
     ) {
-        File(bookDir, SUBTITLE_DATA_FILE).writeText(json.encodeToString(AudiobookSubtitleData.serializer(), data))
+        File(
+            bookDir,
+            SUBTITLE_DATA_FILE,
+        ).writeText(json.encodeToString(AudiobookSubtitleData.serializer(), data))
     }
 
     private fun loadMatchData(bookDir: File): SasayakiMatchData? =
         runCatching {
-            json.decodeFromString(SasayakiMatchData.serializer(), File(bookDir, MATCH_DATA_FILE).readText())
+            json.decodeFromString(
+                SasayakiMatchData.serializer(),
+                File(bookDir, MATCH_DATA_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveMatchData(
         bookDir: File,
         data: SasayakiMatchData,
     ) {
-        File(bookDir, MATCH_DATA_FILE).writeText(json.encodeToString(SasayakiMatchData.serializer(), data))
+        File(bookDir, MATCH_DATA_FILE).writeText(
+            json.encodeToString(
+                SasayakiMatchData.serializer(),
+                data,
+            ),
+        )
     }
 
     private fun loadMatchChapters(bookDir: File): List<MatchChapter> {
         val readerInfoFile = File(bookDir, BOOKINFO_FILE)
         require(readerInfoFile.exists()) { "Reader 信息不存在，请先打开一次图书" }
-        val readerInfo = json.decodeFromString(ReaderBookInfoStorage.serializer(), readerInfoFile.readText())
+        val readerInfo =
+            json.decodeFromString(ReaderBookInfoStorage.serializer(), readerInfoFile.readText())
         return readerInfo.chapterInfo.entries
             .sortedBy { it.value.spineIndex ?: Int.MAX_VALUE }
             .mapNotNull { (href, info) ->
@@ -304,7 +329,9 @@ internal class AndroidAudiobookRepository(
 
         effectiveCues.forEach { (cue, cueText) ->
             if (!cueText.isUsefulMatchCue()) return@forEach
-            val found = findCue(chapters, chapterCursor, offsetCursor, cueText, searchWindow) ?: return@forEach
+            val found =
+                findCue(chapters, chapterCursor, offsetCursor, cueText, searchWindow)
+                    ?: return@forEach
             matches +=
                 SasayakiMatch(
                     id = cue.id,
@@ -340,7 +367,8 @@ internal class AndroidAudiobookRepository(
             val chapter = chapters[currentIndex]
             val from = currentOffset.coerceIn(0, chapter.text.length)
             val to = (from + searchWindow + cueText.length).coerceAtMost(chapter.text.length)
-            val found = chapter.text.indexOf(cueText, startIndex = from).takeIf { it >= 0 && it < to }
+            val found =
+                chapter.text.indexOf(cueText, startIndex = from).takeIf { it >= 0 && it < to }
             if (found != null) {
                 return MatchLocation(
                     chapterListIndex = currentIndex,
@@ -396,7 +424,10 @@ internal class AndroidAudiobookRepository(
 
     private fun takePersistableReadPermission(uri: Uri) {
         runCatching {
-            context.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
         }
     }
 

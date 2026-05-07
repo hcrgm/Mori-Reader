@@ -88,18 +88,20 @@ internal fun ReaderSasayakiSheet(
             onDismissRequest = onDismiss,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 18.dp, vertical = 10.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Text(
-                    text = currentCueText
-                        ?: if (enabled) {
-                            stringResource(Res.string.sasayaki_ready)
-                        } else {
-                            stringResource(Res.string.sasayaki_import_required)
-                        },
+                    text =
+                        currentCueText
+                            ?: if (enabled) {
+                                stringResource(Res.string.sasayaki_ready)
+                            } else {
+                                stringResource(Res.string.sasayaki_import_required)
+                            },
                     color = if (enabled) MiuixTheme.colorScheme.onSurface else MiuixTheme.colorScheme.onSurfaceVariantSummary,
                     maxLines = 3,
                     overflow = TextOverflow.Ellipsis,
@@ -119,10 +121,11 @@ internal fun ReaderSasayakiSheet(
                         )
                     }
                     Slider(
-                        value = seekValue.coerceIn(
-                            0f,
-                            player.durationMs.coerceAtLeast(1L).toFloat()
-                        ),
+                        value =
+                            seekValue.coerceIn(
+                                0f,
+                                player.durationMs.coerceAtLeast(1L).toFloat(),
+                            ),
                         onValueChange = { seekValue = it },
                         valueRange = 0f..player.durationMs.coerceAtLeast(1L).toFloat(),
                         enabled = player.isReady,
@@ -137,7 +140,7 @@ internal fun ReaderSasayakiSheet(
                     TextButton(
                         text = stringResource(Res.string.sasayaki_previous),
                         enabled = enabled && player.isReady,
-                        onClick = onPrevious
+                        onClick = onPrevious,
                     )
                     Spacer(Modifier.width(14.dp))
                     FloatingReaderButton(
@@ -146,11 +149,12 @@ internal fun ReaderSasayakiSheet(
                     ) {
                         Icon(
                             imageVector = if (player.isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
-                            contentDescription = if (player.isPlaying) {
-                                stringResource(Res.string.cd_pause)
-                            } else {
-                                stringResource(Res.string.cd_play)
-                            },
+                            contentDescription =
+                                if (player.isPlaying) {
+                                    stringResource(Res.string.cd_pause)
+                                } else {
+                                    stringResource(Res.string.cd_play)
+                                },
                             tint = if (isDark) Color(0xFFF3F1EA) else Color(0xFF1C1B18),
                         )
                     }
@@ -158,7 +162,7 @@ internal fun ReaderSasayakiSheet(
                     TextButton(
                         text = stringResource(Res.string.sasayaki_next),
                         enabled = enabled && player.isReady,
-                        onClick = onNext
+                        onClick = onNext,
                     )
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -166,10 +170,13 @@ internal fun ReaderSasayakiSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(text = stringResource(Res.string.sasayaki_delay), color = MiuixTheme.colorScheme.onSurface)
+                        Text(
+                            text = stringResource(Res.string.sasayaki_delay),
+                            color = MiuixTheme.colorScheme.onSurface,
+                        )
                         Text(
                             text = "${delayValue.toInt()} ms",
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
                     Slider(
@@ -185,10 +192,13 @@ internal fun ReaderSasayakiSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(text = stringResource(Res.string.sasayaki_speed), color = MiuixTheme.colorScheme.onSurface)
+                        Text(
+                            text = stringResource(Res.string.sasayaki_speed),
+                            color = MiuixTheme.colorScheme.onSurface,
+                        )
                         Text(
                             text = "${(rateValue * 100).toInt()}%",
-                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                         )
                     }
                     Slider(
@@ -260,38 +270,42 @@ private fun SasayakiColorRow(
     enabled: Boolean,
     onSelect: (String) -> Unit,
 ) {
-    val colors = listOf(
-        "#FFC0485C",
-        "#FF3AA675",
-        "#FF4979F5",
-        "#FFE09F3E",
-    )
+    val colors =
+        listOf(
+            "#FFC0485C",
+            "#FF3AA675",
+            "#FF4979F5",
+            "#FFE09F3E",
+        )
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = stringResource(Res.string.sasayaki_highlight_color), color = MiuixTheme.colorScheme.onSurface)
+        Text(
+            text = stringResource(Res.string.sasayaki_highlight_color),
+            color = MiuixTheme.colorScheme.onSurface,
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             colors.forEach { value ->
                 val isSelected = value == selected
                 Box(
-                    modifier = Modifier
-                        .size(22.dp)
-                        .clip(CircleShape)
-                        .background(Color(parseHexColor(value)))
-                        .then(
-                            if (enabled) {
-                                Modifier.clickable { onSelect(value) }
-                            } else {
-                                Modifier
-                            }
-                        )
-                        .shadow(
-                            elevation = if (isSelected) 6.dp else 0.dp,
-                            shape = CircleShape,
-                            spotColor = Color(parseHexColor(value)),
-                        ),
+                    modifier =
+                        Modifier
+                            .size(22.dp)
+                            .clip(CircleShape)
+                            .background(Color(parseHexColor(value)))
+                            .then(
+                                if (enabled) {
+                                    Modifier.clickable { onSelect(value) }
+                                } else {
+                                    Modifier
+                                },
+                            ).shadow(
+                                elevation = if (isSelected) 6.dp else 0.dp,
+                                shape = CircleShape,
+                                spotColor = Color(parseHexColor(value)),
+                            ),
                 )
             }
         }

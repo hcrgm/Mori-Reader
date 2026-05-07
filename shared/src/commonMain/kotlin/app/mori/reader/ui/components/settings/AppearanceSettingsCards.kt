@@ -14,11 +14,54 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import app.mori.reader.data.settings.LanguageMode
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
-import app.mori.reader.data.settings.LanguageMode
-
-import app.mori.reader.shared.generated.resources.*
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_off
+import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_on
+import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_title
+import app.mori.reader.shared.generated.resources.appearance_blur_summary
+import app.mori.reader.shared.generated.resources.appearance_blur_title
+import app.mori.reader.shared.generated.resources.appearance_character_spacing
+import app.mori.reader.shared.generated.resources.appearance_font_size
+import app.mori.reader.shared.generated.resources.appearance_fullscreen_title
+import app.mori.reader.shared.generated.resources.appearance_hide_furigana_title
+import app.mori.reader.shared.generated.resources.appearance_horizontal_margin
+import app.mori.reader.shared.generated.resources.appearance_justify_title
+import app.mori.reader.shared.generated.resources.appearance_language_summary
+import app.mori.reader.shared.generated.resources.appearance_language_title
+import app.mori.reader.shared.generated.resources.appearance_line_height
+import app.mori.reader.shared.generated.resources.appearance_page_mode_summary
+import app.mori.reader.shared.generated.resources.appearance_page_mode_title
+import app.mori.reader.shared.generated.resources.appearance_popup_full_width_off
+import app.mori.reader.shared.generated.resources.appearance_popup_full_width_on
+import app.mori.reader.shared.generated.resources.appearance_popup_full_width_title
+import app.mori.reader.shared.generated.resources.appearance_popup_height
+import app.mori.reader.shared.generated.resources.appearance_popup_swipe_dismiss_off
+import app.mori.reader.shared.generated.resources.appearance_popup_swipe_dismiss_on
+import app.mori.reader.shared.generated.resources.appearance_popup_swipe_dismiss_title
+import app.mori.reader.shared.generated.resources.appearance_popup_swipe_threshold
+import app.mori.reader.shared.generated.resources.appearance_popup_title
+import app.mori.reader.shared.generated.resources.appearance_popup_width
+import app.mori.reader.shared.generated.resources.appearance_reader_theme_title
+import app.mori.reader.shared.generated.resources.appearance_reading_continuous
+import app.mori.reader.shared.generated.resources.appearance_reading_pagination
+import app.mori.reader.shared.generated.resources.appearance_theme_summary
+import app.mori.reader.shared.generated.resources.appearance_theme_title
+import app.mori.reader.shared.generated.resources.appearance_typography
+import app.mori.reader.shared.generated.resources.appearance_vertical_margin
+import app.mori.reader.shared.generated.resources.appearance_writing_direction_summary
+import app.mori.reader.shared.generated.resources.appearance_writing_direction_title
+import app.mori.reader.shared.generated.resources.appearance_writing_horizontal
+import app.mori.reader.shared.generated.resources.appearance_writing_vertical
+import app.mori.reader.shared.generated.resources.language_chinese
+import app.mori.reader.shared.generated.resources.language_english
+import app.mori.reader.shared.generated.resources.language_follow_system
+import app.mori.reader.shared.generated.resources.reader_theme_follow_app
+import app.mori.reader.shared.generated.resources.theme_dark
+import app.mori.reader.shared.generated.resources.theme_follow_system
+import app.mori.reader.shared.generated.resources.theme_light
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.HorizontalDivider
@@ -50,17 +93,19 @@ fun AppThemeSettingsCard(
     val followSystemLabel = stringResource(Res.string.language_follow_system)
     val englishLabel = stringResource(Res.string.language_english)
     val chineseLabel = stringResource(Res.string.language_chinese)
-    val languageModeItems = remember(languageModes, followSystemLabel, englishLabel, chineseLabel) {
-        languageModes.map { mode ->
-            SpinnerEntry(
-                title = when (mode) {
-                    LanguageMode.System -> followSystemLabel
-                    LanguageMode.English -> englishLabel
-                    LanguageMode.Chinese -> chineseLabel
-                }
-            )
+    val languageModeItems =
+        remember(languageModes, followSystemLabel, englishLabel, chineseLabel) {
+            languageModes.map { mode ->
+                SpinnerEntry(
+                    title =
+                        when (mode) {
+                            LanguageMode.System -> followSystemLabel
+                            LanguageMode.English -> englishLabel
+                            LanguageMode.Chinese -> chineseLabel
+                        },
+                )
+            }
         }
-    }
 
     Card(modifier = modifier.fillMaxWidth()) {
         OverlaySpinnerPreference(
@@ -136,18 +181,20 @@ fun ReaderAppearanceSettingsCard(
     val horizontalWritingLabel = stringResource(Res.string.appearance_writing_horizontal)
     val paginationLabel = stringResource(Res.string.appearance_reading_pagination)
     val continuousLabel = stringResource(Res.string.appearance_reading_continuous)
-    val writingModeItems = remember(verticalWritingLabel, horizontalWritingLabel) {
-        listOf(
-            SpinnerEntry(title = verticalWritingLabel),
-            SpinnerEntry(title = horizontalWritingLabel),
-        )
-    }
-    val readingModeItems = remember(paginationLabel, continuousLabel) {
-        listOf(
-            SpinnerEntry(title = paginationLabel),
-            SpinnerEntry(title = continuousLabel),
-        )
-    }
+    val writingModeItems =
+        remember(verticalWritingLabel, horizontalWritingLabel) {
+            listOf(
+                SpinnerEntry(title = verticalWritingLabel),
+                SpinnerEntry(title = horizontalWritingLabel),
+            )
+        }
+    val readingModeItems =
+        remember(paginationLabel, continuousLabel) {
+            listOf(
+                SpinnerEntry(title = paginationLabel),
+                SpinnerEntry(title = continuousLabel),
+            )
+        }
 
     Card(modifier = modifier.fillMaxWidth()) {
         WindowSpinnerPreference(
@@ -192,9 +239,14 @@ fun ReaderAppearanceSettingsCard(
             checked = avoidPageBreak,
             onCheckedChange = onAvoidPageBreakChanged,
             title = stringResource(Res.string.appearance_avoid_page_break_title),
-            summary = if (avoidPageBreak) stringResource(Res.string.appearance_avoid_page_break_on) else stringResource(
-                Res.string.appearance_avoid_page_break_off
-            ),
+            summary =
+                if (avoidPageBreak) {
+                    stringResource(Res.string.appearance_avoid_page_break_on)
+                } else {
+                    stringResource(
+                        Res.string.appearance_avoid_page_break_off,
+                    )
+                },
         )
         SwitchPreference(
             checked = justifyText,
@@ -208,7 +260,9 @@ fun ReaderAppearanceSettingsCard(
         )
         Column(
             modifier = Modifier.padding(14.dp),
-            verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(12.dp),
+            verticalArrangement =
+                androidx.compose.foundation.layout.Arrangement
+                    .spacedBy(12.dp),
         ) {
             SettingSlider(
                 label = stringResource(Res.string.appearance_font_size),
@@ -260,17 +314,27 @@ fun ReaderAppearanceSettingsCard(
             checked = popupFullWidth,
             onCheckedChange = { onTogglePopupFullWidth() },
             title = stringResource(Res.string.appearance_popup_full_width_title),
-            summary = if (popupFullWidth) stringResource(Res.string.appearance_popup_full_width_on) else stringResource(
-                Res.string.appearance_popup_full_width_off
-            ),
+            summary =
+                if (popupFullWidth) {
+                    stringResource(Res.string.appearance_popup_full_width_on)
+                } else {
+                    stringResource(
+                        Res.string.appearance_popup_full_width_off,
+                    )
+                },
         )
         SwitchPreference(
             checked = popupSwipeToDismiss,
             onCheckedChange = { onTogglePopupSwipeToDismiss() },
             title = stringResource(Res.string.appearance_popup_swipe_dismiss_title),
-            summary = if (popupSwipeToDismiss) stringResource(Res.string.appearance_popup_swipe_dismiss_on) else stringResource(
-                Res.string.appearance_popup_swipe_dismiss_off
-            ),
+            summary =
+                if (popupSwipeToDismiss) {
+                    stringResource(Res.string.appearance_popup_swipe_dismiss_on)
+                } else {
+                    stringResource(
+                        Res.string.appearance_popup_swipe_dismiss_off,
+                    )
+                },
         )
         Column(
             modifier = Modifier.padding(14.dp),
@@ -317,7 +381,11 @@ fun SettingSlider(
     onCommit: (Float) -> Unit,
 ) {
     var sliderValue by remember(value) { mutableFloatStateOf(value) }
-    Column(verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(6.dp)) {
+    Column(
+        verticalArrangement =
+            androidx.compose.foundation.layout.Arrangement
+                .spacedBy(6.dp),
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -356,15 +424,17 @@ private fun Double.formatTwoDecimals(): String {
 }
 
 @Composable
-private fun ThemeMode.localizedLabel(): String = when (this) {
-    ThemeMode.System -> stringResource(Res.string.theme_follow_system)
-    ThemeMode.Light -> stringResource(Res.string.theme_light)
-    ThemeMode.Dark -> stringResource(Res.string.theme_dark)
-}
+private fun ThemeMode.localizedLabel(): String =
+    when (this) {
+        ThemeMode.System -> stringResource(Res.string.theme_follow_system)
+        ThemeMode.Light -> stringResource(Res.string.theme_light)
+        ThemeMode.Dark -> stringResource(Res.string.theme_dark)
+    }
 
 @Composable
-private fun ReaderThemeMode.localizedLabel(): String = when (this) {
-    ReaderThemeMode.FollowApp -> stringResource(Res.string.reader_theme_follow_app)
-    ReaderThemeMode.Light -> stringResource(Res.string.theme_light)
-    ReaderThemeMode.Dark -> stringResource(Res.string.theme_dark)
-}
+private fun ReaderThemeMode.localizedLabel(): String =
+    when (this) {
+        ReaderThemeMode.FollowApp -> stringResource(Res.string.reader_theme_follow_app)
+        ReaderThemeMode.Light -> stringResource(Res.string.theme_light)
+        ReaderThemeMode.Dark -> stringResource(Res.string.theme_dark)
+    }

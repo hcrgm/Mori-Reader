@@ -40,8 +40,8 @@ import app.mori.reader.shared.generated.resources.dict_settings_compact_summary
 import app.mori.reader.shared.generated.resources.dict_settings_compact_title
 import app.mori.reader.shared.generated.resources.dict_settings_dedup_pitch_summary
 import app.mori.reader.shared.generated.resources.dict_settings_dedup_pitch_title
-import app.mori.reader.shared.generated.resources.dict_settings_delete_summary
 import app.mori.reader.shared.generated.resources.dict_settings_delete_confirm
+import app.mori.reader.shared.generated.resources.dict_settings_delete_summary
 import app.mori.reader.shared.generated.resources.dict_settings_empty
 import app.mori.reader.shared.generated.resources.dict_settings_loading
 import app.mori.reader.shared.generated.resources.dict_settings_max_results
@@ -65,12 +65,12 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
+import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Delete
 import top.yukonga.miuix.kmp.icon.extended.Sort
@@ -119,22 +119,25 @@ internal fun DictionaryManagementPage(
 ) {
     LazyColumn(
         state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .overScrollVertical()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding = PaddingValues(
-            top = 14.dp,
-            bottom = paddingValues.calculateBottomPadding() + 96.dp,
-        ),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .overScrollVertical()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentPadding =
+            PaddingValues(
+                top = 14.dp,
+                bottom = paddingValues.calculateBottomPadding() + 96.dp,
+            ),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         errorMessage?.let { message ->
             item {
                 Card(
-                    modifier = Modifier
-                        .padding(horizontal = DictionarySettingsHorizontalPadding)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = DictionarySettingsHorizontalPadding)
+                            .fillMaxWidth(),
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -153,7 +156,9 @@ internal fun DictionaryManagementPage(
         if (statusText != null || isLoading) {
             item {
                 LoadingRow(
-                    text = statusText?.asString() ?: stringResource(Res.string.dict_settings_loading),
+                    text =
+                        statusText?.asString()
+                            ?: stringResource(Res.string.dict_settings_loading),
                     modifier = Modifier.padding(horizontal = DictionarySettingsHorizontalPadding),
                 )
             }
@@ -171,9 +176,10 @@ internal fun DictionaryManagementPage(
         if (dictionaries.isEmpty() && !isLoading) {
             item {
                 Card(
-                    modifier = Modifier
-                        .padding(horizontal = DictionarySettingsHorizontalPadding)
-                        .fillMaxWidth(),
+                    modifier =
+                        Modifier
+                            .padding(horizontal = DictionarySettingsHorizontalPadding)
+                            .fillMaxWidth(),
                 ) {
                     Text(
                         text = stringResource(Res.string.dict_settings_empty),
@@ -203,13 +209,15 @@ internal fun DictionaryLookupSettingsPage(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .overScrollVertical()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding = PaddingValues(
-            bottom = paddingValues.calculateBottomPadding() + 96.dp,
-        ),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .overScrollVertical()
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentPadding =
+            PaddingValues(
+                bottom = paddingValues.calculateBottomPadding() + 96.dp,
+            ),
     ) {
         item {
             SmallTitle(text = stringResource(Res.string.dict_settings_query_display))
@@ -364,24 +372,24 @@ private fun LazyItemScope.DictionaryRow(
         key = dictionary.id,
     ) {
         Card(
-            modifier = Modifier
-                .padding(horizontal = DictionarySettingsHorizontalPadding)
-                .fillMaxWidth()
-                .then(
-                    with(this) {
-                        Modifier.longPressDraggableHandle(
-                            onDragStarted = {
-                                hapticFeedback.performHapticFeedback(
-                                    HapticFeedbackType.GestureThresholdActivate,
-                                )
-                            },
-                            onDragStopped = {
-                                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                            },
-                        )
-                    },
-                )
-                .animateItem(),
+            modifier =
+                Modifier
+                    .padding(horizontal = DictionarySettingsHorizontalPadding)
+                    .fillMaxWidth()
+                    .then(
+                        with(this) {
+                            Modifier.longPressDraggableHandle(
+                                onDragStarted = {
+                                    hapticFeedback.performHapticFeedback(
+                                        HapticFeedbackType.GestureThresholdActivate,
+                                    )
+                                },
+                                onDragStopped = {
+                                    hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                                },
+                            )
+                        },
+                    ).animateItem(),
         ) {
             Row(
                 modifier = Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
@@ -397,11 +405,12 @@ private fun LazyItemScope.DictionaryRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = FontWeight.Medium,
-                        color = if (dictionary.isEnabled) {
-                            MiuixTheme.colorScheme.onSurface
-                        } else {
-                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                        },
+                        color =
+                            if (dictionary.isEnabled) {
+                                MiuixTheme.colorScheme.onSurface
+                            } else {
+                                MiuixTheme.colorScheme.onSurfaceVariantSummary
+                            },
                     )
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -419,11 +428,12 @@ private fun LazyItemScope.DictionaryRow(
                 Icon(
                     imageVector = MiuixIcons.Sort,
                     contentDescription = stringResource(Res.string.cd_drag_sort),
-                    tint = if (enabled) {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    } else {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.55f)
-                    },
+                    tint =
+                        if (enabled) {
+                            MiuixTheme.colorScheme.onSurfaceVariantSummary
+                        } else {
+                            MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.55f)
+                        },
                 )
                 Switch(
                     checked = dictionary.isEnabled,
@@ -463,10 +473,11 @@ internal fun DeleteDictionaryDialog(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = stringResource(
-                    Res.string.dict_settings_delete_confirm,
-                    current.dictionary.index.title,
-                ),
+                text =
+                    stringResource(
+                        Res.string.dict_settings_delete_confirm,
+                        current.dictionary.index.title,
+                    ),
                 modifier = Modifier.fillMaxWidth(),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 textAlign = TextAlign.Center,
@@ -492,8 +503,9 @@ internal fun DeleteDictionaryDialog(
 }
 
 @Composable
-internal fun DictionaryType.localizedLabel(): String = when (this) {
-    DictionaryType.Term -> stringResource(Res.string.dict_settings_type_term)
-    DictionaryType.Frequency -> stringResource(Res.string.dict_settings_type_frequency)
-    DictionaryType.Pitch -> stringResource(Res.string.dict_settings_type_pitch)
-}
+internal fun DictionaryType.localizedLabel(): String =
+    when (this) {
+        DictionaryType.Term -> stringResource(Res.string.dict_settings_type_term)
+        DictionaryType.Frequency -> stringResource(Res.string.dict_settings_type_frequency)
+        DictionaryType.Pitch -> stringResource(Res.string.dict_settings_type_pitch)
+    }

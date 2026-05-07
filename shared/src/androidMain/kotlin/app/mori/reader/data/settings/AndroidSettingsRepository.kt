@@ -13,7 +13,7 @@ private object AndroidSettingsDataStore {
     fun get(context: Context): DataStore<Preferences> =
         dataStore ?: createSettingsDataStore(
             producePath = {
-                context.filesDir.resolve(SettingsDataStoreFileName).absolutePath
+                context.filesDir.resolve(SETTINGS_DATA_STORE_FILE_NAME).absolutePath
             },
         ).also { dataStore = it }
 }

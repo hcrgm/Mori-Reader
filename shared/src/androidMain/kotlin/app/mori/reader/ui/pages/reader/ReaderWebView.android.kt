@@ -20,11 +20,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import app.mori.reader.data.audiobook.SasayakiCueRange
-import app.mori.reader.data.book.ReaderChapter
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
-import app.mori.reader.ui.pages.reader.ReaderWebViewState
-import app.mori.reader.ui.pages.reader.ReaderWebViewSettings
-import app.mori.reader.ui.pages.reader.ReaderWebViewCallbacks
 import org.json.JSONObject
 import kotlin.math.abs
 
@@ -85,10 +81,11 @@ actual fun ReaderWebView(
                 var nativeSelectionArmed = false
                 var nativeSelectionRunnable: Runnable? = null
 
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                )
+                layoutParams =
+                    ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                    )
                 setBackgroundColor(Color.TRANSPARENT)
                 alpha = 0f
                 isVerticalScrollBarEnabled = false
@@ -98,58 +95,67 @@ actual fun ReaderWebView(
                 settings.allowFileAccess = true
                 settings.allowContentAccess = false
                 addJavascriptInterface(bridge, "AndroidMoriReader")
-                webViewClient = object : WebViewClient() {
-                    override fun shouldOverrideUrlLoading(
-                        view: WebView,
-                        request: WebResourceRequest,
-                    ): Boolean {
-                        val href = request.url?.toString().orEmpty()
-                        if (!href.isInternalReaderHref()) return false
-                        bridge.onLinkActivated(href)
-                        return true
-                    }
+                webViewClient =
+                    object : WebViewClient() {
+                        override fun shouldOverrideUrlLoading(
+                            view: WebView,
+                            request: WebResourceRequest,
+                        ): Boolean {
+                            val href = request.url?.toString().orEmpty()
+                            if (!href.isInternalReaderHref()) return false
+                            bridge.onLinkActivated(href)
+                            return true
+                        }
 
-                    override fun onPageFinished(view: WebView, url: String?) {
-                        view.evaluateJavascript(
-                            readerBootstrapScript(
-                                progress = bridge.progress,
-                                fragment = bridge.fragment,
-                                verticalWriting = bridge.verticalWriting,
-                                isDark = bridge.isDark,
-                                fontSize = bridge.fontSize,
-                                lineHeight = bridge.lineHeight,
-                                horizontalPadding = bridge.horizontalPadding,
-                                verticalPadding = bridge.verticalPadding,
-                                avoidPageBreak = bridge.avoidPageBreak,
-                                justifyText = bridge.justifyText,
-                                characterSpacing = bridge.characterSpacing,
-                                continuousMode = bridge.continuousMode,
-                                hideFurigana = bridge.hideFurigana,
-                                sasayakiCues = bridge.sasayakiCues,
-                                highlightedSasayakiCueId = bridge.highlightedSasayakiCueId,
-                                sasayakiAutoScroll = bridge.sasayakiAutoScroll,
-                                sasayakiHighlightEnabled = bridge.sasayakiHighlightEnabled,
-                                sasayakiHighlightColor = bridge.sasayakiHighlightColor,
-                            ),
-                            null,
-                        )
+                        override fun onPageFinished(
+                            view: WebView,
+                            url: String?,
+                        ) {
+                            view.evaluateJavascript(
+                                readerBootstrapScript(
+                                    progress = bridge.progress,
+                                    fragment = bridge.fragment,
+                                    verticalWriting = bridge.verticalWriting,
+                                    isDark = bridge.isDark,
+                                    fontSize = bridge.fontSize,
+                                    lineHeight = bridge.lineHeight,
+                                    horizontalPadding = bridge.horizontalPadding,
+                                    verticalPadding = bridge.verticalPadding,
+                                    avoidPageBreak = bridge.avoidPageBreak,
+                                    justifyText = bridge.justifyText,
+                                    characterSpacing = bridge.characterSpacing,
+                                    continuousMode = bridge.continuousMode,
+                                    hideFurigana = bridge.hideFurigana,
+                                    sasayakiCues = bridge.sasayakiCues,
+                                    highlightedSasayakiCueId = bridge.highlightedSasayakiCueId,
+                                    sasayakiAutoScroll = bridge.sasayakiAutoScroll,
+                                    sasayakiHighlightEnabled = bridge.sasayakiHighlightEnabled,
+                                    sasayakiHighlightColor = bridge.sasayakiHighlightColor,
+                                ),
+                                null,
+                            )
+                        }
                     }
-                }
                 setOnScrollChangeListener { view, _, _, _, _ ->
                     if (!bridge.continuousMode || bridge.isRestoring) return@setOnScrollChangeListener
                     val now = SystemClock.uptimeMillis()
                     if (now - lastProgressUpdate >= 50L) {
                         lastProgressUpdate = now
                         (view as WebView).evaluateJavascript("window.moriReader.calculateProgress()") { result ->
-                            result?.toDoubleOrNull()?.let { bridge.onProgressChanged(it.coerceIn(0.0, 1.0)) }
+                            result
+                                ?.toDoubleOrNull()
+                                ?.let { bridge.onProgressChanged(it.coerceIn(0.0, 1.0)) }
                         }
                     }
                     saveProgressRunnable?.let(handler::removeCallbacks)
-                    saveProgressRunnable = Runnable {
-                        (view as WebView).evaluateJavascript("window.moriReader.calculateProgress()") { result ->
-                            result?.toDoubleOrNull()?.let { bridge.onProgressSaved(it.coerceIn(0.0, 1.0)) }
-                        }
-                    }.also { handler.postDelayed(it, 250L) }
+                    saveProgressRunnable =
+                        Runnable {
+                            (view as WebView).evaluateJavascript("window.moriReader.calculateProgress()") { result ->
+                                result
+                                    ?.toDoubleOrNull()
+                                    ?.let { bridge.onProgressSaved(it.coerceIn(0.0, 1.0)) }
+                            }
+                        }.also { handler.postDelayed(it, 250L) }
                 }
                 setOnTouchListener(
                     ReaderGestureTouchListener(
@@ -190,7 +196,8 @@ actual fun ReaderWebView(
         update = { webView ->
             bridge.onProgressChanged = { currentProgressChanged.value(it) }
             bridge.onProgressSaved = { currentProgressSaved.value(it) }
-            bridge.onTextSelected = { text, sentence, rect -> currentTextSelected.value(text, sentence, rect) }
+            bridge.onTextSelected =
+                { text, sentence, rect -> currentTextSelected.value(text, sentence, rect) }
             bridge.onLinkActivated = { href -> currentLinkActivated.value(href) }
             bridge.progress = progress.coerceIn(0.0, 1.0)
             bridge.fragment = fragment
@@ -212,34 +219,36 @@ actual fun ReaderWebView(
             bridge.sasayakiHighlightEnabled = sasayakiHighlightEnabled
             bridge.sasayakiHighlightColor = sasayakiHighlightColor
             bridge.webView = webView
-            val targetLayerType = if (stabilizeForBackdrop) {
-                View.LAYER_TYPE_SOFTWARE
-            } else {
-                View.LAYER_TYPE_NONE
-            }
+            val targetLayerType =
+                if (stabilizeForBackdrop) {
+                    View.LAYER_TYPE_SOFTWARE
+                } else {
+                    View.LAYER_TYPE_NONE
+                }
             if (webView.layerType != targetLayerType) {
                 webView.setLayerType(targetLayerType, null)
             }
             val sourceUrl = chapter?.sourceUrl
-            val key = listOf(
-                sourceUrl,
-                navigationVersion,
-                verticalWriting,
-                isDark,
-                fontSize,
-                lineHeight,
-                horizontalPadding,
-                verticalPadding,
-                avoidPageBreak,
-                justifyText,
-                characterSpacing,
-                continuousMode,
-                hideFurigana,
-                sasayakiCues.joinToString(";") { "${it.id}:${it.start}:${it.length}" },
-                sasayakiAutoScroll,
-                sasayakiHighlightEnabled,
-                sasayakiHighlightColor,
-            ).joinToString("|")
+            val key =
+                listOf(
+                    sourceUrl,
+                    navigationVersion,
+                    verticalWriting,
+                    isDark,
+                    fontSize,
+                    lineHeight,
+                    horizontalPadding,
+                    verticalPadding,
+                    avoidPageBreak,
+                    justifyText,
+                    characterSpacing,
+                    continuousMode,
+                    hideFurigana,
+                    sasayakiCues.joinToString(";") { "${it.id}:${it.start}:${it.length}" },
+                    sasayakiAutoScroll,
+                    sasayakiHighlightEnabled,
+                    sasayakiHighlightColor,
+                ).joinToString("|")
             if (sourceUrl != null && webView.tag != key) {
                 webView.tag = key
                 bridge.isRestoring = true
@@ -249,25 +258,32 @@ actual fun ReaderWebView(
                 webView.loadUrl(sourceUrl)
             } else if (bridge.appliedSelectionHighlightLength != selectionHighlightLength) {
                 bridge.appliedSelectionHighlightLength = selectionHighlightLength
-                val script = selectionHighlightLength
-                    ?.takeIf { it > 0 }
-                    ?.let { "window.moriSelection && window.moriSelection.highlightSelection($it)" }
-                    ?: "window.moriSelection && window.moriSelection.clearCustomHighlight()"
+                val script =
+                    selectionHighlightLength
+                        ?.takeIf { it > 0 }
+                        ?.let { "window.moriSelection && window.moriSelection.highlightSelection($it)" }
+                        ?: "window.moriSelection && window.moriSelection.clearCustomHighlight()"
                 webView.evaluateJavascript(script, null)
             } else if (bridge.appliedHighlightedSasayakiCueId != highlightedSasayakiCueId) {
                 bridge.appliedHighlightedSasayakiCueId = highlightedSasayakiCueId
-                val script = highlightedSasayakiCueId
-                    ?.let { "window.moriSasayaki && window.moriSasayaki.highlightSasayakiCue(${it.jsString()})" }
-                    ?: "window.moriSasayaki && window.moriSasayaki.clearSasayakiCue()"
+                val script =
+                    highlightedSasayakiCueId
+                        ?.let { "window.moriSasayaki && window.moriSasayaki.highlightSasayakiCue(${it.jsString()})" }
+                        ?: "window.moriSasayaki && window.moriSasayaki.clearSasayakiCue()"
                 webView.evaluateJavascript(script, null)
             }
         },
     )
 }
 
-private class MoriReaderWebView(context: Context) : WebView(context) {
+private class MoriReaderWebView(
+    context: Context,
+) : WebView(context) {
     @Suppress("DEPRECATION")
-    fun toJsViewportPoint(x: Float, y: Float): Pair<Float, Float> {
+    fun toJsViewportPoint(
+        x: Float,
+        y: Float,
+    ): Pair<Float, Float> {
         val currentScale = scale.takeIf { it > 0f } ?: 1f
         return (x / currentScale) to (y / currentScale)
     }
@@ -277,21 +293,24 @@ private class MoriReaderWebView(context: Context) : WebView(context) {
         verticalWriting: Boolean,
         threshold: Int,
     ): Boolean {
-        val offset = if (verticalWriting) {
-            computeHorizontalScrollOffset()
-        } else {
-            computeVerticalScrollOffset()
-        }
-        val range = if (verticalWriting) {
-            computeHorizontalScrollRange()
-        } else {
-            computeVerticalScrollRange()
-        }
-        val extent = if (verticalWriting) {
-            computeHorizontalScrollExtent()
-        } else {
-            computeVerticalScrollExtent()
-        }
+        val offset =
+            if (verticalWriting) {
+                computeHorizontalScrollOffset()
+            } else {
+                computeVerticalScrollOffset()
+            }
+        val range =
+            if (verticalWriting) {
+                computeHorizontalScrollRange()
+            } else {
+                computeVerticalScrollRange()
+            }
+        val extent =
+            if (verticalWriting) {
+                computeHorizontalScrollExtent()
+            } else {
+                computeVerticalScrollExtent()
+            }
         val maxOffset = (range - extent).coerceAtLeast(0)
         return when (direction) {
             "forward" -> {
@@ -301,6 +320,7 @@ private class MoriReaderWebView(context: Context) : WebView(context) {
                     offset >= maxOffset - threshold
                 }
             }
+
             "backward" -> {
                 if (verticalWriting) {
                     offset >= maxOffset - threshold
@@ -308,7 +328,10 @@ private class MoriReaderWebView(context: Context) : WebView(context) {
                     offset <= threshold
                 }
             }
-            else -> false
+
+            else -> {
+                false
+            }
         }
     }
 }
@@ -321,7 +344,10 @@ private class ReaderGestureTouchListener(
 ) : View.OnTouchListener {
     private val detector = GestureDetector(context, GestureListener())
 
-    override fun onTouch(view: View, event: MotionEvent): Boolean {
+    override fun onTouch(
+        view: View,
+        event: MotionEvent,
+    ): Boolean {
         detector.onTouchEvent(event)
         return false
     }
@@ -363,7 +389,8 @@ private fun handleTapSelection(
 ) {
     if (webView.hitTestIsInternalLink()) return
     val (jsX, jsY) = webView.toJsViewportPoint(x, y)
-    val script = """
+    val script =
+        """
         (function() {
           var href = window.moriReader.linkAtPoint($jsX, $jsY);
           if (href) {
@@ -372,7 +399,7 @@ private fun handleTapSelection(
           }
           return window.moriSelection.selectText($jsX, $jsY, $scanLength);
         })()
-    """.trimIndent()
+        """.trimIndent()
     webView.evaluateJavascript(script) { result ->
         if (result == null || result == "null") {
             onTapOutside()
@@ -389,26 +416,29 @@ private fun handleHorizontalSwipe(
     onPreviousChapter: () -> Unit,
 ) {
     if (continuousMode) {
-        val direction = if (verticalWriting) {
-            if (swipeLeft) "backward" else "forward"
-        } else {
-            if (swipeLeft) "forward" else "backward"
-        }
-        val atBoundary = webView.isAtContinuousBoundary(
-            direction = direction,
-            verticalWriting = verticalWriting,
-            threshold = 24,
-        )
+        val direction =
+            if (verticalWriting) {
+                if (swipeLeft) "backward" else "forward"
+            } else {
+                if (swipeLeft) "forward" else "backward"
+            }
+        val atBoundary =
+            webView.isAtContinuousBoundary(
+                direction = direction,
+                verticalWriting = verticalWriting,
+                threshold = 24,
+            )
         if (!atBoundary) return
         if (direction == "forward") onNextChapter() else onPreviousChapter()
         return
     }
 
-    val direction = if (verticalWriting) {
-        if (swipeLeft) "backward" else "forward"
-    } else {
-        if (swipeLeft) "forward" else "backward"
-    }
+    val direction =
+        if (verticalWriting) {
+            if (swipeLeft) "backward" else "forward"
+        } else {
+            if (swipeLeft) "forward" else "backward"
+        }
     webView.evaluateJavascript("window.moriReader.paginate('$direction')") { result ->
         if (result?.contains("limit") == true) {
             if (direction == "forward") onNextChapter() else onPreviousChapter()
@@ -459,15 +489,16 @@ private class ReaderBridge {
     fun textSelected(payload: String) {
         val json = runCatching { JSONObject(payload) }.getOrNull() ?: return
         val rectJson = json.optJSONObject("rect")
-        val rect = rectJson?.let {
-            ReaderSelectionRect(
-                x = it.optDouble("x").toFloat(),
-                y = it.optDouble("y").toFloat(),
-                width = it.optDouble("width").toFloat(),
-                height = it.optDouble("height").toFloat(),
-                normalizedOffset = if (it.has("normalizedOffset")) it.optInt("normalizedOffset") else null,
-            )
-        }
+        val rect =
+            rectJson?.let {
+                ReaderSelectionRect(
+                    x = it.optDouble("x").toFloat(),
+                    y = it.optDouble("y").toFloat(),
+                    width = it.optDouble("width").toFloat(),
+                    height = it.optDouble("height").toFloat(),
+                    normalizedOffset = if (it.has("normalizedOffset")) it.optInt("normalizedOffset") else null,
+                )
+            }
         onTextSelected(
             json.optString("text"),
             json.optString("sentence"),
@@ -484,7 +515,8 @@ private class ReaderBridge {
     fun restoreCompleted() {
         isRestoring = false
         webView?.post {
-            webView?.animate()
+            webView
+                ?.animate()
                 ?.alpha(1f)
                 ?.setDuration(250L)
                 ?.start()
@@ -496,11 +528,14 @@ private fun WebView.hitTestIsInternalLink(): Boolean {
     val result = hitTestResult
     val href = result.extra?.trim().orEmpty()
     if (href.isBlank()) return false
-    val isLink = when (result.type) {
-        WebView.HitTestResult.SRC_ANCHOR_TYPE,
-        WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> true
-        else -> false
-    }
+    val isLink =
+        when (result.type) {
+            WebView.HitTestResult.SRC_ANCHOR_TYPE,
+            WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE,
+            -> true
+
+            else -> false
+        }
     return isLink && href.isInternalReaderHref()
 }
 
@@ -510,8 +545,9 @@ private fun String.isInternalReaderHref(): Boolean {
     val schemeEnd = trimmed.indexOf(':')
     if (schemeEnd <= 0) return true
     val scheme = trimmed.take(schemeEnd)
-    val validScheme = scheme.withIndex().all { (index, char) ->
-        if (index == 0) char.isLetter() else char.isLetterOrDigit() || char == '+' || char == '.' || char == '-'
-    }
+    val validScheme =
+        scheme.withIndex().all { (index, char) ->
+            if (index == 0) char.isLetter() else char.isLetterOrDigit() || char == '+' || char == '.' || char == '-'
+        }
     return !validScheme || scheme.equals("file", ignoreCase = true)
 }

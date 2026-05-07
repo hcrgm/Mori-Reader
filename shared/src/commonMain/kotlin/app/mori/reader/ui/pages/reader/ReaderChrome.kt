@@ -97,24 +97,26 @@ internal fun ReaderBottomChrome(
 ) {
     val buttonContentColor = if (isDark) Color(0xFFF3F1EA) else Color(0xFF1C1B18)
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(
-                start = 22.dp,
-                end = 22.dp,
-                bottom = bottomPadding + 12.dp,
-            ),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(
+                    start = 22.dp,
+                    end = 22.dp,
+                    bottom = bottomPadding + 12.dp,
+                ),
     ) {
         FloatingReaderButton(
             isDark = isDark,
             onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.CenterStart),
+            modifier =
+                Modifier
+                    .align(Alignment.CenterStart),
         ) {
             Icon(
                 MiuixIcons.Back,
                 tint = buttonContentColor,
-                contentDescription = stringResource(Res.string.cd_back)
+                contentDescription = stringResource(Res.string.cd_back),
             )
         }
         Row(
@@ -128,7 +130,7 @@ internal fun ReaderBottomChrome(
                 Icon(
                     MiuixIcons.Music,
                     tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_open_audiobook)
+                    contentDescription = stringResource(Res.string.cd_open_audiobook),
                 )
             }
             FloatingReaderButton(
@@ -138,7 +140,7 @@ internal fun ReaderBottomChrome(
                 Icon(
                     MiuixIcons.Background,
                     tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_appearance)
+                    contentDescription = stringResource(Res.string.cd_appearance),
                 )
             }
             FloatingReaderButton(
@@ -148,7 +150,7 @@ internal fun ReaderBottomChrome(
                 Icon(
                     MiuixIcons.ListView,
                     tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_table_of_contents)
+                    contentDescription = stringResource(Res.string.cd_table_of_contents),
                 )
             }
         }
@@ -162,27 +164,29 @@ internal fun FloatingReaderButton(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val buttonBackground = if (isDark) {
-        Color(0xFF242424).copy(alpha = 0.94f)
-    } else {
-        Color(0xFFFFFCF5).copy(alpha = 0.94f)
-    }
-    val buttonShadow = if (isDark) {
-        Color.Black.copy(alpha = 0.34f)
-    } else {
-        Color(0xFF1C1B18).copy(alpha = 0.16f)
-    }
+    val buttonBackground =
+        if (isDark) {
+            Color(0xFF242424).copy(alpha = 0.94f)
+        } else {
+            Color(0xFFFFFCF5).copy(alpha = 0.94f)
+        }
+    val buttonShadow =
+        if (isDark) {
+            Color.Black.copy(alpha = 0.34f)
+        } else {
+            Color(0xFF1C1B18).copy(alpha = 0.16f)
+        }
     Box(
-        modifier = modifier
-            .size(52.dp)
-            .shadow(
-                elevation = 10.dp,
-                shape = CircleShape,
-                spotColor = buttonShadow,
-            )
-            .clip(CircleShape)
-            .background(buttonBackground)
-            .clickable(onClick = onClick),
+        modifier =
+            modifier
+                .size(52.dp)
+                .shadow(
+                    elevation = 10.dp,
+                    shape = CircleShape,
+                    spotColor = buttonShadow,
+                ).clip(CircleShape)
+                .background(buttonBackground)
+                .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -194,11 +198,12 @@ internal fun ReaderSheetTheme(
     isDark: Boolean,
     content: @Composable () -> Unit,
 ) {
-    val controller = remember(isDark) {
-        ThemeController(
-            colorSchemeMode = if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light,
-        )
-    }
+    val controller =
+        remember(isDark) {
+            ThemeController(
+                colorSchemeMode = if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light,
+            )
+        }
     MiuixTheme(
         controller = controller,
         smoothRounding = true,

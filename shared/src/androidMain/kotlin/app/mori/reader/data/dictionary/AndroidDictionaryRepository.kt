@@ -28,9 +28,21 @@ internal class AndroidDictionaryRepository(
             val config = loadConfig()
             val catalog =
                 DictionaryCatalog(
-                    termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
-                    frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
-                    pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
+                    termDictionaries =
+                        collectDictionaries(
+                            DictionaryType.Term,
+                            config.termDictionaries,
+                        ),
+                    frequencyDictionaries =
+                        collectDictionaries(
+                            DictionaryType.Frequency,
+                            config.frequencyDictionaries,
+                        ),
+                    pitchDictionaries =
+                        collectDictionaries(
+                            DictionaryType.Pitch,
+                            config.pitchDictionaries,
+                        ),
                 )
             rebuildQuery(catalog)
             catalog
@@ -46,10 +58,12 @@ internal class AndroidDictionaryRepository(
 
             uriStrings.forEachIndexed { index, uriString ->
                 val uri = Uri.parse(uriString)
-                val tempZip = File(context.cacheDir, "dictionary-import-${System.nanoTime()}-$index.zip")
+                val tempZip =
+                    File(context.cacheDir, "dictionary-import-${System.nanoTime()}-$index.zip")
                 try {
                     copyUriToFile(uri, tempZip)
-                    val result = HoshiDicts.importDictionary(tempZip.absolutePath, outputDir.absolutePath)
+                    val result =
+                        HoshiDicts.importDictionary(tempZip.absolutePath, outputDir.absolutePath)
                     if (!result.success) {
                         failures += uri.lastPathSegment ?: uriString
                     }
@@ -162,12 +176,16 @@ internal class AndroidDictionaryRepository(
                         }
                     if (remoteIndex.revision == dictionary.index.revision || remoteIndex.downloadUrl.isBlank()) return@runCatching
 
-                    val tempZip = File(context.cacheDir, "dictionary-update-${UUID.randomUUID()}.zip")
+                    val tempZip =
+                        File(context.cacheDir, "dictionary-update-${UUID.randomUUID()}.zip")
                     try {
                         URL(remoteIndex.downloadUrl).openStream().use { input ->
                             tempZip.outputStream().use { output -> input.copyTo(output) }
                         }
-                        HoshiDicts.importDictionary(tempZip.absolutePath, typeDirectory(type).absolutePath)
+                        HoshiDicts.importDictionary(
+                            tempZip.absolutePath,
+                            typeDirectory(type).absolutePath,
+                        )
                     } finally {
                         tempZip.delete()
                     }
@@ -254,9 +272,21 @@ internal class AndroidDictionaryRepository(
         val config = loadConfig()
         val catalog =
             DictionaryCatalog(
-                termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
-                frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
-                pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
+                termDictionaries =
+                    collectDictionaries(
+                        DictionaryType.Term,
+                        config.termDictionaries,
+                    ),
+                frequencyDictionaries =
+                    collectDictionaries(
+                        DictionaryType.Frequency,
+                        config.frequencyDictionaries,
+                    ),
+                pitchDictionaries =
+                    collectDictionaries(
+                        DictionaryType.Pitch,
+                        config.pitchDictionaries,
+                    ),
             )
         saveConfig(catalog)
         return catalog
@@ -281,7 +311,11 @@ internal class AndroidDictionaryRepository(
         val config = loadConfig()
         return DictionaryCatalog(
             termDictionaries = collectDictionaries(DictionaryType.Term, config.termDictionaries),
-            frequencyDictionaries = collectDictionaries(DictionaryType.Frequency, config.frequencyDictionaries),
+            frequencyDictionaries =
+                collectDictionaries(
+                    DictionaryType.Frequency,
+                    config.frequencyDictionaries,
+                ),
             pitchDictionaries = collectDictionaries(DictionaryType.Pitch, config.pitchDictionaries),
         )
     }

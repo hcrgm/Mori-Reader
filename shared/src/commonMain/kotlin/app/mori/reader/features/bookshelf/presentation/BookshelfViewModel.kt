@@ -22,7 +22,7 @@ class BookshelfViewModel(
     private val bookRepository: BookRepository,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(HomeState(isLoading = true))
+    private val _state = MutableStateFlow(BookshelfState(isLoading = true))
     val state = _state.asStateFlow()
 
     private var sortMode: BookshelfSortMode = BookshelfSortMode.Recent

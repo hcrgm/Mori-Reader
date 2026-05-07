@@ -23,12 +23,12 @@ import androidx.compose.ui.unit.dp
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
-import app.mori.reader.shared.generated.resources.Res
-import app.mori.reader.shared.generated.resources.reader_loading_epub
-import app.mori.reader.shared.generated.resources.reader_no_chapter
 import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.reader.presentation.ReaderState
 import app.mori.reader.features.settings.presentation.SettingsIntent
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.reader_loading_epub
+import app.mori.reader.shared.generated.resources.reader_no_chapter
 import app.mori.reader.ui.text.asString
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.blur.layerBackdrop
@@ -55,16 +55,24 @@ fun ReaderPage(
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     val navigationBarPadding =
         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val isDark = when (settings.appearance.readerThemeMode) {
-        ReaderThemeMode.FollowApp -> when (settings.appearance.themeMode) {
-            ThemeMode.System -> isSystemInDarkTheme()
-            ThemeMode.Light -> false
-            ThemeMode.Dark -> true
-        }
+    val isDark =
+        when (settings.appearance.readerThemeMode) {
+            ReaderThemeMode.FollowApp -> {
+                when (settings.appearance.themeMode) {
+                    ThemeMode.System -> isSystemInDarkTheme()
+                    ThemeMode.Light -> false
+                    ThemeMode.Dark -> true
+                }
+            }
 
-        ReaderThemeMode.Light -> false
-        ReaderThemeMode.Dark -> true
-    }
+            ReaderThemeMode.Light -> {
+                false
+            }
+
+            ReaderThemeMode.Dark -> {
+                true
+            }
+        }
     ReaderFullscreenEffect(
         enabled = fullscreen && !exitingReader,
         onBack = handleBack,
@@ -73,10 +81,11 @@ fun ReaderPage(
     val readerContentTopPadding = if (fullscreen) 52.dp else statusBarPadding + 52.dp
     val readerContentBottomPadding = if (fullscreen) 58.dp else navigationBarPadding + 58.dp
     val readerPopupBottomPadding = readerContentBottomPadding + 24.dp
-    val popupBackdrop = rememberReaderPopupBackdrop(
-        blurEnabled = settings.appearance.blurEnabled,
-        readerBackground = readerBackground,
-    )
+    val popupBackdrop =
+        rememberReaderPopupBackdrop(
+            blurEnabled = settings.appearance.blurEnabled,
+            readerBackground = readerBackground,
+        )
     val popupBlurActive = popupBackdrop != null && reader.lookupStack.any { it.visible }
 
     LaunchedEffect(bookId) {
@@ -84,81 +93,98 @@ fun ReaderPage(
     }
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(readerBackground),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(readerBackground),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(if (popupBackdrop != null) Modifier.layerBackdrop(popupBackdrop) else Modifier),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .then(if (popupBackdrop != null) Modifier.layerBackdrop(popupBackdrop) else Modifier),
         ) {
             when {
-                reader.isLoading -> ReaderStatus(text = stringResource(Res.string.reader_loading_epub))
-                reader.errorMessage != null -> ReaderStatus(text = reader.errorMessage.asString())
-                chapter == null -> ReaderStatus(text = stringResource(Res.string.reader_no_chapter))
+                reader.isLoading -> {
+                    ReaderStatus(text = stringResource(Res.string.reader_loading_epub))
+                }
+
+                reader.errorMessage != null -> {
+                    ReaderStatus(text = reader.errorMessage.asString())
+                }
+
+                chapter == null -> {
+                    ReaderStatus(text = stringResource(Res.string.reader_no_chapter))
+                }
+
                 else -> {
                     ReaderWebView(
-                        state = ReaderWebViewState(
-                            chapter = chapter,
-                            progress = reader.chapterProgress,
-                            navigationVersion = reader.navigationVersion,
-                            fragment = reader.fragment,
-                            selectionHighlightLength = reader.lookupStack.firstOrNull()?.highlightLength,
-                            sasayakiCues = reader.currentChapterSasayakiCues,
-                            highlightedSasayakiCueId = reader.sasayakiPlayer.currentCueId,
-                        ),
-                        config = ReaderWebViewSettings(
-                            verticalWriting = reader.verticalWriting,
-                            isDark = isDark,
-                            scanLength = settings.dictionary.scanLength,
-                            fontSize = settings.reader.fontSize,
-                            lineHeight = settings.reader.lineHeight,
-                            horizontalPadding = settings.reader.horizontalPadding,
-                            verticalPadding = settings.reader.verticalPadding,
-                            avoidPageBreak = settings.reader.avoidPageBreak,
-                            justifyText = settings.reader.justifyText,
-                            characterSpacing = settings.reader.characterSpacing,
-                            continuousMode = settings.reader.continuousMode,
-                            hideFurigana = settings.reader.hideFurigana,
-                            sasayakiAutoScroll = settings.sasayaki.autoScroll,
-                            sasayakiHighlightEnabled = settings.sasayaki.highlightEnabled,
-                            sasayakiHighlightColor = settings.sasayaki.highlightColor,
-                            stabilizeForBackdrop = popupBlurActive,
-                        ),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(
-                                top = readerContentTopPadding,
-                                bottom = readerContentBottomPadding,
+                        state =
+                            ReaderWebViewState(
+                                chapter = chapter,
+                                progress = reader.chapterProgress,
+                                navigationVersion = reader.navigationVersion,
+                                fragment = reader.fragment,
+                                selectionHighlightLength = reader.lookupStack.firstOrNull()?.highlightLength,
+                                sasayakiCues = reader.currentChapterSasayakiCues,
+                                highlightedSasayakiCueId = reader.sasayakiPlayer.currentCueId,
                             ),
-                        callbacks = ReaderWebViewCallbacks(
-                            onProgressChanged = { onReaderIntent(ReaderIntent.UpdateProgress(it)) },
-                            onProgressSaved = { onReaderIntent(ReaderIntent.SaveProgress(it)) },
-                            onTextSelected = { text, sentence, rect ->
-                                onReaderIntent(ReaderIntent.TextSelected(text, sentence, rect))
-                            },
-                            onLinkActivated = { onReaderIntent(ReaderIntent.JumpToLink(it)) },
-                            onTapOutside = { onReaderIntent(ReaderIntent.DismissLookup()) },
-                            onNextChapter = { onReaderIntent(ReaderIntent.OpenNextChapter) },
-                            onPreviousChapter = { onReaderIntent(ReaderIntent.OpenPreviousChapter) },
-                        ),
+                        config =
+                            ReaderWebViewSettings(
+                                verticalWriting = reader.verticalWriting,
+                                isDark = isDark,
+                                scanLength = settings.dictionary.scanLength,
+                                fontSize = settings.reader.fontSize,
+                                lineHeight = settings.reader.lineHeight,
+                                horizontalPadding = settings.reader.horizontalPadding,
+                                verticalPadding = settings.reader.verticalPadding,
+                                avoidPageBreak = settings.reader.avoidPageBreak,
+                                justifyText = settings.reader.justifyText,
+                                characterSpacing = settings.reader.characterSpacing,
+                                continuousMode = settings.reader.continuousMode,
+                                hideFurigana = settings.reader.hideFurigana,
+                                sasayakiAutoScroll = settings.sasayaki.autoScroll,
+                                sasayakiHighlightEnabled = settings.sasayaki.highlightEnabled,
+                                sasayakiHighlightColor = settings.sasayaki.highlightColor,
+                                stabilizeForBackdrop = popupBlurActive,
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(
+                                    top = readerContentTopPadding,
+                                    bottom = readerContentBottomPadding,
+                                ),
+                        callbacks =
+                            ReaderWebViewCallbacks(
+                                onProgressChanged = { onReaderIntent(ReaderIntent.UpdateProgress(it)) },
+                                onProgressSaved = { onReaderIntent(ReaderIntent.SaveProgress(it)) },
+                                onTextSelected = { text, sentence, rect ->
+                                    onReaderIntent(ReaderIntent.TextSelected(text, sentence, rect))
+                                },
+                                onLinkActivated = { onReaderIntent(ReaderIntent.JumpToLink(it)) },
+                                onTapOutside = { onReaderIntent(ReaderIntent.DismissLookup()) },
+                                onNextChapter = { onReaderIntent(ReaderIntent.OpenNextChapter) },
+                                onPreviousChapter = { onReaderIntent(ReaderIntent.OpenPreviousChapter) },
+                            ),
                     )
                 }
             }
 
             ReaderHeaderInfo(
                 title = chapter?.title ?: book?.info?.title.orEmpty(),
-                progress = book?.let {
-                    "${reader.currentCharacter} / ${it.totalCharacterCount} ${reader.progressPercent.formatPercent()}%"
-                },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(
-                        top = if (fullscreen) 26.dp else statusBarPadding + 26.dp,
-                        start = 28.dp,
-                        end = 28.dp,
-                    ),
+                progress =
+                    book?.let {
+                        "${reader.currentCharacter} / ${it.totalCharacterCount} ${reader.progressPercent.formatPercent()}%"
+                    },
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(
+                            top = if (fullscreen) 26.dp else statusBarPadding + 26.dp,
+                            start = 28.dp,
+                            end = 28.dp,
+                        ),
             )
 
             ReaderBottomChrome(
@@ -262,9 +288,10 @@ fun ReaderPage(
         show = reader.sasayakiSheetOpen,
         isDark = isDark,
         player = reader.sasayakiPlayer,
-        currentCueText = reader.sasayakiPlayer.currentCueId?.let { cueId ->
-            reader.sasayakiMatches.firstOrNull { it.id == cueId }?.text
-        },
+        currentCueText =
+            reader.sasayakiPlayer.currentCueId?.let { cueId ->
+                reader.sasayakiMatches.firstOrNull { it.id == cueId }?.text
+            },
         enabled = reader.sasayakiMatches.isNotEmpty(),
         syncEnabled = settings.sasayaki.syncEnabled,
         autoScroll = settings.sasayaki.autoScroll,

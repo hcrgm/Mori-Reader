@@ -48,7 +48,11 @@ data class DictionarySettings(
 )
 
 data class AudioSettings(
-    val sources: List<AudioSource> = listOf(AudioSource.Local.copy(isEnabled = false), AudioSource.Default),
+    val sources: List<AudioSource> =
+        listOf(
+            AudioSource.Local.copy(isEnabled = false),
+            AudioSource.Default,
+        ),
     val enableLocalAudio: Boolean = false,
     val enableAutoplay: Boolean = false,
     val playbackMode: AudioPlaybackMode = AudioPlaybackMode.Duck,

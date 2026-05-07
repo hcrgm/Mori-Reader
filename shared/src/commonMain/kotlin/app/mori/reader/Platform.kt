@@ -1,8 +1,6 @@
 package app.mori.reader
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.key
 import app.mori.reader.data.settings.LanguageMode
 
 expect fun platform(): String

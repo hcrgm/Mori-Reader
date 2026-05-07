@@ -43,41 +43,48 @@ internal fun dictionaryHtml(
             else -> ""
         }
     return """
-        <!doctype html>
-        <html>
-        <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <style>${dictionaryCss(topPadding, bottomPadding, edgeToEdgeContent, transparentBackground)}</style>
-        </head>
-        <body>
-        <div id="entries-container"></div>
-        <div id="empty-state"></div>
-        <div id="popup-backdrop" hidden></div>
-        <div id="popup" hidden><div id="popup-content"></div></div>
-        <script>
-        window.lookupEntries = $entriesJson;
-        window.lookupQuery = ${WebJson.encodeToString(query)};
-        window.dictionaryStyles = $stylesJson;
-        window.emptyMessage = ${WebJson.encodeToString(message)};
-        window.scanLength = $scanLength;
-        window.maxResults = $maxResults;
-        window.collapseDictionaries = $collapseDictionaries;
-        window.compactGlossaries = $compactGlossaries;
-        window.showExpressionTags = $showExpressionTags;
-        window.harmonicFrequency = $harmonicFrequency;
-        window.deduplicatePitchAccents = $deduplicatePitchAccents;
-        window.isDark = ${WebJson.encodeToString(isDark)};
-        window.audioSources = $audioSourcesJson;
-        window.audioEnableAutoplay = $audioEnableAutoplay;
-        window.audioPlaybackMode = ${WebJson.encodeToString(audioPlaybackMode)};
-        window.enableInternalPopup = $enableInternalPopup;
-        window.swipeThreshold = ${swipeDismissThreshold.coerceIn(0, 80)};
-        document.documentElement.classList.add(window.isDark ? 'dark' : 'light');
-        </script>
-        <script>${dictionaryJs(playPronunciationLabel)}</script>
-        </body>
-        </html>
+                    <!doctype html>
+                    <html>
+                    <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                    <style>${
+        dictionaryCss(
+            topPadding,
+            bottomPadding,
+            edgeToEdgeContent,
+            transparentBackground,
+        )
+    }</style>
+                    </head>
+                    <body>
+                    <div id="entries-container"></div>
+                    <div id="empty-state"></div>
+                    <div id="popup-backdrop" hidden></div>
+                    <div id="popup" hidden><div id="popup-content"></div></div>
+                    <script>
+                    window.lookupEntries = $entriesJson;
+                    window.lookupQuery = ${WebJson.encodeToString(query)};
+                    window.dictionaryStyles = $stylesJson;
+                    window.emptyMessage = ${WebJson.encodeToString(message)};
+                    window.scanLength = $scanLength;
+                    window.maxResults = $maxResults;
+                    window.collapseDictionaries = $collapseDictionaries;
+                    window.compactGlossaries = $compactGlossaries;
+                    window.showExpressionTags = $showExpressionTags;
+                    window.harmonicFrequency = $harmonicFrequency;
+                    window.deduplicatePitchAccents = $deduplicatePitchAccents;
+                    window.isDark = ${WebJson.encodeToString(isDark)};
+                    window.audioSources = $audioSourcesJson;
+                    window.audioEnableAutoplay = $audioEnableAutoplay;
+                    window.audioPlaybackMode = ${WebJson.encodeToString(audioPlaybackMode)};
+                    window.enableInternalPopup = $enableInternalPopup;
+                    window.swipeThreshold = ${swipeDismissThreshold.coerceIn(0, 80)};
+                    document.documentElement.classList.add(window.isDark ? 'dark' : 'light');
+                    </script>
+                    <script>${dictionaryJs(playPronunciationLabel)}</script>
+                    </body>
+                    </html>
         """.trimIndent()
 }
 
@@ -94,7 +101,8 @@ private fun dictionaryCss(
         } else {
             "background: var(--mori-entry-bg);"
         }
-    val entryBackground = if (edgeToEdgeContent || transparentBackground) "transparent" else "var(--mori-entry-bg)"
+    val entryBackground =
+        if (edgeToEdgeContent || transparentBackground) "transparent" else "var(--mori-entry-bg)"
     val entryRadius = if (edgeToEdgeContent) "0" else "8px"
     val lastEntryMargin =
         if (edgeToEdgeContent) {

@@ -34,29 +34,32 @@ internal fun MoriNavigationRail(
     val blurActive = blurEnabled && backdrop != null
     val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
     val layoutDirection = LocalLayoutDirection.current
-    val startPadding = maxOf(
-        WindowInsets.displayCutout
-            .only(WindowInsetsSides.Start)
+    val startPadding =
+        maxOf(
+            WindowInsets.displayCutout
+                .only(WindowInsetsSides.Start)
+                .asPaddingValues()
+                .calculateStartPadding(layoutDirection),
+            WindowInsets.navigationBars
+                .only(WindowInsetsSides.Start)
+                .asPaddingValues()
+                .calculateStartPadding(layoutDirection),
+        )
+    val statusBarPadding =
+        WindowInsets.statusBars
+            .only(WindowInsetsSides.Vertical)
             .asPaddingValues()
-            .calculateStartPadding(layoutDirection),
-        WindowInsets.navigationBars
-            .only(WindowInsetsSides.Start)
-            .asPaddingValues()
-            .calculateStartPadding(layoutDirection),
-    )
-    val statusBarPadding = WindowInsets.statusBars
-        .only(WindowInsetsSides.Vertical)
-        .asPaddingValues()
-        .calculateTopPadding()
+            .calculateTopPadding()
 
     BlurredBar(backdrop, blurEnabled, modifier = modifier) {
         Box(
-            modifier = Modifier
-                .background(barColor)
-                .padding(
-                    start = startPadding,
-                    top = statusBarPadding,
-                ),
+            modifier =
+                Modifier
+                    .background(barColor)
+                    .padding(
+                        start = startPadding,
+                        top = statusBarPadding,
+                    ),
         ) {
             NavigationRail(
                 color = barColor,
@@ -65,11 +68,11 @@ internal fun MoriNavigationRail(
             ) {
                 AppTab.entries.forEach { tab ->
                     NavigationRailItem(
-                    selected = selectedTab == tab,
-                    onClick = { onTabSelected(tab) },
-                    icon = tab.icon,
-                    label = tab.localizedLabel(),
-                )
+                        selected = selectedTab == tab,
+                        onClick = { onTabSelected(tab) },
+                        icon = tab.icon,
+                        label = tab.localizedLabel(),
+                    )
                 }
             }
         }

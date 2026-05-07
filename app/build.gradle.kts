@@ -67,7 +67,7 @@ android {
 
 base {
     archivesName.set(
-        "mori" + "-v" + "0.1.1"
+        "mori" + "-v" + "0.1.1",
     )
 }
 

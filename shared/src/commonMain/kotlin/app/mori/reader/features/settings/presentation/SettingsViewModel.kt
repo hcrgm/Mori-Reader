@@ -1,5 +1,7 @@
 package app.mori.reader.features.settings.presentation
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.audio.AudioRepository
 import app.mori.reader.data.dictionary.DictionaryCatalog
 import app.mori.reader.data.dictionary.DictionaryRepository
@@ -27,8 +29,6 @@ import app.mori.reader.shared.generated.resources.toast_dict_updates_complete
 import app.mori.reader.ui.AppEffect
 import app.mori.reader.ui.text.uiText
 import app.mori.reader.ui.text.uiTextOr
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,19 +41,18 @@ class SettingsViewModel(
     private val dictionaryRepository: DictionaryRepository,
     private val audioRepository: AudioRepository,
 ) : ViewModel() {
-
     private val _state = MutableStateFlow(SettingsUiState())
     val state = _state.asStateFlow()
 
     private val _effects = Channel<AppEffect>(Channel.BUFFERED)
     val effects = _effects.receiveAsFlow()
 
-    private var _cachedSources: List<AudioSource> =
+    private var cachedSources: List<AudioSource> =
         listOf(AudioSource.Local.copy(isEnabled = false), AudioSource.Default)
 
     init {
         viewModelScope.launch {
-            settingsRepository.settings.collect { _cachedSources = it.audio.sources }
+            settingsRepository.settings.collect { cachedSources = it.audio.sources }
         }
         loadDictionaryCatalog()
     }
@@ -156,8 +155,8 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setBlurEnabled(intent.enabled) }
                 _effects.trySend(
                     AppEffect.ShowMessage(
-                        if (intent.enabled) uiText(Res.string.toast_blur_enabled) else uiText(Res.string.toast_blur_disabled)
-                    )
+                        if (intent.enabled) uiText(Res.string.toast_blur_enabled) else uiText(Res.string.toast_blur_disabled),
+                    ),
                 )
             }
 
@@ -201,32 +200,45 @@ class SettingsViewModel(
                 }
             }
 
-            is SettingsIntent.AddAudioSource -> addAudioSource(intent.name, intent.url)
-            is SettingsIntent.UpdateAudioSource -> updateAudioSource(intent.originalUrl, intent.name, intent.url)
-            is SettingsIntent.MoveAudioSource -> updateAudioSources { sources ->
-                val currentIndex = sources.indexOfFirst { it.url == intent.url }
-                if (currentIndex == -1) return@updateAudioSources sources
-                val targetIndex = when (intent.direction) {
-                    MoveDirection.Up -> currentIndex - 1
-                    MoveDirection.Down -> currentIndex + 1
-                }
-                if (targetIndex !in sources.indices) return@updateAudioSources sources
-                sources.toMutableList().also {
-                    val moved = it.removeAt(currentIndex)
-                    it.add(targetIndex, moved)
+            is SettingsIntent.AddAudioSource -> {
+                addAudioSource(intent.name, intent.url)
+            }
+
+            is SettingsIntent.UpdateAudioSource -> {
+                updateAudioSource(intent.originalUrl, intent.name, intent.url)
+            }
+
+            is SettingsIntent.MoveAudioSource -> {
+                updateAudioSources { sources ->
+                    val currentIndex = sources.indexOfFirst { it.url == intent.url }
+                    if (currentIndex == -1) return@updateAudioSources sources
+                    val targetIndex =
+                        when (intent.direction) {
+                            MoveDirection.Up -> currentIndex - 1
+                            MoveDirection.Down -> currentIndex + 1
+                        }
+                    if (targetIndex !in sources.indices) return@updateAudioSources sources
+                    sources.toMutableList().also {
+                        val moved = it.removeAt(currentIndex)
+                        it.add(targetIndex, moved)
+                    }
                 }
             }
 
-            is SettingsIntent.ReorderAudioSources -> updateAudioSources { sources ->
-                val urls = intent.urls
-                if (urls.size != sources.size) return@updateAudioSources sources
-                val sourceByUrl = sources.associateBy(AudioSource::url)
-                val reordered = urls.mapNotNull(sourceByUrl::get)
-                if (reordered.size == sources.size) reordered else sources
+            is SettingsIntent.ReorderAudioSources -> {
+                updateAudioSources { sources ->
+                    val urls = intent.urls
+                    if (urls.size != sources.size) return@updateAudioSources sources
+                    val sourceByUrl = sources.associateBy(AudioSource::url)
+                    val reordered = urls.mapNotNull(sourceByUrl::get)
+                    if (reordered.size == sources.size) reordered else sources
+                }
             }
 
-            is SettingsIntent.DeleteAudioSource -> updateAudioSources { sources ->
-                sources.filterNot { it.url == intent.url && !it.isDefault && !it.isLocal }
+            is SettingsIntent.DeleteAudioSource -> {
+                updateAudioSources { sources ->
+                    sources.filterNot { it.url == intent.url && !it.isDefault && !it.isLocal }
+                }
             }
 
             is SettingsIntent.SetEnableLocalAudio -> {
@@ -241,8 +253,13 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setAudioPlaybackMode(intent.mode) }
             }
 
-            is SettingsIntent.ImportLocalAudioDatabase -> importLocalAudioDatabase(intent.uriString)
-            SettingsIntent.DeleteLocalAudioDatabase -> deleteLocalAudioDatabase()
+            is SettingsIntent.ImportLocalAudioDatabase -> {
+                importLocalAudioDatabase(intent.uriString)
+            }
+
+            SettingsIntent.DeleteLocalAudioDatabase -> {
+                deleteLocalAudioDatabase()
+            }
 
             is SettingsIntent.SetAudiobookStorageMode -> {
                 viewModelScope.launch { settingsRepository.setPreferredAudiobookStorageMode(intent.mode) }
@@ -268,35 +285,56 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setSasayakiHighlightColor(intent.color) }
             }
 
-            is SettingsIntent.SelectDictionaryType -> updateDictionaryManagement {
-                it.copy(selectedType = intent.type)
+            is SettingsIntent.SelectDictionaryType -> {
+                updateDictionaryManagement {
+                    it.copy(selectedType = intent.type)
+                }
             }
 
-            is SettingsIntent.ImportDictionaries -> importDictionaries(intent.type, intent.uriStrings)
-            is SettingsIntent.SetDictionaryEnabled -> mutateDictionaries {
-                dictionaryRepository.setEnabled(intent.type, intent.id, intent.enabled)
+            is SettingsIntent.ImportDictionaries -> {
+                importDictionaries(intent.type, intent.uriStrings)
             }
 
-            is SettingsIntent.MoveDictionary -> mutateDictionaries {
-                dictionaryRepository.move(intent.type, intent.id, intent.direction)
+            is SettingsIntent.SetDictionaryEnabled -> {
+                mutateDictionaries {
+                    dictionaryRepository.setEnabled(intent.type, intent.id, intent.enabled)
+                }
             }
 
-            is SettingsIntent.ReorderDictionaries -> mutateDictionaries {
-                dictionaryRepository.reorder(intent.type, intent.ids)
+            is SettingsIntent.MoveDictionary -> {
+                mutateDictionaries {
+                    dictionaryRepository.move(intent.type, intent.id, intent.direction)
+                }
             }
 
-            is SettingsIntent.DeleteDictionary -> mutateDictionaries {
-                dictionaryRepository.delete(intent.type, intent.id)
+            is SettingsIntent.ReorderDictionaries -> {
+                mutateDictionaries {
+                    dictionaryRepository.reorder(intent.type, intent.ids)
+                }
             }
 
-            SettingsIntent.UpdateDictionaries -> updateDictionaries()
-            SettingsIntent.DismissDictionaryError -> updateDictionaryManagement {
-                it.copy(errorMessage = null)
+            is SettingsIntent.DeleteDictionary -> {
+                mutateDictionaries {
+                    dictionaryRepository.delete(intent.type, intent.id)
+                }
+            }
+
+            SettingsIntent.UpdateDictionaries -> {
+                updateDictionaries()
+            }
+
+            SettingsIntent.DismissDictionaryError -> {
+                updateDictionaryManagement {
+                    it.copy(errorMessage = null)
+                }
             }
         }
     }
 
-    private fun addAudioSource(name: String, url: String) {
+    private fun addAudioSource(
+        name: String,
+        url: String,
+    ) {
         val trimmedName = name.trim()
         val trimmedUrl = url.trim()
         if (trimmedName.isBlank() || trimmedUrl.isBlank()) return
@@ -305,14 +343,23 @@ class SettingsViewModel(
             return
         }
         updateAudioSources { sources ->
-            if (sources.any { it.url == trimmedUrl }) sources else sources + AudioSource(
-                trimmedName,
-                trimmedUrl
-            )
+            if (sources.any { it.url == trimmedUrl }) {
+                sources
+            } else {
+                sources +
+                    AudioSource(
+                        trimmedName,
+                        trimmedUrl,
+                    )
+            }
         }
     }
 
-    private fun updateAudioSource(originalUrl: String, name: String, url: String) {
+    private fun updateAudioSource(
+        originalUrl: String,
+        name: String,
+        url: String,
+    ) {
         val trimmedName = name.trim()
         val trimmedUrl = url.trim()
         if (trimmedName.isBlank() || trimmedUrl.isBlank()) return
@@ -330,17 +377,18 @@ class SettingsViewModel(
                 return@updateAudioSources sources
             }
             sources.toMutableList().apply {
-                this[currentIndex] = current.copy(
-                    name = trimmedName,
-                    url = trimmedUrl,
-                )
+                this[currentIndex] =
+                    current.copy(
+                        name = trimmedName,
+                        url = trimmedUrl,
+                    )
             }
         }
     }
 
     private fun updateAudioSources(block: (List<AudioSource>) -> List<AudioSource>) {
-        val updated = block(_cachedSources)
-        _cachedSources = updated
+        val updated = block(cachedSources)
+        cachedSources = updated
         viewModelScope.launch { settingsRepository.setAudioSources(updated) }
     }
 
@@ -349,17 +397,17 @@ class SettingsViewModel(
         viewModelScope.launch {
             runCatching { audioRepository.importLocalAudioDatabase(uriString) }
                 .onSuccess { sizeBytes ->
-                    val updatedSources = _cachedSources.map { source ->
-                        if (source.isLocal) source.copy(isEnabled = true) else source
-                    }
-                    _cachedSources = updatedSources
+                    val updatedSources =
+                        cachedSources.map { source ->
+                            if (source.isLocal) source.copy(isEnabled = true) else source
+                        }
+                    cachedSources = updatedSources
                     _state.update { it.copy(isImportingLocalAudio = false) }
                     settingsRepository.setAudioSources(updatedSources)
                     settingsRepository.setLocalAudioDatabaseSizeBytes(sizeBytes)
                     settingsRepository.setEnableLocalAudio(true)
                     _effects.trySend(AppEffect.ShowMessage(uiText(Res.string.toast_audio_local_imported)))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     _state.update { it.copy(isImportingLocalAudio = false) }
                     _effects.trySend(AppEffect.ShowMessage(throwable.uiTextOr(Res.string.toast_audio_local_import_failed)))
                 }
@@ -370,25 +418,33 @@ class SettingsViewModel(
         viewModelScope.launch {
             runCatching { audioRepository.deleteLocalAudioDatabase() }
                 .onSuccess {
-                    val updatedSources = _cachedSources.map { source ->
-                        if (source.isLocal) source.copy(isEnabled = false) else source
-                    }
-                    _cachedSources = updatedSources
+                    val updatedSources =
+                        cachedSources.map { source ->
+                            if (source.isLocal) source.copy(isEnabled = false) else source
+                        }
+                    cachedSources = updatedSources
                     settingsRepository.setAudioSources(updatedSources)
                     settingsRepository.setLocalAudioDatabaseSizeBytes(0L)
                     settingsRepository.setEnableLocalAudio(false)
                     _effects.trySend(AppEffect.ShowMessage(uiText(Res.string.toast_audio_local_deleted)))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     _effects.trySend(AppEffect.ShowMessage(throwable.uiTextOr(Res.string.toast_audio_local_delete_failed)))
                 }
         }
     }
 
-    private fun importDictionaries(type: DictionaryType, uriStrings: List<String>) {
+    private fun importDictionaries(
+        type: DictionaryType,
+        uriStrings: List<String>,
+    ) {
         if (uriStrings.isEmpty()) return
         updateDictionaryManagement {
-            it.copy(isImporting = true, isLoading = false, statusText = uiText(Res.string.toast_dict_importing), errorMessage = null)
+            it.copy(
+                isImporting = true,
+                isLoading = false,
+                statusText = uiText(Res.string.toast_dict_importing),
+                errorMessage = null,
+            )
         }
         viewModelScope.launch {
             runCatching { dictionaryRepository.importDictionaries(type, uriStrings) }
@@ -397,8 +453,7 @@ class SettingsViewModel(
                         it.copy(isImporting = false, statusText = null)
                     }
                     _effects.trySend(AppEffect.ShowMessage(uiText(Res.string.toast_dict_imported)))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     updateDictionaryManagement {
                         it.copy(
                             isImporting = false,
@@ -412,7 +467,12 @@ class SettingsViewModel(
 
     private fun updateDictionaries() {
         updateDictionaryManagement {
-            it.copy(isUpdating = true, isLoading = false, statusText = uiText(Res.string.toast_dict_checking_updates), errorMessage = null)
+            it.copy(
+                isUpdating = true,
+                isLoading = false,
+                statusText = uiText(Res.string.toast_dict_checking_updates),
+                errorMessage = null,
+            )
         }
         viewModelScope.launch {
             runCatching { dictionaryRepository.updateDictionaries() }
@@ -421,8 +481,7 @@ class SettingsViewModel(
                         it.copy(isUpdating = false, statusText = null)
                     }
                     _effects.trySend(AppEffect.ShowMessage(uiText(Res.string.toast_dict_updates_complete)))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     updateDictionaryManagement {
                         it.copy(
                             isUpdating = false,
@@ -439,8 +498,7 @@ class SettingsViewModel(
             runCatching { block() }
                 .onSuccess { catalog ->
                     updateDictionaryCatalog(catalog) { it.copy(errorMessage = null) }
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     updateDictionaryManagement {
                         it.copy(errorMessage = throwable.uiTextOr(Res.string.error_dictionary_operation_failed))
                     }
@@ -455,8 +513,7 @@ class SettingsViewModel(
                     updateDictionaryCatalog(catalog) {
                         it.copy(isLoading = false, statusText = null, errorMessage = null)
                     }
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     updateDictionaryManagement {
                         it.copy(
                             isLoading = false,
@@ -483,9 +540,7 @@ class SettingsViewModel(
         }
     }
 
-    private fun updateDictionaryManagement(
-        transform: (DictionaryManagementState) -> DictionaryManagementState,
-    ) {
+    private fun updateDictionaryManagement(transform: (DictionaryManagementState) -> DictionaryManagementState) {
         _state.update { state ->
             state.copy(dictionaryManagement = transform(state.dictionaryManagement))
         }

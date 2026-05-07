@@ -76,7 +76,8 @@ internal class AndroidBookRepository(
             if (uriStrings.isEmpty()) return@withContext loadCatalog()
             booksRoot.mkdirs()
             val categories = loadCategories()
-            val readingCategoryId = categories.firstOrNull { it.name == DEFAULT_READING_CATEGORY_NAME }?.id
+            val readingCategoryId =
+                categories.firstOrNull { it.name == DEFAULT_READING_CATEGORY_NAME }?.id
             val categoryMap = loadBookCategoryMap().toMutableMap()
             val failures = mutableListOf<String>()
 
@@ -142,8 +143,12 @@ internal class AndroidBookRepository(
         chapterProgress: Double,
     ): BookCatalog =
         withContext(Dispatchers.IO) {
-            val bookDir = findBookDirectory(bookId) ?: return@withContext buildCatalog().also(::publishCatalog)
-            val metadata = loadBookMetadataStorage(bookDir) ?: return@withContext buildCatalog().also(::publishCatalog)
+            val bookDir =
+                findBookDirectory(bookId)
+                    ?: return@withContext buildCatalog().also(::publishCatalog)
+            val metadata =
+                loadBookMetadataStorage(bookDir)
+                    ?: return@withContext buildCatalog().also(::publishCatalog)
             val readerBook =
                 parseReaderBook(
                     sourceFile = null,
@@ -161,7 +166,8 @@ internal class AndroidBookRepository(
             val clampedIndex = chapterIndex.coerceIn(readerBook.chapters.indices)
             val clampedProgress = chapterProgress.coerceIn(0.0, 1.0)
             val chapter = readerBook.chapters[clampedIndex]
-            val characterCount = chapter.characterStart + (chapter.characterCount * clampedProgress).toInt()
+            val characterCount =
+                chapter.characterStart + (chapter.characterCount * clampedProgress).toInt()
             val now = System.currentTimeMillis()
             saveBookmark(
                 bookDir,
@@ -268,7 +274,11 @@ internal class AndroidBookRepository(
             listBookDirectories()
                 .mapNotNull { bookDir ->
                     val metadata = loadBookMetadataStorage(bookDir) ?: return@mapNotNull null
-                    val categoryIds = categoryMap[metadata.id].orEmpty().filter { it in validCategoryIds }.distinct()
+                    val categoryIds =
+                        categoryMap[metadata.id]
+                            .orEmpty()
+                            .filter { it in validCategoryIds }
+                            .distinct()
                     computeBookInfo(
                         metadata = metadata,
                         categoryIds = categoryIds,
@@ -288,15 +298,21 @@ internal class AndroidBookRepository(
     private fun loadCategories(): List<BookCategory> {
         ensureCategoriesInitialized()
         return runCatching {
-            json.decodeFromString(BookCategoriesStorage.serializer(), categoriesFile.readText()).categories
+            json
+                .decodeFromString(
+                    BookCategoriesStorage.serializer(),
+                    categoriesFile.readText(),
+                ).categories
         }.getOrDefault(emptyList()).normalizedCategories()
     }
 
     private fun loadBookCategoryMap(): Map<String, List<String>> =
         runCatching {
             json
-                .decodeFromString(BookCategoryMapStorage.serializer(), bookCategoryMapFile.readText())
-                .books
+                .decodeFromString(
+                    BookCategoryMapStorage.serializer(),
+                    bookCategoryMapFile.readText(),
+                ).books
                 .mapValues { (_, categoryIds) -> categoryIds.distinct() }
         }.getOrDefault(emptyMap())
 
@@ -464,7 +480,10 @@ internal class AndroidBookRepository(
                             id = item.id.ifBlank { href },
                             title = title,
                             href = href,
-                            sourceUrl = File(File(bookDir, EXTRACTED_EPUB_DIR), href).toURI().toString(),
+                            sourceUrl =
+                                File(File(bookDir, EXTRACTED_EPUB_DIR), href)
+                                    .toURI()
+                                    .toString(),
                             index = index,
                             characterStart = characterStart,
                             characterCount = count,
@@ -522,7 +541,11 @@ internal class AndroidBookRepository(
                         id = info.id ?: href,
                         title = info.title ?: "第 ${(info.spineIndex ?: 0) + 1} 章",
                         href = href,
-                        sourceUrl = info.sourceUrl ?: File(File(bookDir, EXTRACTED_EPUB_DIR), href).toURI().toString(),
+                        sourceUrl =
+                            info.sourceUrl ?: File(
+                                File(bookDir, EXTRACTED_EPUB_DIR),
+                                href,
+                            ).toURI().toString(),
                         index = info.spineIndex ?: 0,
                         characterStart = info.currentTotal,
                         characterCount = info.characterCount,
@@ -593,7 +616,10 @@ internal class AndroidBookRepository(
 
     private fun loadBookMetadataStorage(bookDir: File): BookMetadataStorage? =
         runCatching {
-            json.decodeFromString(BookMetadataStorage.serializer(), File(bookDir, METADATA_FILE).readText())
+            json.decodeFromString(
+                BookMetadataStorage.serializer(),
+                File(bookDir, METADATA_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveBookMetadataStorage(
@@ -606,7 +632,10 @@ internal class AndroidBookRepository(
 
     private fun loadReaderBookInfoStorage(bookDir: File): ReaderBookInfoStorage? =
         runCatching {
-            json.decodeFromString(ReaderBookInfoStorage.serializer(), File(bookDir, BOOKINFO_FILE).readText())
+            json.decodeFromString(
+                ReaderBookInfoStorage.serializer(),
+                File(bookDir, BOOKINFO_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveReaderBookInfoStorage(
@@ -619,7 +648,10 @@ internal class AndroidBookRepository(
 
     private fun loadReaderTocStorage(bookDir: File): List<ReaderTocItem>? =
         runCatching {
-            json.decodeFromString(ListSerializer(ReaderTocItem.serializer()), File(bookDir, TOC_FILE).readText())
+            json.decodeFromString(
+                ListSerializer(ReaderTocItem.serializer()),
+                File(bookDir, TOC_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveReaderTocStorage(
@@ -656,14 +688,22 @@ internal class AndroidBookRepository(
 
     private fun loadBookmark(bookDir: File): ReaderBookmark? =
         runCatching {
-            json.decodeFromString(ReaderBookmark.serializer(), File(bookDir, BOOKMARK_FILE).readText())
+            json.decodeFromString(
+                ReaderBookmark.serializer(),
+                File(bookDir, BOOKMARK_FILE).readText(),
+            )
         }.getOrNull()
 
     private fun saveBookmark(
         bookDir: File,
         bookmark: ReaderBookmark,
     ) {
-        File(bookDir, BOOKMARK_FILE).writeText(json.encodeToString(ReaderBookmark.serializer(), bookmark))
+        File(bookDir, BOOKMARK_FILE).writeText(
+            json.encodeToString(
+                ReaderBookmark.serializer(),
+                bookmark,
+            ),
+        )
     }
 
     private fun parseContainerRootPath(xml: String): String? {
@@ -703,7 +743,13 @@ internal class AndroidBookRepository(
                 ?: manifestItems.firstOrNull { it.id == coverId }
                 ?: manifestItems.firstOrNull {
                     it.mediaType.startsWith("image/") &&
-                        (it.id.contains("cover", ignoreCase = true) || it.href.contains("cover", ignoreCase = true))
+                        (
+                            it.id.contains("cover", ignoreCase = true) ||
+                                it.href.contains(
+                                    "cover",
+                                    ignoreCase = true,
+                                )
+                        )
                 }
                 ?: return null
 
@@ -734,8 +780,15 @@ internal class AndroidBookRepository(
                 val navPath = resolveZipPath(opfDir, navItem.href)
                 zip
                     .readTextEntry(navPath)
-                    ?.let { runCatching { parseNavToc(parseXml(it), opfDir, spineItems) }.getOrDefault(emptyList()) }
-                    .orEmpty()
+                    ?.let {
+                        runCatching {
+                            parseNavToc(
+                                parseXml(it),
+                                opfDir,
+                                spineItems,
+                            )
+                        }.getOrDefault(emptyList())
+                    }.orEmpty()
             } else {
                 emptyList()
             }
@@ -747,8 +800,11 @@ internal class AndroidBookRepository(
             val ncxPath = resolveZipPath(opfDir, ncxItem.href)
             zip
                 .readTextEntry(ncxPath)
-                ?.let { runCatching { parseNcxToc(parseXml(it), opfDir, spineItems) }.getOrDefault(emptyList()) }
-                .orEmpty()
+                ?.let {
+                    runCatching { parseNcxToc(parseXml(it), opfDir, spineItems) }.getOrDefault(
+                        emptyList(),
+                    )
+                }.orEmpty()
         } else {
             emptyList()
         }
@@ -773,7 +829,14 @@ internal class AndroidBookRepository(
         }
         if (rows.isEmpty()) {
             nav.elementsByLocalName("a").forEach { anchor ->
-                appendTocRow(rows, anchor.textContent.trim(), anchor.getAttribute("href"), opfDir, spineItems, 0)
+                appendTocRow(
+                    rows,
+                    anchor.textContent.trim(),
+                    anchor.getAttribute("href"),
+                    opfDir,
+                    spineItems,
+                    0,
+                )
             }
         }
         return rows.distinctBy { "${it.chapterIndex}:${it.fragment}:${it.label}" }

@@ -16,9 +16,9 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import java.io.File
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
+import java.io.File
 
 @Composable
 actual fun BookCoverImage(
@@ -31,12 +31,14 @@ actual fun BookCoverImage(
     Box(modifier = modifier) {
         if (!coverPath.isNullOrBlank()) {
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(File(coverPath))
-                    .memoryCacheKey(coverPath)
-                    .diskCacheKey(coverPath)
-                    .crossfade(false)
-                    .build(),
+                model =
+                    ImageRequest
+                        .Builder(context)
+                        .data(File(coverPath))
+                        .memoryCacheKey(coverPath)
+                        .diskCacheKey(coverPath)
+                        .crossfade(false)
+                        .build(),
                 contentDescription = title,
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
@@ -60,11 +62,12 @@ private fun PlaceholderCover(
         contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(8.dp)
-                .fillMaxSize(0.18f)
-                .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.16f)),
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .fillMaxSize(0.18f)
+                    .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.16f)),
         )
         Text(
             text = title.ifBlank { "EPUB" },

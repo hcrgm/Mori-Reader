@@ -15,9 +15,9 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplayTransitionEffects
 import app.mori.reader.app.navigation.AppNavigationState
 import app.mori.reader.features.audiobook.presentation.AudiobookIntent
-import app.mori.reader.features.audiobook.presentation.AudiobookState
+import app.mori.reader.features.audiobook.presentation.AudiobookUiState
 import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
-import app.mori.reader.features.bookshelf.presentation.HomeState
+import app.mori.reader.features.bookshelf.presentation.BookshelfState
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryState
 import app.mori.reader.features.reader.presentation.ReaderViewModel
@@ -43,9 +43,9 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 @Composable
 fun AppContent(
     state: AppState,
-    homeState: HomeState,
+    bookshelfState: BookshelfState,
     dictionaryState: DictionaryState,
-    audiobookState: AudiobookState,
+    audiobookUiState: AudiobookUiState,
     settingsUi: SettingsUiState,
     effects: Flow<AppEffect>,
     onIntent: (AppIntent) -> Unit,
@@ -66,76 +66,80 @@ fun AppContent(
         }
     }
 
-    val rootTransitionEffects = remember {
-        NavDisplayTransitionEffects(
-            enableCornerClip = true,
-            dimAmount = 0.5f,
-            blockInputDuringTransition = true,
-            popDirectionFollowsSwipeEdge = false,
-        )
-    }
+    val rootTransitionEffects =
+        remember {
+            NavDisplayTransitionEffects(
+                enableCornerClip = true,
+                dimAmount = 0.5f,
+                blockInputDuringTransition = true,
+                popDirectionFollowsSwipeEdge = false,
+            )
+        }
 
-    val rootEntries = rememberDecoratedNavEntries(
-        backStack = navigationState.rootBackStack,
-        entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
-        entryProvider = entryProvider<NavKey> {
-            entry<AppRoute.Main> {
-                MainTabsContent(
-                    home = homeState,
-                    dictionary = dictionaryState,
-                    settings = state.settings,
-                    audiobook = audiobookState,
-                    navigationState = navigationState,
-                    onIntent = onIntent,
-                    onBookshelfIntent = onBookshelfIntent,
-                    onDictionaryIntent = onDictionaryIntent,
-                    onSettingsIntent = onSettingsIntent,
-                    onAudiobookIntent = onAudiobookIntent,
-                    onOpenAppearanceSettings = { navigationState.pushRoot(AppRoute.AppearanceSettings) },
-                    onOpenDictionarySettings = { navigationState.pushRoot(AppRoute.DictionarySettings) },
-                    onOpenAudioSettings = { navigationState.pushRoot(AppRoute.AudioSettings) },
-                )
-            }
-            entry<AppRoute.Reader> { route ->
-                val readerViewModel = koinViewModel<ReaderViewModel>(
-                    key = "reader-${route.bookId}",
-                    parameters = { parametersOf(route.bookId) },
-                )
-                val readerState by readerViewModel.state.collectAsStateWithLifecycle()
-                ReaderPage(
-                    reader = readerState,
-                    settings = state.settings,
-                    bookId = route.bookId,
-                    onReaderIntent = readerViewModel::onIntent,
-                    onSettingsIntent = onSettingsIntent,
-                    onBack = navigationState::popRoot,
-                )
-            }
-            entry<AppRoute.DictionarySettings> {
-                DictionarySettingsPage(
-                    settings = state.settings,
-                    dictionaryState = settingsUi.dictionaryManagement,
-                    onIntent = onSettingsIntent,
-                    onBack = navigationState::popRoot,
-                )
-            }
-            entry<AppRoute.AppearanceSettings> {
-                AppearanceSettingsPage(
-                    settings = state.settings,
-                    onSettingsIntent = onSettingsIntent,
-                    onBack = navigationState::popRoot,
-                )
-            }
-            entry<AppRoute.AudioSettings> {
-                AudioSettingsPage(
-                    settings = state.settings,
-                    settingsUi = settingsUi,
-                    onIntent = onSettingsIntent,
-                    onBack = navigationState::popRoot,
-                )
-            }
-        },
-    )
+    val rootEntries =
+        rememberDecoratedNavEntries(
+            backStack = navigationState.rootBackStack,
+            entryDecorators = listOf(rememberSaveableStateHolderNavEntryDecorator()),
+            entryProvider =
+                entryProvider<NavKey> {
+                    entry<AppRoute.Main> {
+                        MainTabsContent(
+                            home = bookshelfState,
+                            dictionary = dictionaryState,
+                            settings = state.settings,
+                            audiobook = audiobookUiState,
+                            navigationState = navigationState,
+                            onIntent = onIntent,
+                            onBookshelfIntent = onBookshelfIntent,
+                            onDictionaryIntent = onDictionaryIntent,
+                            onSettingsIntent = onSettingsIntent,
+                            onAudiobookIntent = onAudiobookIntent,
+                            onOpenAppearanceSettings = { navigationState.pushRoot(AppRoute.AppearanceSettings) },
+                            onOpenDictionarySettings = { navigationState.pushRoot(AppRoute.DictionarySettings) },
+                            onOpenAudioSettings = { navigationState.pushRoot(AppRoute.AudioSettings) },
+                        )
+                    }
+                    entry<AppRoute.Reader> { route ->
+                        val readerViewModel =
+                            koinViewModel<ReaderViewModel>(
+                                key = "reader-${route.bookId}",
+                                parameters = { parametersOf(route.bookId) },
+                            )
+                        val readerState by readerViewModel.state.collectAsStateWithLifecycle()
+                        ReaderPage(
+                            reader = readerState,
+                            settings = state.settings,
+                            bookId = route.bookId,
+                            onReaderIntent = readerViewModel::onIntent,
+                            onSettingsIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.DictionarySettings> {
+                        DictionarySettingsPage(
+                            settings = state.settings,
+                            dictionaryState = settingsUi.dictionaryManagement,
+                            onIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.AppearanceSettings> {
+                        AppearanceSettingsPage(
+                            settings = state.settings,
+                            onSettingsIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.AudioSettings> {
+                        AudioSettingsPage(
+                            settings = state.settings,
+                            settingsUi = settingsUi,
+                            onIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                },
+        )
 
     Surface(
         modifier = Modifier.fillMaxSize(),

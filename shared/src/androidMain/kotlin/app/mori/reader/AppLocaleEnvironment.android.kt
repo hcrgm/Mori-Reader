@@ -17,27 +17,33 @@ actual fun AppLocaleEnvironment(
 ) {
     val baseConfiguration = LocalConfiguration.current
     val context = LocalContext.current
-    val localeTag = when (mode) {
-        LanguageMode.System -> null
-        LanguageMode.English -> "en"
-        LanguageMode.Chinese -> "zh"
-    }
+    val localeTag =
+        when (mode) {
+            LanguageMode.System -> null
+            LanguageMode.English -> "en"
+            LanguageMode.Chinese -> "zh"
+        }
 
-    val localizedConfiguration = Configuration(baseConfiguration).apply {
-        if (localeTag != null) {
-            val locale = Locale.forLanguageTag(localeTag)
-            Locale.setDefault(locale)
-            setLocale(locale)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                setLocales(android.os.LocaleList(locale))
+    val localizedConfiguration =
+        Configuration(baseConfiguration).apply {
+            if (localeTag != null) {
+                val locale = Locale.forLanguageTag(localeTag)
+                Locale.setDefault(locale)
+                setLocale(locale)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    setLocales(android.os.LocaleList(locale))
+                }
             }
         }
-    }
 
     CompositionLocalProvider(
         LocalConfiguration provides localizedConfiguration,
     ) {
-        key(localeTag ?: context.resources.configuration.locales[0]?.toLanguageTag().orEmpty()) {
+        key(
+            localeTag ?: context.resources.configuration.locales[0]
+                ?.toLanguageTag()
+                .orEmpty(),
+        ) {
             content()
         }
     }

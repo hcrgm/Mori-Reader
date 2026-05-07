@@ -12,9 +12,7 @@ import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
-internal fun DictionaryPlaceholder(
-    modifier: Modifier = Modifier,
-) {
+internal fun DictionaryPlaceholder(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(10.dp),

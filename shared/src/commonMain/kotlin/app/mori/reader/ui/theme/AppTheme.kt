@@ -12,11 +12,12 @@ fun AppTheme(
     themeMode: ThemeMode,
     content: @Composable () -> Unit,
 ) {
-    val controller = remember(themeMode) {
-        ThemeController(
-            colorSchemeMode = themeMode.toColorSchemeMode(),
-        )
-    }
+    val controller =
+        remember(themeMode) {
+            ThemeController(
+                colorSchemeMode = themeMode.toColorSchemeMode(),
+            )
+        }
 
     MiuixTheme(
         controller = controller,

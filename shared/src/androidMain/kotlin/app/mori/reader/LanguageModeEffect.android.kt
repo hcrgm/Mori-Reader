@@ -9,11 +9,12 @@ import app.mori.reader.data.settings.LanguageMode
 @Composable
 actual fun ApplyLanguageModeEffect(mode: LanguageMode) {
     SideEffect {
-        val languageTags = when (mode) {
-            LanguageMode.System -> ""
-            LanguageMode.English -> "en"
-            LanguageMode.Chinese -> "zh"
-        }
+        val languageTags =
+            when (mode) {
+                LanguageMode.System -> ""
+                LanguageMode.English -> "en"
+                LanguageMode.Chinese -> "zh"
+            }
         val locales = LocaleListCompat.forLanguageTags(languageTags)
         if (AppCompatDelegate.getApplicationLocales() != locales) {
             AppCompatDelegate.setApplicationLocales(locales)

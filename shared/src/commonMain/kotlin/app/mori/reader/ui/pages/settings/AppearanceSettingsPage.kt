@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.appearance_app_title
 import app.mori.reader.shared.generated.resources.appearance_reader_title
 import app.mori.reader.shared.generated.resources.cd_appearance
 import app.mori.reader.shared.generated.resources.cd_back
-import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.AppThemeSettingsCard
 import app.mori.reader.ui.components.settings.ReaderAppearanceSettingsCard
@@ -47,14 +47,16 @@ fun AppearanceSettingsPage(
         AppearanceSettingsContent(
             settings = settings,
             onSettingsIntent = onSettingsIntent,
-            modifier = Modifier
-                .fillMaxSize()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-            contentPadding = PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding() + 24.dp,
-            ),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .overScrollVertical()
+                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+            contentPadding =
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding() + 24.dp,
+                ),
         )
     }
 }
@@ -118,11 +120,35 @@ private fun AppearanceSettingsContent(
                 onFullscreenChanged = { onSettingsIntent(SettingsIntent.SetReaderFullscreen(it)) },
                 onFontSizeChanged = { onSettingsIntent(SettingsIntent.SetReaderFontSize(it)) },
                 onLineHeightChanged = { onSettingsIntent(SettingsIntent.SetReaderLineHeight(it)) },
-                onHorizontalPaddingChanged = { onSettingsIntent(SettingsIntent.SetReaderHorizontalPadding(it)) },
-                onVerticalPaddingChanged = { onSettingsIntent(SettingsIntent.SetReaderVerticalPadding(it)) },
-                onAvoidPageBreakChanged = { onSettingsIntent(SettingsIntent.SetReaderAvoidPageBreak(it)) },
+                onHorizontalPaddingChanged = {
+                    onSettingsIntent(
+                        SettingsIntent.SetReaderHorizontalPadding(
+                            it,
+                        ),
+                    )
+                },
+                onVerticalPaddingChanged = {
+                    onSettingsIntent(
+                        SettingsIntent.SetReaderVerticalPadding(
+                            it,
+                        ),
+                    )
+                },
+                onAvoidPageBreakChanged = {
+                    onSettingsIntent(
+                        SettingsIntent.SetReaderAvoidPageBreak(
+                            it,
+                        ),
+                    )
+                },
                 onJustifyTextChanged = { onSettingsIntent(SettingsIntent.SetReaderJustifyText(it)) },
-                onCharacterSpacingChanged = { onSettingsIntent(SettingsIntent.SetReaderCharacterSpacing(it)) },
+                onCharacterSpacingChanged = {
+                    onSettingsIntent(
+                        SettingsIntent.SetReaderCharacterSpacing(
+                            it,
+                        ),
+                    )
+                },
                 onPopupWidthChanged = { onSettingsIntent(SettingsIntent.SetPopupWidth(it)) },
                 onPopupHeightChanged = { onSettingsIntent(SettingsIntent.SetPopupHeight(it)) },
                 onTogglePopupFullWidth = {
@@ -131,7 +157,13 @@ private fun AppearanceSettingsContent(
                 onTogglePopupSwipeToDismiss = {
                     onSettingsIntent(SettingsIntent.SetPopupSwipeToDismiss(!settings.popup.swipeToDismiss))
                 },
-                onPopupSwipeThresholdChanged = { onSettingsIntent(SettingsIntent.SetPopupSwipeThreshold(it)) },
+                onPopupSwipeThresholdChanged = {
+                    onSettingsIntent(
+                        SettingsIntent.SetPopupSwipeThreshold(
+                            it,
+                        ),
+                    )
+                },
             )
         }
     }

@@ -50,19 +50,21 @@ internal fun MoriPageScaffold(
     val fixedEndPadding = fixedPadding.calculateEndPadding(layoutDirection)
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .scrollEndHaptic(),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .scrollEndHaptic(),
     ) {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 BlurredBar(backdrop, blurEnabled) {
                     Column(
-                        modifier = Modifier.padding(
-                            start = fixedStartPadding,
-                            end = fixedEndPadding,
-                        ),
+                        modifier =
+                            Modifier.padding(
+                                start = fixedStartPadding,
+                                end = fixedEndPadding,
+                            ),
                     ) {
                         TopAppBar(
                             title = title,
@@ -79,18 +81,19 @@ internal fun MoriPageScaffold(
             },
             floatingActionButton = floatingActionButton,
         ) { paddingValues ->
-            val pagePaddingValues = PaddingValues(
-                top = paddingValues.calculateTopPadding(),
-                bottom = paddingValues.calculateBottomPadding() + fixedPadding.calculateBottomPadding(),
-            )
+            val pagePaddingValues =
+                PaddingValues(
+                    top = paddingValues.calculateTopPadding(),
+                    bottom = paddingValues.calculateBottomPadding() + fixedPadding.calculateBottomPadding(),
+                )
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = fixedStartPadding,
-                        end = fixedEndPadding,
-                    )
-                    .then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(
+                            start = fixedStartPadding,
+                            end = fixedEndPadding,
+                        ).then(if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier),
             ) {
                 content(pagePaddingValues, scrollBehavior)
             }
@@ -107,31 +110,37 @@ internal fun BlurredBar(
 ) {
     val density = LocalDensity.current
     Box(
-        modifier = modifier.then(
-            if (blurEnabled && backdrop != null) {
-                Modifier.textureBlur(
-                    backdrop = backdrop,
-                    shape = RectangleShape,
-                    blurRadius = 25f * density.density,
-                    colors = BlurColors(
-                        blendColors = listOf(
-                            BlendColorEntry(color = MiuixTheme.colorScheme.surface.copy(0.8f)),
-                        ),
-                    ),
-                )
-            } else {
-                Modifier
-            },
-        ),
+        modifier =
+            modifier.then(
+                if (blurEnabled && backdrop != null) {
+                    Modifier.textureBlur(
+                        backdrop = backdrop,
+                        shape = RectangleShape,
+                        blurRadius = 25f * density.density,
+                        colors =
+                            BlurColors(
+                                blendColors =
+                                    listOf(
+                                        BlendColorEntry(
+                                            color =
+                                                MiuixTheme.colorScheme.surface.copy(
+                                                    0.8f,
+                                                ),
+                                        ),
+                                    ),
+                            ),
+                    )
+                } else {
+                    Modifier
+                },
+            ),
     ) {
         content()
     }
 }
 
 @Composable
-internal fun Modifier.moriFixedHorizontalPadding(
-    fixedPadding: PaddingValues,
-): Modifier {
+internal fun Modifier.moriFixedHorizontalPadding(fixedPadding: PaddingValues): Modifier {
     val layoutDirection = LocalLayoutDirection.current
     return padding(
         start = fixedPadding.calculateStartPadding(layoutDirection),
@@ -140,9 +149,7 @@ internal fun Modifier.moriFixedHorizontalPadding(
 }
 
 @Composable
-private fun rememberMoriBlurBackdrop(
-    blurEnabled: Boolean,
-): LayerBackdrop? {
+private fun rememberMoriBlurBackdrop(blurEnabled: Boolean): LayerBackdrop? {
     if (!blurEnabled || !isRenderEffectSupported()) return null
 
     val surfaceColor = MiuixTheme.colorScheme.surface

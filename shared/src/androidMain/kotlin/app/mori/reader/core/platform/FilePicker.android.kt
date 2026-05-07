@@ -30,7 +30,13 @@ actual fun rememberDictionaryZipPicker(onSelected: (List<String>) -> Unit): () -
             }
         }
     return {
-        launcher.launch(arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream"))
+        launcher.launch(
+            arrayOf(
+                "application/zip",
+                "application/x-zip-compressed",
+                "application/octet-stream",
+            ),
+        )
     }
 }
 
@@ -64,5 +70,13 @@ actual fun rememberAudiobookSubtitlePicker(onSelected: (String) -> Unit): () -> 
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri?.let { onSelected(it.toString()) }
         }
-    return { launcher.launch(arrayOf("text/*", "application/x-subrip", "application/octet-stream")) }
+    return {
+        launcher.launch(
+            arrayOf(
+                "text/*",
+                "application/x-subrip",
+                "application/octet-stream",
+            ),
+        )
+    }
 }

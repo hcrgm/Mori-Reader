@@ -22,24 +22,25 @@ import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
-private const val AudioFetchConnectTimeoutMillis = 15_000
-private const val AudioFetchReadTimeoutMillis = 45_000
-private const val DictionaryAudioLogTag = "MoriDictionaryAudio"
-private const val EmptyAudioSourceListJson = """{"type":"audioSourceList","audioSources":[]}"""
+private const val AUDIO_FETCH_CONNECT_TIMEOUT_MILLIS = 15_000
+private const val AUDIO_FETCH_READ_TIMEOUT_MILLIS = 45_000
+private const val DICTIONARY_AUDIO_LOG_TAG = "MoriDictionaryAudio"
+private const val EMPTY_AUDIO_SOURCE_LIST_JSON = """{"type":"audioSourceList","audioSources":[]}"""
 
-private val dictionaryAudioHttpClient = HttpClient(CIO) {
-    install(HttpTimeout) {
-        connectTimeoutMillis = AudioFetchConnectTimeoutMillis.toLong()
-        requestTimeoutMillis = AudioFetchReadTimeoutMillis.toLong()
-        socketTimeoutMillis = AudioFetchReadTimeoutMillis.toLong()
+private val dictionaryAudioHttpClient =
+    HttpClient(CIO) {
+        install(HttpTimeout) {
+            connectTimeoutMillis = AUDIO_FETCH_CONNECT_TIMEOUT_MILLIS.toLong()
+            requestTimeoutMillis = AUDIO_FETCH_READ_TIMEOUT_MILLIS.toLong()
+            socketTimeoutMillis = AUDIO_FETCH_READ_TIMEOUT_MILLIS.toLong()
+        }
+        followRedirects = true
+        expectSuccess = false
+        defaultRequest {
+            accept(ContentType.Application.Json)
+            contentType(ContentType.Application.Json)
+        }
     }
-    followRedirects = true
-    expectSuccess = false
-    defaultRequest {
-        accept(ContentType.Application.Json)
-        contentType(ContentType.Application.Json)
-    }
-}
 
 internal object DictionaryAutoplayTracker {
     private val consumedKeys = linkedSetOf<String>()
@@ -69,7 +70,10 @@ internal class DictionaryAudioSourceResolver {
             resolveRemoteAudioSourceListJson(sourceUrl)
         }
 
-    fun playableAudioUrl(context: Context, url: String): String? =
+    fun playableAudioUrl(
+        context: Context,
+        url: String,
+    ): String? =
         if (url.startsWith("local://audio-file")) {
             val bytes = AndroidLocalAudioStore.audioBytes(context, url) ?: return null
             val target = File(context.cacheDir, "word-audio-${System.nanoTime()}.mp3")
@@ -79,78 +83,92 @@ internal class DictionaryAudioSourceResolver {
             url
         }
 
-    private fun resolveLocalAudioSourceListJson(context: Context, sourceUrl: String): String =
+    private fun resolveLocalAudioSourceListJson(
+        context: Context,
+        sourceUrl: String,
+    ): String =
         runCatching {
             AndroidLocalAudioStore.audioSourceListJson(context, sourceUrl)
         }.onFailure {
             Log.e(
-                DictionaryAudioLogTag,
+                DICTIONARY_AUDIO_LOG_TAG,
                 "resolveAudioSourceListJson local failed url=${sourceUrl.take(200)}",
                 it,
             )
-        }.getOrDefault(EmptyAudioSourceListJson)
+        }.getOrDefault(EMPTY_AUDIO_SOURCE_LIST_JSON)
 
     private fun resolveRemoteAudioSourceListJson(sourceUrl: String): String =
         runCatching {
             runBlocking {
-                dictionaryAudioHttpClient.get(sourceUrl) {
-                    accept(ContentType.Application.Json)
-                }.bodyAsText()
+                dictionaryAudioHttpClient
+                    .get(sourceUrl) {
+                        accept(ContentType.Application.Json)
+                    }.bodyAsText()
             }
-        }
-            .onFailure {
-                Log.e(
-                    DictionaryAudioLogTag,
-                    "resolveAudioSourceListJson remote failed url=${sourceUrl.take(200)}",
-                    it,
-                )
-            }
-            .getOrDefault(EmptyAudioSourceListJson)
+        }.onFailure {
+            Log.e(
+                DICTIONARY_AUDIO_LOG_TAG,
+                "resolveAudioSourceListJson remote failed url=${sourceUrl.take(200)}",
+                it,
+            )
+        }.getOrDefault(EMPTY_AUDIO_SOURCE_LIST_JSON)
 }
 
 internal class AndroidWordAudioPlayer {
     private var mediaPlayer: MediaPlayer? = null
     private var audioFocusRequest: AudioFocusRequest? = null
 
-    fun play(context: Context, url: String, mode: AudioPlaybackMode) {
+    fun play(
+        context: Context,
+        url: String,
+        mode: AudioPlaybackMode,
+    ) {
         stop(context)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         if (mode != AudioPlaybackMode.Mix && !requestFocus(audioManager, mode)) return
 
-        val player = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-                    .build(),
-            )
-            setDataSource(context, Uri.parse(url))
-            setOnCompletionListener { stop(context) }
-            setOnErrorListener { _, _, _ ->
-                stop(context)
-                true
-            }
-            prepareAsync()
-            setOnPreparedListener { it.start() }
-        }
-        mediaPlayer = player
-    }
-
-    private fun requestFocus(audioManager: AudioManager, mode: AudioPlaybackMode): Boolean {
-        val gain = when (mode) {
-            AudioPlaybackMode.Interrupt -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
-            AudioPlaybackMode.Duck -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
-            AudioPlaybackMode.Mix -> return true
-        }
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val request = AudioFocusRequest.Builder(gain)
-                .setAudioAttributes(
-                    AudioAttributes.Builder()
+        val player =
+            MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes
+                        .Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build(),
                 )
-                .build()
+                setDataSource(context, Uri.parse(url))
+                setOnCompletionListener { stop(context) }
+                setOnErrorListener { _, _, _ ->
+                    stop(context)
+                    true
+                }
+                prepareAsync()
+                setOnPreparedListener { it.start() }
+            }
+        mediaPlayer = player
+    }
+
+    private fun requestFocus(
+        audioManager: AudioManager,
+        mode: AudioPlaybackMode,
+    ): Boolean {
+        val gain =
+            when (mode) {
+                AudioPlaybackMode.Interrupt -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT
+                AudioPlaybackMode.Duck -> AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+                AudioPlaybackMode.Mix -> return true
+            }
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val request =
+                AudioFocusRequest
+                    .Builder(gain)
+                    .setAudioAttributes(
+                        AudioAttributes
+                            .Builder()
+                            .setUsage(AudioAttributes.USAGE_MEDIA)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                            .build(),
+                    ).build()
             audioFocusRequest = request
             audioManager.requestAudioFocus(request) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         } else {
@@ -158,7 +176,7 @@ internal class AndroidWordAudioPlayer {
             audioManager.requestAudioFocus(
                 null,
                 AudioManager.STREAM_MUSIC,
-                gain
+                gain,
             ) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
         }
     }

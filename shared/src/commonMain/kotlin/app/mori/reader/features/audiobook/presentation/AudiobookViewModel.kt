@@ -11,8 +11,8 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.error_audiobook_asset_delete_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_asset_load_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_audio_import_failed
-import app.mori.reader.shared.generated.resources.error_audiobook_match_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_match_delete_failed
+import app.mori.reader.shared.generated.resources.error_audiobook_match_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_subtitle_import_failed
 import app.mori.reader.shared.generated.resources.toast_audiobook_asset_deleted
 import app.mori.reader.shared.generated.resources.toast_audiobook_audio_imported
@@ -32,24 +32,23 @@ import kotlinx.coroutines.launch
 class AudiobookViewModel(
     private val audiobookRepository: AudiobookRepository,
     private val settingsRepository: SettingsRepository,
-    preferredStorageMode: AudiobookStorageMode = AudiobookStorageMode.Copy,
+    private var preferredStorageMode: AudiobookStorageMode = AudiobookStorageMode.Copy,
 ) : ViewModel() {
-    private val _state = MutableStateFlow(
-        AudiobookState(preferredStorageMode = preferredStorageMode)
-    )
+    private val _state =
+        MutableStateFlow(
+            AudiobookUiState(preferredStorageMode = preferredStorageMode),
+        )
     val state = _state.asStateFlow()
 
-    private var _preferredStorageMode: AudiobookStorageMode = preferredStorageMode
-
-    private val _effect = Channel<UiText>(Channel.BUFFERED)
-    val effects = _effect.receiveAsFlow()
+    private val effect = Channel<UiText>(Channel.BUFFERED)
+    val effects = effect.receiveAsFlow()
 
     init {
         viewModelScope.launch {
             settingsRepository.settings.collect { settings ->
                 val mode = settings.sasayaki.preferredStorageMode
-                if (_preferredStorageMode != mode) {
-                    _preferredStorageMode = mode
+                if (this@AudiobookViewModel.preferredStorageMode != mode) {
+                    this@AudiobookViewModel.preferredStorageMode = mode
                     _state.update { it.copy(preferredStorageMode = mode) }
                 }
             }
@@ -58,37 +57,64 @@ class AudiobookViewModel(
 
     fun onIntent(intent: AudiobookIntent) {
         when (intent) {
-            is AudiobookIntent.OpenAudiobookManager -> openAudiobookManager(intent.bookId)
-            AudiobookIntent.CloseAudiobookManager -> _state.update {
-                it.copy(selectedBookId = null, errorMessage = null)
+            is AudiobookIntent.OpenAudiobookManager -> {
+                openAudiobookManager(intent.bookId)
             }
 
-            is AudiobookIntent.LoadAudiobookAssets -> loadAudiobookAssets(intent.bookId)
-            is AudiobookIntent.ImportAudiobookAudio -> importAudiobookAudio(
-                intent.bookId,
-                intent.uriString,
-            )
+            AudiobookIntent.CloseAudiobookManager -> {
+                _state.update {
+                    it.copy(selectedBookId = null, errorMessage = null)
+                }
+            }
 
-            is AudiobookIntent.ImportAudiobookSubtitle -> importAudiobookSubtitle(
-                intent.bookId,
-                intent.uriString,
-            )
+            is AudiobookIntent.LoadAudiobookAssets -> {
+                loadAudiobookAssets(intent.bookId)
+            }
 
-            is AudiobookIntent.DeleteAudiobookAsset -> deleteAudiobookAsset(
-                intent.bookId,
-                intent.type,
-            )
+            is AudiobookIntent.ImportAudiobookAudio -> {
+                importAudiobookAudio(
+                    intent.bookId,
+                    intent.uriString,
+                )
+            }
 
-            is AudiobookIntent.RunAudiobookMatch -> runAudiobookMatch(
-                intent.bookId,
-                intent.searchWindow,
-            )
+            is AudiobookIntent.ImportAudiobookSubtitle -> {
+                importAudiobookSubtitle(
+                    intent.bookId,
+                    intent.uriString,
+                )
+            }
 
-            is AudiobookIntent.DeleteAudiobookMatch -> deleteAudiobookMatch(intent.bookId)
-            is AudiobookIntent.SetAudiobookSearchWindow -> setAudiobookSearchWindow(intent.value)
-            is AudiobookIntent.SetAudiobookStorageMode -> setAudiobookStorageMode(intent.mode)
-            AudiobookIntent.DismissAudiobookError -> _state.update {
-                it.copy(errorMessage = null)
+            is AudiobookIntent.DeleteAudiobookAsset -> {
+                deleteAudiobookAsset(
+                    intent.bookId,
+                    intent.type,
+                )
+            }
+
+            is AudiobookIntent.RunAudiobookMatch -> {
+                runAudiobookMatch(
+                    intent.bookId,
+                    intent.searchWindow,
+                )
+            }
+
+            is AudiobookIntent.DeleteAudiobookMatch -> {
+                deleteAudiobookMatch(intent.bookId)
+            }
+
+            is AudiobookIntent.SetAudiobookSearchWindow -> {
+                setAudiobookSearchWindow(intent.value)
+            }
+
+            is AudiobookIntent.SetAudiobookStorageMode -> {
+                setAudiobookStorageMode(intent.mode)
+            }
+
+            AudiobookIntent.DismissAudiobookError -> {
+                _state.update {
+                    it.copy(errorMessage = null)
+                }
             }
         }
     }
@@ -97,7 +123,7 @@ class AudiobookViewModel(
         _state.update {
             it.copy(
                 selectedBookId = bookId,
-                preferredStorageMode = _preferredStorageMode,
+                preferredStorageMode = preferredStorageMode,
                 errorMessage = null,
             )
         }
@@ -124,7 +150,10 @@ class AudiobookViewModel(
         }
     }
 
-    private fun importAudiobookAudio(bookId: String, uriString: String) {
+    private fun importAudiobookAudio(
+        bookId: String,
+        uriString: String,
+    ) {
         val storageMode = _state.value.preferredStorageMode
         _state.update {
             it.copy(isImportingAudio = true, errorMessage = null)
@@ -136,8 +165,7 @@ class AudiobookViewModel(
                         it.copy(isImportingAudio = false)
                     }
                     sendEffect(uiText(Res.string.toast_audiobook_audio_imported))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     val message = throwable.uiTextOr(Res.string.error_audiobook_audio_import_failed)
                     _state.update {
                         it.copy(
@@ -150,7 +178,10 @@ class AudiobookViewModel(
         }
     }
 
-    private fun importAudiobookSubtitle(bookId: String, uriString: String) {
+    private fun importAudiobookSubtitle(
+        bookId: String,
+        uriString: String,
+    ) {
         _state.update {
             it.copy(isImportingSubtitle = true, errorMessage = null)
         }
@@ -161,34 +192,34 @@ class AudiobookViewModel(
                     uriString,
                     AudiobookStorageMode.Copy,
                 )
+            }.onSuccess { bundle ->
+                updateAudiobookBundle(bookId, bundle) {
+                    it.copy(isImportingSubtitle = false)
+                }
+                sendEffect(uiText(Res.string.toast_audiobook_subtitle_imported))
+            }.onFailure { throwable ->
+                val message = throwable.uiTextOr(Res.string.error_audiobook_subtitle_import_failed)
+                _state.update {
+                    it.copy(
+                        isImportingSubtitle = false,
+                        errorMessage = message,
+                    )
+                }
+                sendEffect(message)
             }
-                .onSuccess { bundle ->
-                    updateAudiobookBundle(bookId, bundle) {
-                        it.copy(isImportingSubtitle = false)
-                    }
-                    sendEffect(uiText(Res.string.toast_audiobook_subtitle_imported))
-                }
-                .onFailure { throwable ->
-                    val message = throwable.uiTextOr(Res.string.error_audiobook_subtitle_import_failed)
-                    _state.update {
-                        it.copy(
-                            isImportingSubtitle = false,
-                            errorMessage = message,
-                        )
-                    }
-                    sendEffect(message)
-                }
         }
     }
 
-    private fun deleteAudiobookAsset(bookId: String, type: AudiobookAssetType) {
+    private fun deleteAudiobookAsset(
+        bookId: String,
+        type: AudiobookAssetType,
+    ) {
         viewModelScope.launch {
             runCatching { audiobookRepository.deleteAsset(bookId, type) }
                 .onSuccess { bundle ->
                     updateAudiobookBundle(bookId, bundle)
                     sendEffect(uiText(Res.string.toast_audiobook_asset_deleted))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     val message = throwable.uiTextOr(Res.string.error_audiobook_asset_delete_failed)
                     _state.update { it.copy(errorMessage = message) }
                     sendEffect(message)
@@ -196,7 +227,10 @@ class AudiobookViewModel(
         }
     }
 
-    private fun runAudiobookMatch(bookId: String, searchWindow: Int) {
+    private fun runAudiobookMatch(
+        bookId: String,
+        searchWindow: Int,
+    ) {
         val clampedWindow = searchWindow.coerceIn(50, 350)
         _state.update {
             it.copy(
@@ -214,8 +248,7 @@ class AudiobookViewModel(
                     val matched = bundle.matchData?.matches?.size ?: 0
                     val total = matched + (bundle.matchData?.unmatched ?: 0)
                     sendEffect(uiText(Res.string.toast_audiobook_match_complete, matched, total))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     val message = throwable.uiTextOr(Res.string.error_audiobook_match_failed)
                     _state.update {
                         it.copy(
@@ -234,8 +267,7 @@ class AudiobookViewModel(
                 .onSuccess { bundle ->
                     updateAudiobookBundle(bookId, bundle)
                     sendEffect(uiText(Res.string.toast_audiobook_match_deleted))
-                }
-                .onFailure { throwable ->
+                }.onFailure { throwable ->
                     val message = throwable.uiTextOr(Res.string.error_audiobook_match_delete_failed)
                     _state.update { it.copy(errorMessage = message) }
                     sendEffect(message)
@@ -249,8 +281,8 @@ class AudiobookViewModel(
     }
 
     private fun setAudiobookStorageMode(mode: AudiobookStorageMode) {
-        if (_preferredStorageMode == mode) return
-        _preferredStorageMode = mode
+        if (preferredStorageMode == mode) return
+        preferredStorageMode = mode
         _state.update { it.copy(preferredStorageMode = mode) }
         viewModelScope.launch {
             settingsRepository.setPreferredAudiobookStorageMode(mode)
@@ -260,7 +292,7 @@ class AudiobookViewModel(
     private fun updateAudiobookBundle(
         bookId: String,
         bundle: AudiobookAssetBundle,
-        transform: (AudiobookState) -> AudiobookState = { it },
+        transform: (AudiobookUiState) -> AudiobookUiState = { it },
     ) {
         _state.update {
             transform(
@@ -271,12 +303,12 @@ class AudiobookViewModel(
                     subtitleData = bundle.subtitleData,
                     matchData = bundle.matchData,
                     errorMessage = null,
-                )
+                ),
             )
         }
     }
 
     private fun sendEffect(message: UiText) {
-        _effect.trySend(message)
+        effect.trySend(message)
     }
 }

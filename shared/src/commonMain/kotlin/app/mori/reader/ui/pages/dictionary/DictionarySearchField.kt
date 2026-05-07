@@ -53,32 +53,35 @@ internal fun DictionarySearchField(
     val focusManager = LocalFocusManager.current
 
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(DictionarySearchFieldHeight)
-            .then(
-                if (blurEnabled && backdrop != null) {
-                    Modifier.textureBlur(
-                        backdrop = backdrop,
-                        shape = RoundedCornerShape(22.dp),
-                        blurRadius = 25f * density.density,
-                        colors = BlurColors(
-                            blendColors = listOf(
-                                BlendColorEntry(
-                                    color = MiuixTheme.colorScheme.surfaceContainer.copy(
-                                        0.8f
-                                    )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(DictionarySearchFieldHeight)
+                .then(
+                    if (blurEnabled && backdrop != null) {
+                        Modifier.textureBlur(
+                            backdrop = backdrop,
+                            shape = RoundedCornerShape(22.dp),
+                            blurRadius = 25f * density.density,
+                            colors =
+                                BlurColors(
+                                    blendColors =
+                                        listOf(
+                                            BlendColorEntry(
+                                                color =
+                                                    MiuixTheme.colorScheme.surfaceContainer.copy(
+                                                        0.8f,
+                                                    ),
+                                            ),
+                                        ),
                                 ),
-                            ),
-                        ),
-                    )
-                } else {
-                    Modifier
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f))
-                }
-            )
-            .padding(start = 16.dp, end = 8.dp),
+                        )
+                    } else {
+                        Modifier
+                            .clip(RoundedCornerShape(22.dp))
+                            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f))
+                    },
+                ).padding(start = 16.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -94,15 +97,17 @@ internal fun DictionarySearchField(
             modifier = Modifier.weight(1f),
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    focusManager.clearFocus(force = true)
-                    onSearch()
-                },
-            ),
-            textStyle = MiuixTheme.textStyles.main.copy(
-                color = MiuixTheme.colorScheme.onSurface,
-            ),
+            keyboardActions =
+                KeyboardActions(
+                    onSearch = {
+                        focusManager.clearFocus(force = true)
+                        onSearch()
+                    },
+                ),
+            textStyle =
+                MiuixTheme.textStyles.main.copy(
+                    color = MiuixTheme.colorScheme.onSurface,
+                ),
             cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
             decorationBox = { innerTextField ->
                 if (query.isEmpty()) {

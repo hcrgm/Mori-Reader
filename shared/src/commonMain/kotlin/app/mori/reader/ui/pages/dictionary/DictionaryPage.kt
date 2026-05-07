@@ -23,10 +23,10 @@ import app.mori.reader.data.settings.ThemeMode
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryState
 import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.cd_play_pronunciation
 import app.mori.reader.shared.generated.resources.dict_no_results
 import app.mori.reader.shared.generated.resources.dict_placeholder
 import app.mori.reader.shared.generated.resources.dict_searching
-import app.mori.reader.shared.generated.resources.cd_play_pronunciation
 import app.mori.reader.ui.components.scaffold.moriFixedHorizontalPadding
 import app.mori.reader.ui.text.asString
 import org.jetbrains.compose.resources.stringResource
@@ -49,18 +49,20 @@ fun DictionaryPage(
         query.isNotBlank() || dictionaryState.isSearching || dictionaryState.hasSearched
     val horizontalContentInset = Modifier.moriFixedHorizontalPadding(fixedPadding)
     val statusBarPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    val bottomPadding = maxOf(
-        fixedPadding.calculateBottomPadding(),
-        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-    )
+    val bottomPadding =
+        maxOf(
+            fixedPadding.calculateBottomPadding(),
+            WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+        )
     val searchTopPadding = statusBarPadding + 12.dp
     val blurEnabled = settings.appearance.blurEnabled
     val contentBackdrop = rememberDictionaryContentBackdrop(blurEnabled)
-    val isDark = when (settings.appearance.themeMode) {
-        ThemeMode.System -> isSystemInDarkTheme()
-        ThemeMode.Light -> false
-        ThemeMode.Dark -> true
-    }
+    val isDark =
+        when (settings.appearance.themeMode) {
+            ThemeMode.System -> isSystemInDarkTheme()
+            ThemeMode.Light -> false
+            ThemeMode.Dark -> true
+        }
 
     LaunchedEffect(shouldComposeWebView) {
         if (!shouldComposeWebView) {
@@ -69,89 +71,101 @@ fun DictionaryPage(
     }
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MiuixTheme.colorScheme.surface),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .background(MiuixTheme.colorScheme.surface),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (contentBackdrop != null) Modifier.layerBackdrop(contentBackdrop)
-                        else Modifier
-                    ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (contentBackdrop != null) {
+                                Modifier.layerBackdrop(contentBackdrop)
+                            } else {
+                                Modifier
+                            },
+                        ),
             ) {
                 if (shouldComposeWebView) {
                     DictionaryWebView(
-                        state = DictionaryWebViewState(
-                            query = query,
-                            entries = dictionaryState.entries,
-                            dictionaryStyles = dictionaryState.dictionaryStyles,
-                            isSearching = dictionaryState.isSearching,
-                            hasSearched = dictionaryState.hasSearched,
-                            errorMessage = dictionaryState.errorMessage?.asString(),
-                            searchingMessage = stringResource(Res.string.dict_searching),
-                            noResultsMessage = stringResource(Res.string.dict_no_results),
-                            idleMessage = stringResource(Res.string.dict_placeholder),
-                            playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
-                        ),
-                        config = DictionaryWebViewSettings(
-                            maxResults = settings.dictionary.maxResults,
-                            scanLength = settings.dictionary.scanLength,
-                            collapseDictionaries = settings.dictionary.collapseDictionaries,
-                            compactGlossaries = settings.dictionary.compactGlossaries,
-                            showExpressionTags = settings.dictionary.showExpressionTags,
-                            harmonicFrequency = settings.dictionary.harmonicFrequency,
-                            deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
-                            isDark = isDark,
-                            audioSources = settings.audio.sources,
-                            audioEnableAutoplay = settings.audio.enableAutoplay,
-                            audioPlaybackMode = settings.audio.playbackMode,
-                            contentTopPadding = searchTopPadding +
-                                DictionarySearchFieldHeight +
-                                DictionarySearchFieldContentGap,
-                            enableInternalPopup = false,
-                            contentBottomPadding = bottomPadding,
-                        ),
-                        callbacks = DictionaryWebViewCallbacks(
-                            onVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
-                            onPopupTextSelected = { text, rect ->
-                                onDictionaryIntent(
-                                    DictionaryIntent.PopupTextSelected(
-                                        parentIndex = null,
-                                        text = text,
-                                        rect = rect
+                        state =
+                            DictionaryWebViewState(
+                                query = query,
+                                entries = dictionaryState.entries,
+                                dictionaryStyles = dictionaryState.dictionaryStyles,
+                                isSearching = dictionaryState.isSearching,
+                                hasSearched = dictionaryState.hasSearched,
+                                errorMessage = dictionaryState.errorMessage?.asString(),
+                                searchingMessage = stringResource(Res.string.dict_searching),
+                                noResultsMessage = stringResource(Res.string.dict_no_results),
+                                idleMessage = stringResource(Res.string.dict_placeholder),
+                                playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
+                            ),
+                        config =
+                            DictionaryWebViewSettings(
+                                maxResults = settings.dictionary.maxResults,
+                                scanLength = settings.dictionary.scanLength,
+                                collapseDictionaries = settings.dictionary.collapseDictionaries,
+                                compactGlossaries = settings.dictionary.compactGlossaries,
+                                showExpressionTags = settings.dictionary.showExpressionTags,
+                                harmonicFrequency = settings.dictionary.harmonicFrequency,
+                                deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
+                                isDark = isDark,
+                                audioSources = settings.audio.sources,
+                                audioEnableAutoplay = settings.audio.enableAutoplay,
+                                audioPlaybackMode = settings.audio.playbackMode,
+                                contentTopPadding =
+                                    searchTopPadding +
+                                        DictionarySearchFieldHeight +
+                                        DictionarySearchFieldContentGap,
+                                enableInternalPopup = false,
+                                contentBottomPadding = bottomPadding,
+                            ),
+                        callbacks =
+                            DictionaryWebViewCallbacks(
+                                onVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
+                                onPopupTextSelected = { text, rect ->
+                                    onDictionaryIntent(
+                                        DictionaryIntent.PopupTextSelected(
+                                            parentIndex = null,
+                                            text = text,
+                                            rect = rect,
+                                        ),
                                     )
+                                },
+                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .then(horizontalContentInset)
+                                .padding(
+                                    start = 12.dp,
+                                    end = 12.dp,
                                 )
-                            },
-                        ),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .then(horizontalContentInset)
-                            .padding(
-                                start = 12.dp,
-                                end = 12.dp,
-                            )
-                            // This 0.1dp rounded corner clip is a hack for flickering.
-                            // When blur effect is enabled, the WebView will keep flickering without the rounded corner.
-                            // I don't know why but this magically fix it. DO NOT REMOVE IT!!!
-                            .clip(RoundedCornerShape(0.1.dp)),
+                                // This 0.1dp rounded corner clip is a hack for flickering.
+                                // When blur effect is enabled, the WebView will keep flickering without the rounded corner.
+                                // I don't know why but this magically fix it. DO NOT REMOVE IT!!!
+                                .clip(RoundedCornerShape(0.1.dp)),
                     )
                 } else {
                     DictionaryPlaceholder(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .then(horizontalContentInset)
-                            .padding(
-                                start = 24.dp,
-                                end = 24.dp,
-                                top = searchTopPadding +
-                                    DictionarySearchFieldHeight +
-                                    DictionarySearchFieldContentGap +
-                                    36.dp,
-                                bottom = bottomPadding,
-                            ),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .then(horizontalContentInset)
+                                .padding(
+                                    start = 24.dp,
+                                    end = 24.dp,
+                                    top =
+                                        searchTopPadding +
+                                            DictionarySearchFieldHeight +
+                                            DictionarySearchFieldContentGap +
+                                            36.dp,
+                                    bottom = bottomPadding,
+                                ),
                     )
                 }
             }
@@ -163,14 +177,15 @@ fun DictionaryPage(
                 onQueryChange = { onDictionaryIntent(DictionaryIntent.UpdateQuery(it)) },
                 onSearch = { onDictionaryIntent(DictionaryIntent.ExecuteSearch) },
                 onClear = { onDictionaryIntent(DictionaryIntent.ClearQuery) },
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .then(horizontalContentInset)
-                    .padding(
-                        start = 12.dp,
-                        end = 12.dp,
-                        top = searchTopPadding,
-                    ),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopCenter)
+                        .then(horizontalContentInset)
+                        .padding(
+                            start = 12.dp,
+                            end = 12.dp,
+                            top = searchTopPadding,
+                        ),
             )
         }
 
@@ -182,9 +197,10 @@ fun DictionaryPage(
                 isDark = isDark,
                 viewportWidth = maxWidth,
                 viewportHeight = maxHeight,
-                topInset = searchTopPadding +
-                    DictionarySearchFieldHeight +
-                    DictionarySearchFieldContentGap,
+                topInset =
+                    searchTopPadding +
+                        DictionarySearchFieldHeight +
+                        DictionarySearchFieldContentGap,
                 bottomInset = bottomPadding + 8.dp,
                 blurEnabled = blurEnabled,
                 backdrop = contentBackdrop,

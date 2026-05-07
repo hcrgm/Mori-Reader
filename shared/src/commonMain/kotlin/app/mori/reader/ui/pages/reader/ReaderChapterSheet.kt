@@ -60,29 +60,30 @@ internal fun ReaderChapterSheet(
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(420.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(420.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     items(rows) { row ->
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onSelect(row) }
-                                .background(
-                                    if (row.chapterIndex == currentChapterIndex) {
-                                        MiuixTheme.colorScheme.surfaceContainerHighest
-                                    } else {
-                                        MiuixTheme.colorScheme.surface
-                                    },
-                                )
-                                .padding(
-                                    start = 12.dp + 16.dp * row.indentLevel,
-                                    end = 12.dp,
-                                    top = 10.dp,
-                                    bottom = 10.dp,
-                                ),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelect(row) }
+                                    .background(
+                                        if (row.chapterIndex == currentChapterIndex) {
+                                            MiuixTheme.colorScheme.surfaceContainerHighest
+                                        } else {
+                                            MiuixTheme.colorScheme.surface
+                                        },
+                                    ).padding(
+                                        start = 12.dp + 16.dp * row.indentLevel,
+                                        end = 12.dp,
+                                        top = 10.dp,
+                                        bottom = 10.dp,
+                                    ),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(

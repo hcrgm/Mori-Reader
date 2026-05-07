@@ -25,22 +25,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import app.mori.reader.data.settings.AppSettings
-import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
+import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.reader.presentation.ReaderState
+import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.cd_pause
 import app.mori.reader.shared.generated.resources.cd_play_pronunciation
 import app.mori.reader.shared.generated.resources.dict_no_results
 import app.mori.reader.shared.generated.resources.dict_placeholder
 import app.mori.reader.shared.generated.resources.dict_searching
+import app.mori.reader.shared.generated.resources.sasayaki_continue
+import app.mori.reader.shared.generated.resources.sasayaki_continue_from_cue
+import app.mori.reader.shared.generated.resources.sasayaki_replay
 import app.mori.reader.ui.pages.dictionary.DictionaryWebView
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewCallbacks
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewSettings
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewState
-import app.mori.reader.shared.generated.resources.Res
-import app.mori.reader.shared.generated.resources.cd_pause
-import app.mori.reader.shared.generated.resources.sasayaki_continue
-import app.mori.reader.shared.generated.resources.sasayaki_continue_from_cue
-import app.mori.reader.shared.generated.resources.sasayaki_replay
 import app.mori.reader.ui.text.asString
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.TextButton
@@ -72,105 +72,111 @@ internal fun ReaderLookupPopup(
 ) {
     if (!lookup.visible) return
 
-    val layout = remember(
-        lookup.rect,
-        popupIndex,
-        isVertical,
-        viewportWidth,
-        viewportHeight,
-        readerTopPadding,
-        readerBottomPadding,
-        settings.popup.width,
-        settings.popup.height,
-        settings.popup.fullWidth,
-    ) {
-        lookup.rect?.let { rect ->
-            val selectionTop = if (popupIndex == 0) readerTopPadding + rect.y.dp else rect.y.dp
-            val selectionBottom = selectionTop + rect.height.dp
-            calculateReaderPopupLayout(
-                selectionLeft = rect.x.dp,
-                selectionTop = selectionTop,
-                selectionRight = rect.x.dp + rect.width.dp,
-                selectionBottom = selectionBottom,
+    val layout =
+        remember(
+            lookup.rect,
+            popupIndex,
+            isVertical,
+            viewportWidth,
+            viewportHeight,
+            readerTopPadding,
+            readerBottomPadding,
+            settings.popup.width,
+            settings.popup.height,
+            settings.popup.fullWidth,
+        ) {
+            lookup.rect?.let { rect ->
+                val selectionTop = if (popupIndex == 0) readerTopPadding + rect.y.dp else rect.y.dp
+                val selectionBottom = selectionTop + rect.height.dp
+                calculateReaderPopupLayout(
+                    selectionLeft = rect.x.dp,
+                    selectionTop = selectionTop,
+                    selectionRight = rect.x.dp + rect.width.dp,
+                    selectionBottom = selectionBottom,
+                    screenWidth = viewportWidth,
+                    screenHeight = viewportHeight,
+                    maxWidth = settings.popup.width.dp,
+                    maxHeight = settings.popup.height.dp,
+                    isVertical = isVertical,
+                    isFullWidth = popupIndex == 0 && settings.popup.fullWidth,
+                    topInset = readerTopPadding,
+                    bottomInset = readerBottomPadding,
+                )
+            } ?: calculateReaderPopupLayout(
+                selectionLeft = viewportWidth / 2f,
+                selectionTop = viewportHeight - readerBottomPadding - 1.dp,
+                selectionRight = viewportWidth / 2f,
+                selectionBottom = viewportHeight - readerBottomPadding,
                 screenWidth = viewportWidth,
                 screenHeight = viewportHeight,
                 maxWidth = settings.popup.width.dp,
                 maxHeight = settings.popup.height.dp,
-                isVertical = isVertical,
+                isVertical = false,
                 isFullWidth = popupIndex == 0 && settings.popup.fullWidth,
                 topInset = readerTopPadding,
                 bottomInset = readerBottomPadding,
             )
-        } ?: calculateReaderPopupLayout(
-            selectionLeft = viewportWidth / 2f,
-            selectionTop = viewportHeight - readerBottomPadding - 1.dp,
-            selectionRight = viewportWidth / 2f,
-            selectionBottom = viewportHeight - readerBottomPadding,
-            screenWidth = viewportWidth,
-            screenHeight = viewportHeight,
-            maxWidth = settings.popup.width.dp,
-            maxHeight = settings.popup.height.dp,
-            isVertical = false,
-            isFullWidth = popupIndex == 0 && settings.popup.fullWidth,
-            topInset = readerTopPadding,
-            bottomInset = readerBottomPadding,
-        )
-    }
+        }
 
     val outsideInteractionSource = remember { MutableInteractionSource() }
     val popupInteractionSource = remember { MutableInteractionSource() }
     val popupShape = RoundedCornerShape(10.dp)
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .zIndex(20f)
-            .clickable(
-                interactionSource = outsideInteractionSource,
-                indication = null,
-                onClick = onDismiss,
-            ),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .zIndex(20f)
+                .clickable(
+                    interactionSource = outsideInteractionSource,
+                    indication = null,
+                    onClick = onDismiss,
+                ),
     ) {
         Box(
-            modifier = Modifier
-                .offset(x = layout.left, y = layout.top)
-                .width(layout.width)
-                .height(layout.height)
-                .shadow(
-                    elevation = 18.dp,
-                    shape = popupShape,
-                    spotColor = Color.Black.copy(alpha = 0.22f),
-                )
-                .clip(popupShape)
-                .clickable(
-                    interactionSource = popupInteractionSource,
-                    indication = null,
-                    onClick = {},
-                ),
+            modifier =
+                Modifier
+                    .offset(x = layout.left, y = layout.top)
+                    .width(layout.width)
+                    .height(layout.height)
+                    .shadow(
+                        elevation = 18.dp,
+                        shape = popupShape,
+                        spotColor = Color.Black.copy(alpha = 0.22f),
+                    ).clip(popupShape)
+                    .clickable(
+                        interactionSource = popupInteractionSource,
+                        indication = null,
+                        onClick = {},
+                    ),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .then(
-                        if (blurEnabled && backdrop != null) {
-                            Modifier.textureBlur(
-                                backdrop = backdrop,
-                                shape = popupShape,
-                                blurRadius = 28f,
-                                noiseCoefficient = 0f,
-                                colors = BlurColors(
-                                    blendColors = listOf(
-                                        BlendColorEntry(
-                                            color = MiuixTheme.colorScheme.surface.copy(
-                                                alpha = if (isDark) 0.9f else 0.86f,
-                                            ),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (blurEnabled && backdrop != null) {
+                                Modifier.textureBlur(
+                                    backdrop = backdrop,
+                                    shape = popupShape,
+                                    blurRadius = 28f,
+                                    noiseCoefficient = 0f,
+                                    colors =
+                                        BlurColors(
+                                            blendColors =
+                                                listOf(
+                                                    BlendColorEntry(
+                                                        color =
+                                                            MiuixTheme.colorScheme.surface.copy(
+                                                                alpha = if (isDark) 0.9f else 0.86f,
+                                                            ),
+                                                    ),
+                                                ),
                                         ),
-                                    ),
-                                ),
-                            )
-                        } else {
-                            Modifier.background(MiuixTheme.colorScheme.surface.copy(alpha = 0.96f))
-                        }
-                    ),
+                                )
+                            } else {
+                                Modifier.background(MiuixTheme.colorScheme.surface.copy(alpha = 0.96f))
+                            },
+                        ),
             )
             Column(modifier = Modifier.fillMaxSize()) {
                 lookup.sasayakiCueId?.let { cueId ->
@@ -182,46 +188,56 @@ internal fun ReaderLookupPopup(
                     )
                 }
                 DictionaryWebView(
-                    state = DictionaryWebViewState(
-                        query = lookup.selectedText,
-                        entries = lookup.entries,
-                        dictionaryStyles = lookup.dictionaryStyles,
-                        isSearching = lookup.isSearching,
-                        hasSearched = lookup.selectedText.isNotBlank(),
-                        errorMessage = lookup.errorMessage?.asString(),
-                        searchingMessage = stringResource(Res.string.dict_searching),
-                        noResultsMessage = stringResource(Res.string.dict_no_results),
-                        idleMessage = stringResource(Res.string.dict_placeholder),
-                        playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
-                    ),
-                    config = DictionaryWebViewSettings(
-                        maxResults = settings.dictionary.maxResults,
-                        scanLength = settings.dictionary.scanLength,
-                        collapseDictionaries = settings.dictionary.collapseDictionaries,
-                        compactGlossaries = settings.dictionary.compactGlossaries,
-                        showExpressionTags = settings.dictionary.showExpressionTags,
-                        harmonicFrequency = settings.dictionary.harmonicFrequency,
-                        deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
-                        isDark = isDark,
-                        audioSources = settings.audio.sources,
-                        audioEnableAutoplay = settings.audio.enableAutoplay,
-                        audioPlaybackMode = settings.audio.playbackMode,
-                        enableInternalPopup = false,
-                        swipeDismissThreshold = if (settings.popup.swipeToDismiss) {
-                            settings.popup.swipeThreshold
-                        } else {
-                            0
-                        },
-                        contentBottomPadding = 0.dp,
-                        edgeToEdgeContent = true,
-                        transparentBackground = blurEnabled,
-                    ),
-                    callbacks = DictionaryWebViewCallbacks(
-                        onPopupTextSelected = { text, rect ->
-                            onReaderIntent(ReaderIntent.PopupTextSelected(popupIndex, text, rect))
-                        },
-                        onSwipeDismiss = onSwipeDismiss,
-                    ),
+                    state =
+                        DictionaryWebViewState(
+                            query = lookup.selectedText,
+                            entries = lookup.entries,
+                            dictionaryStyles = lookup.dictionaryStyles,
+                            isSearching = lookup.isSearching,
+                            hasSearched = lookup.selectedText.isNotBlank(),
+                            errorMessage = lookup.errorMessage?.asString(),
+                            searchingMessage = stringResource(Res.string.dict_searching),
+                            noResultsMessage = stringResource(Res.string.dict_no_results),
+                            idleMessage = stringResource(Res.string.dict_placeholder),
+                            playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
+                        ),
+                    config =
+                        DictionaryWebViewSettings(
+                            maxResults = settings.dictionary.maxResults,
+                            scanLength = settings.dictionary.scanLength,
+                            collapseDictionaries = settings.dictionary.collapseDictionaries,
+                            compactGlossaries = settings.dictionary.compactGlossaries,
+                            showExpressionTags = settings.dictionary.showExpressionTags,
+                            harmonicFrequency = settings.dictionary.harmonicFrequency,
+                            deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
+                            isDark = isDark,
+                            audioSources = settings.audio.sources,
+                            audioEnableAutoplay = settings.audio.enableAutoplay,
+                            audioPlaybackMode = settings.audio.playbackMode,
+                            enableInternalPopup = false,
+                            swipeDismissThreshold =
+                                if (settings.popup.swipeToDismiss) {
+                                    settings.popup.swipeThreshold
+                                } else {
+                                    0
+                                },
+                            contentBottomPadding = 0.dp,
+                            edgeToEdgeContent = true,
+                            transparentBackground = blurEnabled,
+                        ),
+                    callbacks =
+                        DictionaryWebViewCallbacks(
+                            onPopupTextSelected = { text, rect ->
+                                onReaderIntent(
+                                    ReaderIntent.PopupTextSelected(
+                                        popupIndex,
+                                        text,
+                                        rect,
+                                    ),
+                                )
+                            },
+                            onSwipeDismiss = onSwipeDismiss,
+                        ),
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -237,10 +253,11 @@ private fun SasayakiPopupControls(
     onContinue: () -> Unit,
 ) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MiuixTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.62f))
-            .padding(horizontal = 10.dp, vertical = 6.dp),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .background(MiuixTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.62f))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -249,7 +266,10 @@ private fun SasayakiPopupControls(
             text = if (isPlaying) stringResource(Res.string.cd_pause) else stringResource(Res.string.sasayaki_continue),
             onClick = onToggle,
         )
-        TextButton(text = stringResource(Res.string.sasayaki_continue_from_cue), onClick = onContinue)
+        TextButton(
+            text = stringResource(Res.string.sasayaki_continue_from_cue),
+            onClick = onContinue,
+        )
     }
 }
 

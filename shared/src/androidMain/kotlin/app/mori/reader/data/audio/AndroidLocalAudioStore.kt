@@ -3,30 +3,29 @@ package app.mori.reader.data.audio
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
+import androidx.core.net.toUri
 import java.io.File
 
 object AndroidLocalAudioStore {
-    private val defaultSources = listOf(
-        "nhk16",
-        "daijisen",
-        "shinmeikai8",
-        "jpod",
-        "jpod_alternate",
-        "taas",
-        "ozk5",
-        "forvo",
-        "forvo_ext",
-        "forvo_ext2",
-    )
+    private val defaultSources =
+        listOf(
+            "nhk16",
+            "daijisen",
+            "shinmeikai8",
+            "jpod",
+            "jpod_alternate",
+            "taas",
+            "ozk5",
+            "forvo",
+            "forvo_ext",
+            "forvo_ext2",
+        )
 
-    fun databaseFile(context: Context): File =
-        File(context.filesDir, "Audio/android.db")
+    fun databaseFile(context: Context): File = File(context.filesDir, "Audio/android.db")
 
-    private fun tempDatabaseFile(context: Context): File =
-        File(context.filesDir, "Audio/android.db.importing")
+    private fun tempDatabaseFile(context: Context): File = File(context.filesDir, "Audio/android.db.importing")
 
-    private fun backupDatabaseFile(context: Context): File =
-        File(context.filesDir, "Audio/android.db.backup")
+    private fun backupDatabaseFile(context: Context): File = File(context.filesDir, "Audio/android.db.backup")
 
     fun databaseSizeBytes(context: Context): Long =
         databaseFile(context)
@@ -34,8 +33,11 @@ object AndroidLocalAudioStore {
             .takeIf { it.isFile }
             ?.length() ?: 0L
 
-    fun importDatabase(context: Context, uriString: String): Long {
-        val uri = Uri.parse(uriString)
+    fun importDatabase(
+        context: Context,
+        uriString: String,
+    ): Long {
+        val uri = uriString.toUri()
         val target = databaseFile(context)
         val temp = tempDatabaseFile(context)
         val backup = backupDatabaseFile(context)
@@ -75,81 +77,99 @@ object AndroidLocalAudioStore {
         return 0L
     }
 
-    fun audioSourceListJson(context: Context, sourceUrl: String): String {
+    fun audioSourceListJson(
+        context: Context,
+        sourceUrl: String,
+    ): String {
         recoverIfNeeded(context)
-        val uri = Uri.parse(sourceUrl)
+        val uri = sourceUrl.toUri()
         val term = uri.getQueryParameter("term").orEmpty()
         val reading = katakanaToHiragana(uri.getQueryParameter("reading").orEmpty())
         val match = findAudioFile(context, term, reading)
         return if (match == null) {
-            EmptyAudioResponse
+            EMPTY_AUDIO_RESPONSE
         } else {
-            val url = Uri.Builder()
-                .scheme("local")
-                .authority("audio-file")
-                .appendQueryParameter("source", match.source)
-                .appendQueryParameter("file", match.file)
-                .build()
-                .toString()
+            val url =
+                Uri
+                    .Builder()
+                    .scheme("local")
+                    .authority("audio-file")
+                    .appendQueryParameter("source", match.source)
+                    .appendQueryParameter("file", match.file)
+                    .build()
+                    .toString()
             """{"type":"audioSourceList","audioSources":[{"name":${jsonString(match.source)},"url":${
                 jsonString(
-                    url
+                    url,
                 )
             }}]}"""
         }
     }
 
-    fun audioBytes(context: Context, audioUrl: String): ByteArray? {
+    fun audioBytes(
+        context: Context,
+        audioUrl: String,
+    ): ByteArray? {
         recoverIfNeeded(context)
-        val uri = Uri.parse(audioUrl)
+        val uri = audioUrl.toUri()
         if (uri.scheme != "local" || uri.host != "audio-file") return null
         val source = uri.getQueryParameter("source") ?: return null
         val file = uri.getQueryParameter("file") ?: return null
         val dbFile = databaseFile(context)
         if (!dbFile.isFile) return null
 
-        return SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        return SQLiteDatabase
+            .openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
             .use { db ->
-                db.rawQuery(
-                    "SELECT data FROM android WHERE source = ? AND file = ? LIMIT 1",
-                    arrayOf(source, file),
-                ).use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getBlob(0) else null
-                }
+                db
+                    .rawQuery(
+                        "SELECT data FROM android WHERE source = ? AND file = ? LIMIT 1",
+                        arrayOf(source, file),
+                    ).use { cursor ->
+                        if (cursor.moveToFirst()) cursor.getBlob(0) else null
+                    }
             }
     }
 
-    private fun findAudioFile(context: Context, term: String, reading: String): AudioFile? {
+    private fun findAudioFile(
+        context: Context,
+        term: String,
+        reading: String,
+    ): AudioFile? {
         recoverIfNeeded(context)
         val dbFile = databaseFile(context)
         if (!dbFile.isFile || term.isBlank()) return null
 
         return runCatching {
-            SQLiteDatabase.openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+            SQLiteDatabase
+                .openDatabase(dbFile.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
                 .use { db ->
-                    val sortOrder = "CASE source " + defaultSources.mapIndexed { index, source ->
-                        "WHEN ? THEN $index "
-                    }.joinToString("") + "ELSE 999 END"
+                    val sortOrder =
+                        "CASE source " +
+                            List(defaultSources.size) { index ->
+                                "WHEN ? THEN $index "
+                            }.joinToString("") + "ELSE 999 END"
                     val args = mutableListOf<String>()
-                    val sql = if (reading.isBlank()) {
-                        args += term
-                        """
-                    SELECT source, file FROM entries
-                    WHERE expression = ? AND file LIKE '%.mp3'
-                    ORDER BY $sortOrder
-                    LIMIT 1
-                    """.trimIndent()
-                    } else {
-                        args += term
-                        args += reading
-                        args += reading
-                        """
-                    SELECT source, file FROM entries
-                    WHERE (expression = ? OR reading = ?) AND file LIKE '%.mp3'
-                    ORDER BY CASE WHEN reading = ? THEN 0 ELSE 1 END, $sortOrder
-                    LIMIT 1
-                    """.trimIndent()
-                    }
+                    val sql =
+                        if (reading.isBlank()) {
+                            args += term
+                            """
+                            SELECT source, file FROM entries
+                            WHERE expression = ? AND file LIKE '%.mp3'
+                            ORDER BY $sortOrder
+                            LIMIT 1
+                            """.trimIndent()
+                        } else {
+                            args += term
+                            args += reading
+                            args += reading
+                            """
+                            SELECT source, file FROM entries
+                            WHERE (expression = ? OR reading = ?) AND file LIKE '%.mp3'
+                            ORDER BY CASE WHEN reading = ? THEN 0 ELSE 1 END, $sortOrder
+                            LIMIT 1
+                            """.trimIndent()
+                        }
                     args += defaultSources
                     db.rawQuery(sql, args.toTypedArray()).use { cursor ->
                         if (cursor.moveToFirst()) {
@@ -175,23 +195,24 @@ object AndroidLocalAudioStore {
             }
         }
 
-    private fun jsonString(value: String): String =
-        "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
+    private fun jsonString(value: String): String = "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
 
     private fun validateDatabase(file: File) {
         require(file.isFile && file.length() > 0L) { "android.db 导入失败" }
-        SQLiteDatabase.openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
+        SQLiteDatabase
+            .openDatabase(file.absolutePath, null, SQLiteDatabase.OPEN_READONLY)
             .use { db ->
-                db.rawQuery(
-                    "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('entries', 'android')",
-                    emptyArray(),
-                ).use { cursor ->
-                    val tables = mutableSetOf<String>()
-                    while (cursor.moveToNext()) {
-                        tables += cursor.getString(0)
+                db
+                    .rawQuery(
+                        "SELECT name FROM sqlite_master WHERE type = 'table' AND name IN ('entries', 'android')",
+                        emptyArray(),
+                    ).use { cursor ->
+                        val tables = mutableSetOf<String>()
+                        while (cursor.moveToNext()) {
+                            tables += cursor.getString(0)
+                        }
+                        require("entries" in tables && "android" in tables) { "android.db 结构无效" }
                     }
-                    require("entries" in tables && "android" in tables) { "android.db 结构无效" }
-                }
             }
     }
 
@@ -211,7 +232,10 @@ object AndroidLocalAudioStore {
         }
     }
 
-    private data class AudioFile(val source: String, val file: String)
+    private data class AudioFile(
+        val source: String,
+        val file: String,
+    )
 
-    private const val EmptyAudioResponse = """{"type":"audioSourceList","audioSources":[]}"""
+    private const val EMPTY_AUDIO_RESPONSE = """{"type":"audioSourceList","audioSources":[]}"""
 }
