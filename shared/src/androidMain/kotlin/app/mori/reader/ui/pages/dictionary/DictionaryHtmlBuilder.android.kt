@@ -186,7 +186,6 @@ private fun dictionaryCss(
         .header-buttons { display: flex; align-items: center; gap: 6px; margin-left: auto; flex: 0 0 auto; }
         .audio-button { width: 32px; height: 32px; border: none; border-radius: 16px; background: var(--mori-audio-button-bg); color: var(--mori-audio-button-color); font-size: 18px; line-height: 32px; padding: 0; }
         .expression { font-size: 26px; line-height: 1.25; font-weight: 650; overflow-wrap: anywhere; }
-        .expression ruby { ruby-align: center; }
         .expression rt { font-size: 13px; font-weight: 400; user-select: none; -webkit-user-select: none; pointer-events: none; }
         .tag-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 4px; margin-top: 6px; }
         .expr-tag, .deinflection-tag, .frequency-group { font-size: 11px; border-radius: 4px; padding: 2px 5px; background: var(--mori-tag-bg); line-height: 1.45; }

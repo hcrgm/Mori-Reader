@@ -855,7 +855,7 @@ function highlightLookupMatch(selection) {
   } catch {}
 }
 function normalizeRubyTextContainers(root) {
-  root.querySelectorAll('.glossary-content ruby, .expression ruby').forEach(ruby => {
+  root.querySelectorAll('.glossary-content ruby').forEach(ruby => {
     ruby.childNodes.forEach(node => {
       if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
         const span = document.createElement('span');
