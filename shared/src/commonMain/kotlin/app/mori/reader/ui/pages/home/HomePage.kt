@@ -45,8 +45,8 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
+import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.basic.TabRowDefaults
-import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.More
@@ -184,10 +184,10 @@ fun HomePage(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .height(TabRowDefaults.TabRowWithContourHeight),
+                            .height(TabRowDefaults.TabRowHeight),
                 )
             } else {
-                TabRowWithContour(
+                TabRow(
                     tabs = tabs,
                     selectedTabIndex = pagerState.currentPage.coerceAtMost(tabs.lastIndex),
                     onTabSelected = { index ->
