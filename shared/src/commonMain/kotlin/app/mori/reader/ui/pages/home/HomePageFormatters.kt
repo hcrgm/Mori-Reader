@@ -8,7 +8,6 @@ import app.mori.reader.data.settings.BookshelfSortMode
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.audiobook_asset_copied
 import app.mori.reader.shared.generated.resources.audiobook_asset_referenced
-import app.mori.reader.shared.generated.resources.audiobook_subtitle_saved
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -29,7 +28,6 @@ fun AudiobookAssetInfo.subtitleDetails(cueCount: Int?): String =
         format.uppercase(),
         formatBytes(fileSizeBytes),
         cueCount?.let { "$it cues" },
-        stringResource(Res.string.audiobook_subtitle_saved),
     ).joinToString(" · ")
 
 fun formatMatchRate(

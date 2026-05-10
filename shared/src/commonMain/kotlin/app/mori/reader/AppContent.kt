@@ -14,12 +14,15 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.NavDisplayTransitionEffects
 import app.mori.reader.app.navigation.AppNavigationState
+import app.mori.reader.features.anki.presentation.AnkiIntent
+import app.mori.reader.features.anki.presentation.AnkiState
 import app.mori.reader.features.audiobook.presentation.AudiobookIntent
 import app.mori.reader.features.audiobook.presentation.AudiobookUiState
 import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
 import app.mori.reader.features.bookshelf.presentation.BookshelfState
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryState
+import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.reader.presentation.ReaderViewModel
 import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.features.settings.presentation.SettingsUiState
@@ -29,9 +32,12 @@ import app.mori.reader.ui.AppState
 import app.mori.reader.ui.navigation.AppRoute
 import app.mori.reader.ui.navigation.MainTabsContent
 import app.mori.reader.ui.pages.reader.ReaderPage
+import app.mori.reader.ui.pages.settings.AnkiConnectionSettingsPage
+import app.mori.reader.ui.pages.settings.AnkiSettingsPage
 import app.mori.reader.ui.pages.settings.AppearanceSettingsPage
 import app.mori.reader.ui.pages.settings.AudioSettingsPage
 import app.mori.reader.ui.pages.settings.DictionarySettingsPage
+import app.mori.reader.ui.pages.settings.ReaderSettingsPage
 import app.mori.reader.ui.text.resolveString
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
@@ -47,12 +53,14 @@ fun AppContent(
     dictionaryState: DictionaryState,
     audiobookUiState: AudiobookUiState,
     settingsUi: SettingsUiState,
+    ankiState: AnkiState,
     effects: Flow<AppEffect>,
     onIntent: (AppIntent) -> Unit,
     onBookshelfIntent: (BookshelfIntent) -> Unit,
     onDictionaryIntent: (DictionaryIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
     onAudiobookIntent: (AudiobookIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
 ) {
     val showToast = rememberSystemToast()
     val navigationState = remember { AppNavigationState() }
@@ -88,15 +96,19 @@ fun AppContent(
                             dictionary = dictionaryState,
                             settings = state.settings,
                             audiobook = audiobookUiState,
+                            ankiState = ankiState,
                             navigationState = navigationState,
                             onIntent = onIntent,
                             onBookshelfIntent = onBookshelfIntent,
                             onDictionaryIntent = onDictionaryIntent,
                             onSettingsIntent = onSettingsIntent,
                             onAudiobookIntent = onAudiobookIntent,
+                            onAnkiIntent = onAnkiIntent,
                             onOpenAppearanceSettings = { navigationState.pushRoot(AppRoute.AppearanceSettings) },
+                            onOpenReaderSettings = { navigationState.pushRoot(AppRoute.ReaderSettings) },
                             onOpenDictionarySettings = { navigationState.pushRoot(AppRoute.DictionarySettings) },
                             onOpenAudioSettings = { navigationState.pushRoot(AppRoute.AudioSettings) },
+                            onOpenAnkiSettings = { navigationState.pushRoot(AppRoute.AnkiSettings) },
                         )
                     }
                     entry<AppRoute.Reader> { route ->
@@ -109,10 +121,15 @@ fun AppContent(
                         ReaderPage(
                             reader = readerState,
                             settings = state.settings,
+                            ankiState = ankiState,
                             bookId = route.bookId,
                             onReaderIntent = readerViewModel::onIntent,
                             onSettingsIntent = onSettingsIntent,
-                            onBack = navigationState::popRoot,
+                            onAnkiIntent = onAnkiIntent,
+                            onBack = {
+                                readerViewModel.onIntent(ReaderIntent.CloseBook)
+                                navigationState.popRoot()
+                            },
                         )
                     }
                     entry<AppRoute.DictionarySettings> {
@@ -130,11 +147,35 @@ fun AppContent(
                             onBack = navigationState::popRoot,
                         )
                     }
+                    entry<AppRoute.ReaderSettings> {
+                        ReaderSettingsPage(
+                            settings = state.settings,
+                            onSettingsIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
                     entry<AppRoute.AudioSettings> {
                         AudioSettingsPage(
                             settings = state.settings,
                             settingsUi = settingsUi,
                             onIntent = onSettingsIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.AnkiSettings> {
+                        AnkiSettingsPage(
+                            settings = state.settings,
+                            ankiState = ankiState,
+                            dictionaryState = settingsUi.dictionaryManagement,
+                            onIntent = onAnkiIntent,
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.AnkiConnectionSettings> {
+                        AnkiConnectionSettingsPage(
+                            settings = state.settings,
+                            ankiState = ankiState,
+                            onIntent = onAnkiIntent,
                             onBack = navigationState::popRoot,
                         )
                     }

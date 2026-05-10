@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,7 +28,9 @@ import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.cd_open_audiobook
 import app.mori.reader.shared.generated.resources.cd_table_of_contents
 import org.jetbrains.compose.resources.stringResource
+import top.yukonga.miuix.kmp.basic.FloatingToolbar
 import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -88,6 +91,8 @@ internal fun ReaderHeaderInfo(
 @Composable
 internal fun ReaderBottomChrome(
     isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
     bottomPadding: Dp,
     onBack: () -> Unit,
     onMenu: () -> Unit,
@@ -95,81 +100,112 @@ internal fun ReaderBottomChrome(
     onSasayaki: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val buttonContentColor = if (isDark) Color(0xFFF3F1EA) else Color(0xFF1C1B18)
-    Box(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(
-                    start = 22.dp,
-                    end = 22.dp,
-                    bottom = bottomPadding + 12.dp,
-                ),
+    ReaderSheetTheme(
+        isDark = isDark,
+        monetEnabled = monetEnabled,
+        monetKeyColor = monetKeyColor,
     ) {
-        FloatingReaderButton(
-            isDark = isDark,
-            onClick = onBack,
+        val buttonContentColor = MiuixTheme.colorScheme.onSurface
+        val floatingBackground = floatingReaderContainerColor()
+        Box(
             modifier =
-                Modifier
-                    .align(Alignment.CenterStart),
-        ) {
-            Icon(
-                MiuixIcons.Back,
-                tint = buttonContentColor,
-                contentDescription = stringResource(Res.string.cd_back),
-            )
-        }
-        Row(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = 22.dp,
+                        end = 22.dp,
+                        bottom = bottomPadding + 12.dp,
+                    ),
         ) {
             FloatingReaderButton(
                 isDark = isDark,
-                onClick = onSasayaki,
+                onClick = onBack,
+                modifier =
+                    Modifier
+                        .align(Alignment.CenterStart),
             ) {
                 Icon(
-                    MiuixIcons.Music,
+                    MiuixIcons.Back,
                     tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_open_audiobook),
+                    contentDescription = stringResource(Res.string.cd_back),
                 )
             }
-            FloatingReaderButton(
-                isDark = isDark,
-                onClick = onAppearance,
+            Row(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                horizontalArrangement = Arrangement.spacedBy(0.dp),
             ) {
-                Icon(
-                    MiuixIcons.Background,
-                    tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_appearance),
-                )
-            }
-            FloatingReaderButton(
-                isDark = isDark,
-                onClick = onMenu,
-            ) {
-                Icon(
-                    MiuixIcons.ListView,
-                    tint = buttonContentColor,
-                    contentDescription = stringResource(Res.string.cd_table_of_contents),
-                )
+                FloatingToolbar(
+                    color = floatingBackground,
+                    shadowElevation = 10.dp,
+                    outSidePadding = PaddingValues(0.dp),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        ReaderToolbarButton(
+                            onClick = onSasayaki,
+                        ) {
+                            Icon(
+                                MiuixIcons.Music,
+                                tint = buttonContentColor,
+                                contentDescription = stringResource(Res.string.cd_open_audiobook),
+                            )
+                        }
+                        ReaderToolbarButton(
+                            onClick = onAppearance,
+                        ) {
+                            Icon(
+                                MiuixIcons.Background,
+                                tint = buttonContentColor,
+                                contentDescription = stringResource(Res.string.cd_appearance),
+                            )
+                        }
+                        ReaderToolbarButton(
+                            onClick = onMenu,
+                        ) {
+                            Icon(
+                                MiuixIcons.ListView,
+                                tint = buttonContentColor,
+                                contentDescription = stringResource(Res.string.cd_table_of_contents),
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-internal fun FloatingReaderButton(
-    isDark: Boolean,
+private fun ReaderToolbarButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val buttonBackground =
-        if (isDark) {
-            Color(0xFF242424).copy(alpha = 0.94f)
-        } else {
-            Color(0xFFFFFCF5).copy(alpha = 0.94f)
-        }
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+        minWidth = 40.dp,
+        minHeight = 40.dp,
+        backgroundColor = Color.Transparent,
+        content = content,
+    )
+}
+
+@Composable
+private fun floatingReaderContainerColor(): Color = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f)
+
+@Composable
+internal fun FloatingReaderButton(
+    isDark: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit,
+) {
+    val buttonBackground = floatingReaderContainerColor()
     val buttonShadow =
         if (isDark) {
             Color.Black.copy(alpha = 0.34f)
@@ -186,7 +222,7 @@ internal fun FloatingReaderButton(
                     spotColor = buttonShadow,
                 ).clip(CircleShape)
                 .background(buttonBackground)
-                .clickable(onClick = onClick),
+                .clickable(enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -196,12 +232,20 @@ internal fun FloatingReaderButton(
 @Composable
 internal fun ReaderSheetTheme(
     isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
     content: @Composable () -> Unit,
 ) {
     val controller =
-        remember(isDark) {
+        remember(isDark, monetEnabled, monetKeyColor) {
             ThemeController(
-                colorSchemeMode = if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light,
+                colorSchemeMode =
+                    if (monetEnabled) {
+                        if (isDark) ColorSchemeMode.MonetDark else ColorSchemeMode.MonetLight
+                    } else {
+                        if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light
+                    },
+                keyColor = monetKeyColor.takeIf { it != 0L }?.let(::Color),
             )
         }
     MiuixTheme(

@@ -18,6 +18,7 @@ kotlin {
         }
         minSdk = 26
         namespace = "app.mori.reader.shared"
+        withHostTest {}
     }
 
     sourceSets {
@@ -42,10 +43,17 @@ kotlin {
             implementation(libs.koin.compose)
             implementation(libs.koin.compose.viewmodel)
         }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.kotlinx.coroutines.test)
+        }
         androidMain.dependencies {
             implementation("androidx.appcompat:appcompat:1.7.0")
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.media3.exoplayer)
+            implementation(libs.androidx.media3.session)
+            implementation(libs.androidx.media3.transformer)
+            implementation(libs.ankidroid.api)
             implementation(libs.coil.compose)
             implementation(libs.koin.android)
             implementation(libs.ktor.client.core)

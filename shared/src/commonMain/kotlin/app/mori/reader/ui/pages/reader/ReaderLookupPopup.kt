@@ -12,44 +12,63 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import app.mori.reader.data.anki.AnkiConnectionMode
+import app.mori.reader.data.anki.buildReaderAnkiMiningContext
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.anki.presentation.AnkiIntent
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.reader.presentation.ReaderState
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_pause
+import app.mori.reader.shared.generated.resources.cd_play
 import app.mori.reader.shared.generated.resources.cd_play_pronunciation
 import app.mori.reader.shared.generated.resources.dict_no_results
 import app.mori.reader.shared.generated.resources.dict_placeholder
 import app.mori.reader.shared.generated.resources.dict_searching
-import app.mori.reader.shared.generated.resources.sasayaki_continue
 import app.mori.reader.shared.generated.resources.sasayaki_continue_from_cue
 import app.mori.reader.shared.generated.resources.sasayaki_replay
+import app.mori.reader.ui.pages.dictionary.DictionaryPopupActionBar
 import app.mori.reader.ui.pages.dictionary.DictionaryWebView
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewCallbacks
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewSettings
 import app.mori.reader.ui.pages.dictionary.DictionaryWebViewState
 import app.mori.reader.ui.text.asString
 import org.jetbrains.compose.resources.stringResource
-import top.yukonga.miuix.kmp.basic.TextButton
+import top.yukonga.miuix.kmp.basic.HorizontalDivider
+import top.yukonga.miuix.kmp.basic.Icon
+import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.blur.BlendColorEntry
 import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
+import top.yukonga.miuix.kmp.icon.MiuixIcons
+import top.yukonga.miuix.kmp.icon.extended.Import
+import top.yukonga.miuix.kmp.icon.extended.Pause
+import top.yukonga.miuix.kmp.icon.extended.Play
+import top.yukonga.miuix.kmp.icon.extended.Refresh
+import top.yukonga.miuix.kmp.theme.LocalContentColor
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
@@ -58,6 +77,7 @@ internal fun ReaderLookupPopup(
     popupIndex: Int,
     reader: ReaderState,
     settings: AppSettings,
+    ankiDuplicateExpression: String?,
     isDark: Boolean,
     isVertical: Boolean,
     viewportWidth: Dp,
@@ -67,6 +87,7 @@ internal fun ReaderLookupPopup(
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
     onReaderIntent: (ReaderIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onDismiss: () -> Unit,
     onSwipeDismiss: () -> Unit,
 ) {
@@ -121,6 +142,12 @@ internal fun ReaderLookupPopup(
     val outsideInteractionSource = remember { MutableInteractionSource() }
     val popupInteractionSource = remember { MutableInteractionSource() }
     val popupShape = RoundedCornerShape(10.dp)
+    val ankiSettings = settings.anki
+    val ankiNeedsAudio = ankiSettings.fieldMappings.values.any { it.contains("{audio}") }
+    var canNavigateBack by remember(lookup.id) { mutableStateOf(false) }
+    var canNavigateForward by remember(lookup.id) { mutableStateOf(false) }
+    var navigateBackToken by remember(lookup.id) { mutableIntStateOf(0) }
+    var navigateForwardToken by remember(lookup.id) { mutableIntStateOf(0) }
     Box(
         modifier =
             Modifier
@@ -179,9 +206,22 @@ internal fun ReaderLookupPopup(
                         ),
             )
             Column(modifier = Modifier.fillMaxSize()) {
+                DictionaryPopupActionBar(
+                    canNavigateBack = canNavigateBack,
+                    canNavigateForward = canNavigateForward,
+                    blurEnabled = blurEnabled,
+                    backdrop = backdrop,
+                    isDark = isDark,
+                    onNavigateBack = { navigateBackToken++ },
+                    onNavigateForward = { navigateForwardToken++ },
+                    onClose = onDismiss,
+                )
                 lookup.sasayakiCueId?.let { cueId ->
                     SasayakiPopupControls(
                         isPlaying = reader.sasayakiPlayer.isPlaying,
+                        blurEnabled = blurEnabled,
+                        backdrop = backdrop,
+                        isDark = isDark,
                         onReplay = { onReaderIntent(ReaderIntent.ReplayCue(cueId)) },
                         onToggle = { onReaderIntent(ReaderIntent.TogglePlayback) },
                         onContinue = { onReaderIntent(ReaderIntent.ContinueFromCue(cueId)) },
@@ -224,6 +264,14 @@ internal fun ReaderLookupPopup(
                             contentBottomPadding = 0.dp,
                             edgeToEdgeContent = true,
                             transparentBackground = blurEnabled,
+                            ankiNeedsAudio = ankiNeedsAudio,
+                            ankiAllowDuplicates = ankiSettings.allowDuplicates,
+                            ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,
+                            ankiEmbedMedia = ankiSettings.embedMedia,
+                            ankiCompactGlossaries = ankiSettings.compactGlossaries,
+                            ankiDuplicateExpression = ankiDuplicateExpression,
+                            navigateBackToken = navigateBackToken,
+                            navigateForwardToken = navigateForwardToken,
                         ),
                     callbacks =
                         DictionaryWebViewCallbacks(
@@ -236,7 +284,30 @@ internal fun ReaderLookupPopup(
                                     ),
                                 )
                             },
+                            onMineEntry = { content ->
+                                onAnkiIntent(
+                                    AnkiIntent.MineNote(
+                                        content = content,
+                                        context =
+                                            buildReaderAnkiMiningContext(
+                                                book = reader.book,
+                                                sentence = lookup.sentence.ifBlank { lookup.selectedText },
+                                                sasayakiAudioAssetInfo = reader.sasayakiAudioAssetInfo,
+                                                sasayakiMatches = reader.sasayakiMatches,
+                                                sasayakiDelayMs = reader.sasayakiPlayer.delayMs,
+                                                sasayakiCueId = lookup.sasayakiCueId,
+                                            ),
+                                    ),
+                                )
+                            },
+                            onCheckDuplicate = { expression ->
+                                onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
+                            },
                             onSwipeDismiss = onSwipeDismiss,
+                            onNavigationStateChange = { back, forward ->
+                                canNavigateBack = back
+                                canNavigateForward = forward
+                            },
                         ),
                     modifier = Modifier.weight(1f),
                 )
@@ -248,28 +319,86 @@ internal fun ReaderLookupPopup(
 @Composable
 private fun SasayakiPopupControls(
     isPlaying: Boolean,
+    blurEnabled: Boolean,
+    backdrop: LayerBackdrop?,
+    isDark: Boolean,
     onReplay: () -> Unit,
     onToggle: () -> Unit,
     onContinue: () -> Unit,
 ) {
-    Row(
+    val density = LocalDensity.current
+    val topBarShape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    Box(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(MiuixTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.62f))
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+                .then(
+                    if (blurEnabled && backdrop != null) {
+                        Modifier.textureBlur(
+                            backdrop = backdrop,
+                            shape = topBarShape,
+                            blurRadius = 25f * density.density,
+                            noiseCoefficient = 0f,
+                            colors =
+                                BlurColors(
+                                    blendColors =
+                                        listOf(
+                                            BlendColorEntry(
+                                                color =
+                                                    MiuixTheme.colorScheme.surface.copy(
+                                                        alpha = if (isDark) 0.82f else 0.74f,
+                                                    ),
+                                            ),
+                                        ),
+                                ),
+                        )
+                    } else {
+                        Modifier.background(
+                            MiuixTheme.colorScheme.surfaceContainerHighest.copy(
+                                alpha = if (isDark) 0.78f else 0.92f,
+                            ),
+                            shape = topBarShape,
+                        )
+                    },
+                ),
     ) {
-        TextButton(text = stringResource(Res.string.sasayaki_replay), onClick = onReplay)
-        TextButton(
-            text = if (isPlaying) stringResource(Res.string.cd_pause) else stringResource(Res.string.sasayaki_continue),
-            onClick = onToggle,
-        )
-        TextButton(
-            text = stringResource(Res.string.sasayaki_continue_from_cue),
-            onClick = onContinue,
-        )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            CompositionLocalProvider(LocalContentColor provides MiuixTheme.colorScheme.onSurface) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onReplay, minWidth = 32.dp, minHeight = 32.dp) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = MiuixIcons.Refresh,
+                            contentDescription = stringResource(Res.string.sasayaki_replay),
+                        )
+                    }
+                    IconButton(onClick = onToggle, minWidth = 32.dp, minHeight = 32.dp) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = if (isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
+                            contentDescription =
+                                if (isPlaying) {
+                                    stringResource(Res.string.cd_pause)
+                                } else {
+                                    stringResource(Res.string.cd_play)
+                                },
+                        )
+                    }
+                    IconButton(onClick = onContinue, minWidth = 32.dp, minHeight = 32.dp) {
+                        Icon(
+                            modifier = Modifier.size(18.dp),
+                            imageVector = MiuixIcons.Import,
+                            contentDescription = stringResource(Res.string.sasayaki_continue_from_cue),
+                        )
+                    }
+                }
+            }
+            HorizontalDivider(color = MiuixTheme.colorScheme.dividerLine)
+        }
     }
 }
 

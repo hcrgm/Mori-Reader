@@ -840,22 +840,23 @@ internal fun readerBootstrapScript(
             },
             scrollToCue: function(target) {
               if (!target) return false;
+              var rect = window.moriReader.getRect(target);
               if (window.moriReader.continuousMode) {
-                target.scrollIntoView({
-                  block: 'center',
-                  inline: 'center',
-                  behavior: 'instant'
-                });
+                var visible = window.moriReader.isVertical()
+                  ? rect.left >= 0 && rect.right <= window.innerWidth
+                  : rect.top >= 0 && rect.bottom <= window.innerHeight;
+                if (visible) return false;
+                target.scrollIntoView({ block: 'start', inline: 'nearest' });
                 AndroidMoriReader.progressSaved(window.moriReader.calculateProgress());
                 return true;
               }
 
               var context = window.moriReader.getScrollContext();
               if (context.pageSize <= 0) return false;
-              var rect = window.moriReader.getRect(target);
               var currentScroll = context.vertical ? context.scrollEl.scrollTop : context.scrollEl.scrollLeft;
-              var anchor = (context.vertical ? rect.top : rect.left) + currentScroll;
+              var anchor = (context.vertical ? (rect.top + rect.bottom) / 2 : (rect.left + rect.right) / 2) + currentScroll;
               var targetScroll = window.moriReader.alignToPage(context, anchor);
+              if (targetScroll === currentScroll) return false;
               window.lastPageScroll = targetScroll;
               window.moriReader.setScrollOffset(context, targetScroll);
               requestAnimationFrame(function() {

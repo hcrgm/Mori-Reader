@@ -30,6 +30,14 @@ sealed interface SettingsIntent {
         val enabled: Boolean,
     ) : SettingsIntent
 
+    data class SetMonetEnabled(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
+    data class SetMonetKeyColor(
+        val color: Long,
+    ) : SettingsIntent
+
     data class SetReaderFullscreen(
         val enabled: Boolean,
     ) : SettingsIntent

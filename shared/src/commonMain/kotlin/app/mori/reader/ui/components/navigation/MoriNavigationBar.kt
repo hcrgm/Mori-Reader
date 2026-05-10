@@ -27,7 +27,7 @@ internal fun MoriNavigationBar(
     BlurredBar(backdrop, blurEnabled) {
         NavigationBar(
             color = barColor,
-            showDivider = false,
+            showDivider = true,
         ) {
             AppTab.entries.forEach { tab ->
                 NavigationBarItem(

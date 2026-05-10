@@ -25,6 +25,8 @@
     <string name="cd_import_dictionary">Import dictionary</string>
     <string name="cd_play">Play</string>
     <string name="cd_pause">Pause</string>
+    <string name="cd_previous">Previous</string>
+    <string name="cd_next">Next</string>
     <string name="cd_play_pronunciation">Play pronunciation</string>
 
     <!-- Button labels -->
@@ -38,6 +40,7 @@
     <string name="btn_refresh">Refresh</string>
     <string name="btn_close">Close</string>
     <string name="btn_dismiss">Dismiss</string>
+    <string name="value_none">None</string>
 
     <!-- ===================== Bookshelf (HomePage) ===================== -->
     <string name="home_tab_all">All</string>
@@ -71,16 +74,32 @@
     <string name="reader_loading_epub">Loading EPUB</string>
     <string name="reader_no_chapter">No chapters to read</string>
     <string name="reader_chapter_sheet_title">Table of Contents</string>
+    <string name="reader_chapter_sheet_empty">This book has no available table of contents</string>
+    <string name="reader_chapter_jump">Jump to</string>
+    <string name="reader_chapter_jump_title">Jump to</string>
+    <string name="reader_chapter_jump_summary">Current: %1$d / %2$d</string>
+    <string name="reader_chapter_jump_label">Character count</string>
+    <string name="reader_chapter_jump_invalid_title">Invalid input</string>
+    <string name="reader_chapter_jump_invalid_message">Please enter a valid integer greater than or equal to 0</string>
     <string name="reader_appearance_sheet_title">Appearance</string>
 
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">Settings</string>
     <string name="settings_appearance_title">Appearance</string>
-    <string name="settings_appearance_summary">App theme, blur effects, and reader typography</string>
+    <string name="settings_appearance_summary">App theme, language, and blur effects</string>
+    <string name="settings_reader_title">Reader</string>
+    <string name="settings_reader_summary">Reading layout, typography, and dictionary popup</string>
     <string name="settings_dictionary_title">Dictionaries</string>
     <string name="settings_dictionary_summary">Import, enable, reorder, and manage local dictionaries</string>
     <string name="settings_audio_title">Audio</string>
     <string name="settings_audio_summary">Configure term pronunciation, auto-play, and offline audio</string>
+    <string name="settings_anki_title">Anki</string>
+    <string name="settings_anki_summary">Decks, note fields, duplicates, and mining options</string>
+    <string name="settings_anki_status_connected">connected</string>
+    <string name="settings_anki_status_disconnected">not connected</string>
+    <string name="reader_settings_display_title">Reading</string>
+    <string name="reader_settings_typography_title">Typography</string>
+    <string name="reader_settings_popup_title">Dictionary popup</string>
 
     <!-- ===================== Appearance Settings ===================== -->
     <string name="appearance_title">Appearance</string>
@@ -95,6 +114,10 @@
     <string name="language_chinese">中文</string>
     <string name="appearance_theme_title">App theme</string>
     <string name="appearance_theme_summary">Choose system, light, or dark theme</string>
+    <string name="appearance_monet_title">Monet colors</string>
+    <string name="appearance_monet_summary">Use dynamic colors from the system wallpaper</string>
+    <string name="appearance_monet_key_color_title">Key color</string>
+    <string name="monet_key_color_default">Default</string>
     <string name="appearance_blur_title">Global blur effect</string>
     <string name="appearance_blur_summary">Control blur effects for app components</string>
     <string name="appearance_writing_vertical">Vertical</string>
@@ -135,6 +158,9 @@
     <string name="audio_auto_play_title">Auto-play</string>
     <string name="audio_auto_play_summary">Play the first pronunciation automatically after lookup</string>
     <string name="audio_background_title">Background audio</string>
+    <string name="audio_source_enabled">Enabled</string>
+    <string name="audio_source_disabled">Disabled</string>
+    <string name="audio_source_local_unavailable">Local database not imported yet</string>
     <string name="audio_source_title">Audio sources</string>
     <string name="audio_add_source_title">Add source</string>
     <string name="audio_edit_source_title">Edit source</string>
@@ -158,15 +184,69 @@
     <string name="audio_mode_duck">Duck others</string>
     <string name="audio_mode_mix">Keep others</string>
 
+    <!-- ===================== Anki Settings ===================== -->
+    <string name="anki_title">Anki</string>
+    <string name="anki_connection_title">Connection</string>
+    <string name="anki_connection_mode_title">Connection mode</string>
+    <string name="anki_ankidroid_guidance">Use AnkiDroid as the recommended local path. Install AnkiDroid, enable its API, and grant database permission when prompted.</string>
+    <string name="anki_http_title">AnkiConnect HTTP</string>
+    <string name="anki_http_url_label">Endpoint URL</string>
+    <string name="anki_http_timeout_label">Timeout in milliseconds</string>
+    <string name="anki_status_title">Status</string>
+    <string name="anki_status_connected">Connected</string>
+    <string name="anki_status_disconnected">Not connected</string>
+    <string name="anki_deck_title">Deck</string>
+    <string name="anki_model_title">Note type</string>
+    <string name="anki_no_decks">Fetch decks first</string>
+    <string name="anki_no_models">Fetch note types first</string>
+    <string name="anki_no_fields">Select a note type to edit field mappings.</string>
+    <string name="anki_field_mapping_title">Field mapping</string>
+    <string name="anki_lapis_template_hint">When a Lapis note type is selected, recommended placeholders will be filled in automatically.</string>
+    <string name="anki_options_title">Options</string>
+    <string name="anki_allow_duplicates_title">Allow duplicates</string>
+    <string name="anki_allow_duplicates_summary">Let Anki accept a note even when the expression already exists</string>
+    <string name="anki_embed_media_title">Embed media</string>
+    <string name="anki_embed_media_summary">Include audio and images when the selected transport supports them</string>
+    <string name="anki_compact_glossaries_title">Compact glossaries</string>
+    <string name="anki_compact_glossaries_summary">Render glossary lists in a denser card-friendly format</string>
+    <string name="anki_tags_label">Tags separated by spaces</string>
+    <string name="anki_handlebars_title">Available handlebars</string>
+    <string name="anki_duplicate_scope_title">Duplicate scope</string>
+    <string name="anki_duplicate_scope_collection">Collection</string>
+    <string name="anki_duplicate_scope_deck">Deck</string>
+    <string name="anki_duplicate_scope_note_type">Note type</string>
+    <string name="anki_check_all_models_title">Check all models</string>
+    <string name="anki_check_all_models_summary">Check duplicate expressions across every note type</string>
+    <string name="anki_force_sync_title">Force sync after add</string>
+    <string name="anki_force_sync_summary">Run Anki sync after a note is added successfully</string>
+
     <!-- ===================== Audiobook Import ===================== -->
     <string name="cd_open_audiobook">Open audiobook</string>
     <string name="audiobook_title">Audiobook</string>
+    <string name="audiobook_import_title">Import audiobook</string>
     <string name="audiobook_storage_title">Audio storage</string>
     <string name="audiobook_storage_copy">Copy locally</string>
     <string name="audiobook_storage_reference">Reference original</string>
     <string name="audiobook_subtitle_storage_note">Applies only to audio; subtitles are always copied into the book and parsed as JSON</string>
-    <string name="audiobook_audio_title">Audio</string>
-    <string name="audiobook_subtitle_title">Subtitles</string>
+    <string name="audiobook_audio_title">Choose audio</string>
+    <string name="audiobook_subtitle_title">Choose subtitles</string>
+    <string name="audiobook_audio_section">Audio</string>
+    <string name="audiobook_subtitle_section">Subtitles</string>
+    <string name="audiobook_choose">Choose</string>
+    <string name="audiobook_change">Change</string>
+    <string name="audiobook_no_audio_selected">Choose an audio file</string>
+    <string name="audiobook_no_subtitle_selected">Choose a subtitle file</string>
+    <string name="audiobook_importing">Importing</string>
+    <string name="audiobook_progress_audio">Saving and parsing audio info</string>
+    <string name="audiobook_progress_subtitle_match">Subtitle matching</string>
+    <string name="audiobook_progress_waiting">Waiting</string>
+    <string name="audiobook_progress_processing">Processing</string>
+    <string name="audiobook_progress_done">Done</string>
+    <string name="audiobook_matched_full">Subtitles matched %1$s</string>
+    <string name="audiobook_playback_hint">Playback will highlight sentences and can optionally follow scrolling</string>
+    <string name="audiobook_remove">Remove audiobook</string>
+    <string name="audiobook_remove_confirm_title">Remove audiobook?</string>
+    <string name="audiobook_remove_confirm_message">Source files will not be deleted.</string>
     <string name="audiobook_import_audio">Import audio</string>
     <string name="audiobook_import_subtitle">Import subtitles</string>
     <string name="audiobook_reimport">Reimport</string>
@@ -179,7 +259,11 @@
     <string name="audiobook_status_import_subtitle_first">Import SRT subtitles first</string>
     <string name="audiobook_status_matching">Matching subtitles with text</string>
     <string name="audiobook_status_not_matched">Not matched</string>
-    <string name="audiobook_status_matched">Matched %s</string>
+    <string name="audiobook_status_matched">Matched %1$s</string>
+    <string name="audiobook_matching_short">Matching</string>
+    <string name="audiobook_summary_audio_imported">Audio imported</string>
+    <string name="audiobook_summary_subtitle_imported">Subtitles imported</string>
+    <string name="audiobook_summary_ready_to_match">Ready to match</string>
     <string name="audiobook_match_title">Subtitle matching</string>
     <string name="audiobook_match_unmatched">Unmatched %d · Window %d</string>
     <string name="audiobook_match_start">Start matching</string>
@@ -194,11 +278,16 @@
     <string name="audiobook_rematch_confirm">Rematching will overwrite the current sasayaki_match.json.</string>
     <string name="audiobook_delete_match_confirm">Delete the current subtitle match result? Audio and subtitles will not be deleted.</string>
     <string name="audiobook_delete_asset_confirm">Delete the current audiobook asset?</string>
+    <string name="audiobook_delete_audio">Delete audio</string>
+    <string name="audiobook_delete_subtitle">Delete subtitles</string>
+    <string name="audiobook_delete_subtitle_confirm">Delete the current subtitles? This will also clear the match result.</string>
     <string name="audiobook_replace_asset_confirm">This asset type already exists. Continuing will overwrite the current file.</string>
     <string name="toast_audiobook_audio_imported">Audiobook audio imported</string>
     <string name="toast_audiobook_subtitle_imported">Audiobook subtitles imported</string>
+    <string name="toast_audiobook_import_complete">Import successful. Matched subtitles: %1$d/%2$d (%3$s)</string>
     <string name="toast_audiobook_import_failed">Audiobook import failed</string>
     <string name="toast_audiobook_asset_deleted">Audiobook asset deleted</string>
+    <string name="toast_audiobook_removed">Audiobook removed</string>
     <string name="toast_audiobook_match_complete">Subtitle matching complete: %d/%d</string>
     <string name="toast_audiobook_match_deleted">Subtitle match deleted</string>
 
@@ -237,6 +326,21 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="reader_theme_follow_app">Follow app theme</string>
+    <string name="color_red">Red</string>
+    <string name="color_pink">Pink</string>
+    <string name="color_purple">Purple</string>
+    <string name="color_deep_purple">Deep Purple</string>
+    <string name="color_indigo">Indigo</string>
+    <string name="color_blue">Blue</string>
+    <string name="color_cyan">Cyan</string>
+    <string name="color_teal">Teal</string>
+    <string name="color_green">Green</string>
+    <string name="color_yellow">Yellow</string>
+    <string name="color_amber">Amber</string>
+    <string name="color_orange">Orange</string>
+    <string name="color_brown">Brown</string>
+    <string name="color_blue_grey">Blue Grey</string>
+    <string name="color_sakura">Sakura</string>
 
     <!-- ===================== Toast / Effect Messages ===================== -->
     <!-- Blur -->
@@ -284,6 +388,7 @@
     <string name="error_category_sort_failed">Failed to sort categories</string>
     <string name="error_category_operation_failed">Category operation failed</string>
     <string name="error_audiobook_asset_load_failed">Failed to load audiobook assets</string>
+    <string name="error_audiobook_import_failed">Failed to import audiobook</string>
     <string name="error_audiobook_audio_import_failed">Failed to import audiobook audio</string>
     <string name="error_audiobook_subtitle_import_failed">Failed to import audiobook subtitles</string>
     <string name="error_audiobook_asset_delete_failed">Failed to delete audiobook asset</string>

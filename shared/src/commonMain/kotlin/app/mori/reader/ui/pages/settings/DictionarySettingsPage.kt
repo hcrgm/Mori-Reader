@@ -1,5 +1,6 @@
 package app.mori.reader.ui.pages.settings
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -157,19 +159,25 @@ fun DictionarySettingsPage(
                         modifier =
                             Modifier
                                 .navigationBarsPadding()
-                                .padding(end = 6.dp, bottom = 6.dp),
+                                .padding(end = 20.dp, bottom = 20.dp)
+                                .border(
+                                    width = 0.05.dp,
+                                    color = MiuixTheme.colorScheme.outline.copy(alpha = 0.5f),
+                                    shape = CircleShape,
+                                ),
                         onClick = {
                             if (!isBusy) {
                                 showImportPopup = true
                             }
                         },
-                        containerColor = MiuixTheme.colorScheme.background,
+                        containerColor = MiuixTheme.colorScheme.primary,
+                        shadowElevation = 0.dp,
                     ) {
                         Icon(
                             imageVector = MiuixIcons.Add,
                             contentDescription = stringResource(Res.string.cd_import_dictionary),
                             modifier = Modifier.size(26.dp),
-                            tint = MiuixTheme.colorScheme.primary,
+                            tint = MiuixTheme.colorScheme.onPrimary,
                         )
                     }
 

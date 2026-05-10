@@ -18,8 +18,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import app.mori.reader.data.anki.AnkiConnectionMode
+import app.mori.reader.data.anki.AnkiMiningContext
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.features.anki.presentation.AnkiIntent
+import app.mori.reader.features.anki.presentation.AnkiState
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryState
 import app.mori.reader.shared.generated.resources.Res
@@ -40,8 +44,10 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 fun DictionaryPage(
     dictionaryState: DictionaryState,
     settings: AppSettings,
+    ankiState: AnkiState,
     fixedPadding: PaddingValues,
     onDictionaryIntent: (DictionaryIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onWebViewVerticalScrollActiveChange: (Boolean) -> Unit = {},
 ) {
     val query = dictionaryState.query
@@ -56,6 +62,8 @@ fun DictionaryPage(
         )
     val searchTopPadding = statusBarPadding + 12.dp
     val blurEnabled = settings.appearance.blurEnabled
+    val ankiSettings = settings.anki
+    val ankiNeedsAudio = ankiSettings.fieldMappings.values.any { it.contains("{audio}") }
     val contentBackdrop = rememberDictionaryContentBackdrop(blurEnabled)
     val isDark =
         when (settings.appearance.themeMode) {
@@ -123,6 +131,12 @@ fun DictionaryPage(
                                         DictionarySearchFieldContentGap,
                                 enableInternalPopup = false,
                                 contentBottomPadding = bottomPadding,
+                                ankiNeedsAudio = ankiNeedsAudio,
+                                ankiAllowDuplicates = ankiSettings.allowDuplicates,
+                                ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,
+                                ankiEmbedMedia = ankiSettings.embedMedia,
+                                ankiCompactGlossaries = ankiSettings.compactGlossaries,
+                                ankiDuplicateExpression = ankiState.duplicateExpression,
                             ),
                         callbacks =
                             DictionaryWebViewCallbacks(
@@ -135,6 +149,17 @@ fun DictionaryPage(
                                             rect = rect,
                                         ),
                                     )
+                                },
+                                onMineEntry = { content ->
+                                    onAnkiIntent(
+                                        AnkiIntent.MineNote(
+                                            content = content,
+                                            context = AnkiMiningContext(sentence = query),
+                                        ),
+                                    )
+                                },
+                                onCheckDuplicate = { expression ->
+                                    onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
                                 },
                             ),
                         modifier =
@@ -194,6 +219,7 @@ fun DictionaryPage(
                 lookup = lookup,
                 popupIndex = index,
                 settings = settings,
+                ankiDuplicateExpression = ankiState.duplicateExpression,
                 isDark = isDark,
                 viewportWidth = maxWidth,
                 viewportHeight = maxHeight,
@@ -205,6 +231,7 @@ fun DictionaryPage(
                 blurEnabled = blurEnabled,
                 backdrop = contentBackdrop,
                 onDictionaryIntent = onDictionaryIntent,
+                onAnkiIntent = onAnkiIntent,
                 onVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
                 onSwipeDismiss = { onDictionaryIntent(DictionaryIntent.DismissPopup(index)) },
                 onDismiss = { onDictionaryIntent(DictionaryIntent.DismissPopup(index)) },

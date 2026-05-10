@@ -19,6 +19,8 @@ import top.yukonga.miuix.kmp.window.WindowBottomSheet
 internal fun ReaderAppearanceSheet(
     show: Boolean,
     isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
     readerThemeMode: ReaderThemeMode,
     verticalWriting: Boolean,
     continuousMode: Boolean,
@@ -55,7 +57,11 @@ internal fun ReaderAppearanceSheet(
     onTogglePopupSwipeToDismiss: () -> Unit,
     onPopupSwipeThresholdChanged: (Int) -> Unit,
 ) {
-    ReaderSheetTheme(isDark = isDark) {
+    ReaderSheetTheme(
+        isDark = isDark,
+        monetEnabled = monetEnabled,
+        monetKeyColor = monetKeyColor,
+    ) {
         WindowBottomSheet(
             show = show,
             title = stringResource(Res.string.cd_appearance),

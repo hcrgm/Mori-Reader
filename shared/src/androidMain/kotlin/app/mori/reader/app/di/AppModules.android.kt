@@ -2,6 +2,7 @@ package app.mori.reader.app.di
 
 import app.mori.reader.data.audiobook.AudiobookStorageMode
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.anki.presentation.AnkiViewModel
 import app.mori.reader.features.audiobook.presentation.AudiobookViewModel
 import app.mori.reader.features.bookshelf.presentation.BookshelfViewModel
 import app.mori.reader.features.dictionary.domain.DictionaryLookupUseCase
@@ -62,6 +63,16 @@ private val audiobookModule =
         }
     }
 
+private val ankiModule =
+    module {
+        viewModel {
+            AnkiViewModel(
+                settingsRepository = get(),
+                ankiService = get(),
+            )
+        }
+    }
+
 private val settingsModule =
     module {
         viewModel {
@@ -90,6 +101,7 @@ fun appModules(): List<Module> =
         dictionaryModule,
         readerModule,
         audiobookModule,
+        ankiModule,
         settingsModule,
         rootModule,
     )

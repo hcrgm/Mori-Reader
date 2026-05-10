@@ -16,6 +16,10 @@ sealed interface ReaderIntent {
 
     data object OpenPreviousChapter : ReaderIntent
 
+    data class JumpToCharacter(
+        val characterCount: Int,
+    ) : ReaderIntent
+
     data class TextSelected(
         val text: String,
         val sentence: String,
@@ -44,7 +48,7 @@ sealed interface ReaderIntent {
         val progress: Double,
     ) : ReaderIntent
 
-    data object ToggleSheet : ReaderIntent
+    data object CloseBook : ReaderIntent
 
     data object TogglePlayback : ReaderIntent
 

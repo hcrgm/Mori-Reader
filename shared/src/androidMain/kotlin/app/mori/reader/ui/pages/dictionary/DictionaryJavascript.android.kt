@@ -7,8 +7,16 @@ const KANJI_PATTERN = new RegExp(`[${'$'}{KANJI_RANGE}]`);
 const KANJI_SEGMENT_PATTERN = new RegExp(`[${'$'}{KANJI_RANGE}]+|[^${'$'}{KANJI_RANGE}]+`, 'g');
 const SMALL_KANA_SET = new Set('ぁぃぅぇぉゃゅょゎァィゥェォャュョヮ');
 const POS_TAGS = new Set(['n', 'adj-i', 'adj-na', 'adj-no', 'v1', 'vk', 'vs', 'vs-i', 'vs-s', 'vz', 'vi', 'vt']);
+const NUMERIC_TAG = /^\d+${'$'}/;
 const DEFAULT_HARMONIC_RANK = '9999999';
-const audioUrls = {};
+const COMPACT_GLOSSARIES_ANKI = `.yomitan-glossary ul[data-sc-content="glossary"] > li:not(:first-child)::before, .yomitan-glossary .glossary-list > li:not(:first-child)::before { white-space: pre-wrap; content: " | "; display: inline; color: rgb(119, 119, 119); }
+.yomitan-glossary ul[data-sc-content="glossary"] > li, .yomitan-glossary .glossary-list > li { display: inline; }
+.yomitan-glossary ul[data-sc-content="glossary"], .yomitan-glossary .glossary-list { display: inline; list-style: none; padding-left: 0px; }`;
+let audioUrls = {};
+let selectedDictionaries = {};
+let currentDictionaryMedia = null;
+const backStack = [];
+const forwardStack = [];
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -20,19 +28,33 @@ function el(tag, props = {}, children = []) {
   node.append(...children);
   return node;
 }
+function notifyNavigationState() {
+  try { AndroidHoshi.updateNavigationState(backStack.length, forwardStack.length); } catch {}
+}
 function toHiragana(text) { return text.replace(/[\u30A1-\u30F6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)); }
 function toKebabCase(str) { return str.replace(/([A-Z])/g, (_, c, i) => (i ? '-' : '') + c.toLowerCase()); }
 function parseTags(tags) { return (tags || '').split(/\s+/).filter(Boolean); }
-function isPartOfSpeech(tag) { return POS_TAGS.has(tag); }
+function isPartOfSpeech(tag) { return POS_TAGS.has(tag) || tag.startsWith('v5'); }
+function isStringPartiallyJapanese(text) { return !!text && /[\u3000-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(text); }
+function isStringPartiallyChinese(text) { return !!text && (KANJI_PATTERN.test(text) || /[\u3100-\u312f\u31a0-\u31bf]/.test(text)); }
+function getLanguageFromText(text, language) {
+  const partiallyJapanese = isStringPartiallyJapanese(text);
+  const partiallyChinese = isStringPartiallyChinese(text);
+  if (!['zh', 'yue'].includes(language ?? '')) {
+    if (partiallyJapanese) return 'ja';
+    if (partiallyChinese) return 'zh';
+  }
+  return language ?? null;
+}
 function setStructuredContentElementStyle(element, style) {
   for (const [property, value] of Object.entries(style || {})) {
     if ((property === 'marginTop' || property === 'marginLeft' || property === 'marginRight' || property === 'marginBottom') && typeof value === 'number') element.style[property] = `${'$'}{value}em`;
     else element.style[property] = value;
   }
 }
-function constructDictCss(css, dictName) {
+function constructDictCss(css, dictName, rootSelector = '.glossary-group') {
   if (!css) return '';
-  const prefix = `.glossary-group [data-dictionary="${'$'}{dictName}"]`;
+  const prefix = `${'$'}{rootSelector} [data-dictionary="${'$'}{dictName}"]`;
   const parts = [];
   let i = 0;
   while (i < css.length) {
@@ -50,7 +72,7 @@ function constructDictCss(css, dictName) {
     const selectors = selectorPart.split(',').map(s => {
       const trimmed = s.trim();
       if (!trimmed) return '';
-      if (trimmed.startsWith('&') || trimmed.startsWith('@')) return s;
+      if (trimmed.startsWith('&')) return s;
       return `${'$'}{prefix} ${'$'}{trimmed}`;
     });
     parts.push(selectors.join(', '), ' {');
@@ -62,11 +84,57 @@ function constructDictCss(css, dictName) {
       else if (css[i] === '}') depth--;
       i++;
     }
-    parts.push(css.slice(blockStart, i - 1), '}');
+    const blockContent = css.slice(blockStart, i - 1);
+    if (blockContent.includes('{')) {
+      let pos = 0;
+      let properties = '';
+      let nestedRules = '';
+      while (pos < blockContent.length) {
+        while (pos < blockContent.length && /\s/.test(blockContent[pos])) pos++;
+        if (pos >= blockContent.length) break;
+        const nextSemi = blockContent.indexOf(';', pos);
+        const nextBrace = blockContent.indexOf('{', pos);
+        if (nextBrace !== -1 && (nextSemi === -1 || nextBrace < nextSemi)) {
+          let nestedDepth = 1;
+          let nestedEnd = nextBrace + 1;
+          while (nestedEnd < blockContent.length && nestedDepth > 0) {
+            if (blockContent[nestedEnd] === '{') nestedDepth++;
+            else if (blockContent[nestedEnd] === '}') nestedDepth--;
+            nestedEnd++;
+          }
+          nestedRules += blockContent.slice(pos, nestedEnd);
+          pos = nestedEnd;
+        } else if (nextSemi !== -1) {
+          properties += blockContent.slice(pos, nextSemi + 1);
+          pos = nextSemi + 1;
+        } else {
+          properties += blockContent.slice(pos);
+          break;
+        }
+      }
+      parts.push(properties);
+      if (nestedRules) parts.push(constructDictCss(nestedRules, dictName, rootSelector));
+    } else {
+      parts.push(blockContent);
+    }
+    parts.push('}');
   }
   return parts.join('');
 }
-function createDefinitionImage(data, dictionary) {
+function getMediaFilename(dictionary, path) {
+  if (!currentDictionaryMedia || !dictionary || !path) return path || '';
+  const key = `${'$'}{dictionary}:${'$'}{path}`;
+  if (!currentDictionaryMedia.has(key)) {
+    const extension = path.split('.').pop() || 'bin';
+    currentDictionaryMedia.set(key, {
+      dictionary,
+      path,
+      filename: `mori_dict_${'$'}{currentDictionaryMedia.size}.${'$'}{extension}`,
+    });
+  }
+  return currentDictionaryMedia.get(key).filename;
+}
+function createDefinitionImage(data, dictionary, exporting = false) {
   const {
     path,
     width = 100,
@@ -92,7 +160,9 @@ function createDefinitionImage(data, dictionary) {
   const hasDimensions = hasPreferredWidth || hasPreferredHeight || typeof data.width === 'number' || typeof data.height === 'number';
   const invAspectRatio = hasPreferredWidth && hasPreferredHeight ? preferredHeight / preferredWidth : height / width;
   const usedWidth = hasPreferredWidth ? preferredWidth : (hasPreferredHeight ? preferredHeight / invAspectRatio : width);
-  const node = el('a', { className: 'gloss-image-link', target: '_blank', rel: 'noreferrer noopener' });
+  const node = exporting
+    ? el('span', { className: 'gloss-image-link' })
+    : el('a', { className: 'gloss-image-link', target: '_blank', rel: 'noreferrer noopener' });
   const imageContainer = el('span', { className: 'gloss-image-container' });
   const aspectRatioSizer = el('span', { className: 'gloss-image-sizer' });
   const imageBackground = el('span', { className: 'gloss-image-background' });
@@ -114,11 +184,26 @@ function createDefinitionImage(data, dictionary) {
   if (typeof borderRadius === 'string') imageContainer.style.borderRadius = borderRadius;
   imageContainer.style.width = `${'$'}{usedWidth}em`;
   if (typeof title === 'string') imageContainer.title = title;
-  const img = el('img', {
-    className: 'gloss-image',
-    alt: nodeData?.alt || title || '',
-    src: `image://?dictionary=${'$'}{encodeURIComponent(dictionary)}&path=${'$'}{encodeURIComponent(path)}`,
-  });
+  const filename = exporting && (window.useAnkiConnect || window.embedMedia) ? getMediaFilename(dictionary, path) : null;
+  const alt = nodeData?.alt || title || '';
+  const img = filename || !exporting
+    ? el('img', {
+        className: 'gloss-image',
+        alt,
+        src: filename || `image://?dictionary=${'$'}{encodeURIComponent(dictionary)}&path=${'$'}{encodeURIComponent(path)}`,
+      })
+    : el('span', { className: 'gloss-image', textContent: alt });
+  if (exporting && filename) {
+    if (sizeUnits === 'em') {
+      const emSize = 14;
+      const scaleFactor = 2 * window.devicePixelRatio;
+      img.width = usedWidth * emSize * scaleFactor;
+    } else {
+      img.width = usedWidth;
+    }
+    img.height = img.width * invAspectRatio;
+    applyImageStyles(node, imageContainer, aspectRatioSizer, imageBackground, img, filename, appearance, sizeUnits === 'em');
+  }
   if (!hasDimensions) {
     img.addEventListener('load', () => {
       if (img.naturalWidth > 0) {
@@ -164,9 +249,22 @@ function isRubyAnnotationNode(node) {
   }
   return false;
 }
-function renderStructuredContent(parent, content, dictionary) {
+function renderStructuredContent(parent, content, language = null, dictionary = null, exporting = false) {
   if (content == null) return;
-  if (typeof content === 'string' || typeof content === 'number') {
+  if (typeof content === 'string') {
+    content.split(/\r?\n/).forEach((line, i) => {
+      if (i > 0) parent.appendChild(document.createElement('br'));
+      if (line) {
+        if (!language && !parent.hasAttribute('lang')) {
+          const detected = getLanguageFromText(line, language);
+          if (detected) parent.setAttribute('lang', detected);
+        }
+        parent.appendChild(document.createTextNode(line));
+      }
+    });
+    return;
+  }
+  if (typeof content === 'number') {
     parent.appendChild(document.createTextNode(String(content)));
     return;
   }
@@ -179,27 +277,64 @@ function renderStructuredContent(parent, content, dictionary) {
       parent.appendChild(ul);
       return;
     }
-    content.forEach(item => renderStructuredContent(parent, item?.type === 'structured-content' ? item.content : item, dictionary));
+    const items = content.map(item => item?.type === 'structured-content' ? item.content : item);
+    const isLinkArray = items.every(item => item?.tag === 'a');
+    if (isLinkArray && content.length > 1) {
+      const ul = el('ul', { className: 'glossary-list' });
+      content.forEach(child => {
+        const li = el('li');
+        renderStructuredContent(li, child, language, dictionary, exporting);
+        ul.appendChild(li);
+      });
+      parent.appendChild(ul);
+      return;
+    }
+    content.forEach(item => renderStructuredContent(parent, item, language, dictionary, exporting));
     return;
   }
   if (content.type === 'structured-content') {
     const container = el('span', { className: 'structured-content' });
     parent.appendChild(container);
-    renderStructuredContent(container, content.content, dictionary);
+    renderStructuredContent(container, content.content, language, dictionary, exporting);
     return;
   }
   if (content.type === 'image' || content.tag === 'img') {
-    parent.appendChild(createDefinitionImage(content, dictionary));
+    parent.appendChild(createDefinitionImage(content, dictionary, exporting));
     return;
   }
   const tag = typeof content.tag === 'string' ? content.tag : 'span';
   const node = el(tag, { className: `gloss-sc-${'$'}{tag}` });
+  let nextLanguage = language;
   if (content.href) {
     node.href = content.href;
-    node.addEventListener('click', e => { e.preventDefault(); AndroidHoshi.openLink(content.href); });
+    node.addEventListener('click', async e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const href = content.href;
+      if (/^https?:\/\//i.test(href)) {
+        AndroidHoshi.openLink(href);
+        return;
+      }
+      const index = href.indexOf('?');
+      const query = index < 0 ? null : new URLSearchParams(href.slice(index + 1)).get('query');
+      if (!query) {
+        AndroidHoshi.openLink(href);
+        return;
+      }
+      try {
+        const payload = AndroidHoshi.lookupRedirect?.(query, window.maxResults || 16);
+        const result = payload ? JSON.parse(payload) : null;
+        redirectToLookup(result, query);
+      } catch {
+        AndroidHoshi.openLink(href);
+      }
+    });
   }
   if (content.title) node.setAttribute('title', content.title);
-  if (content.lang) node.setAttribute('lang', content.lang);
+  if (content.lang) {
+    node.setAttribute('lang', content.lang);
+    nextLanguage = content.lang;
+  }
   if (content.data) {
     for (const [k, v] of Object.entries(content.data)) {
       const isCJK = /^[\u3000-\u9FFF\uF900-\uFAFF]/.test(k);
@@ -209,7 +344,7 @@ function renderStructuredContent(parent, content, dictionary) {
   if (content.style && typeof content.style === 'object') {
     setStructuredContentElementStyle(node, content.style);
   }
-  renderStructuredContent(node, content.content ?? content.children ?? content.data?.content ?? '', dictionary);
+  renderStructuredContent(node, content.content ?? content.children ?? content.data?.content ?? '', nextLanguage, dictionary, exporting);
   if (content.colSpan) node.setAttribute('colspan', content.colSpan);
   if (content.rowSpan) node.setAttribute('rowspan', content.rowSpan);
   if (tag === 'table') {
@@ -261,6 +396,11 @@ function createTags(entry) {
     row.appendChild(pitchContainer);
   }
   return row.childNodes.length ? row : null;
+}
+function createGlossaryTags(tags) {
+  const filtered = (tags || []).filter(Boolean);
+  if (!filtered.length) return null;
+  return el('div', { className: 'tag-row' }, filtered.map(tag => el('span', { className: 'expr-tag', textContent: tag })));
 }
 function getFrequencyHarmonicRank(frequencies) {
   if (!frequencies || frequencies.length === 0) return DEFAULT_HARMONIC_RANK;
@@ -451,16 +591,212 @@ function createAudioButton(expression, reading, entryIndex) {
   });
   return button;
 }
-function textFromGlossaryContent(content) {
-  if (content == null) return '';
-  if (typeof content === 'string' || typeof content === 'number') return String(content);
-  if (Array.isArray(content)) return content.map(textFromGlossaryContent).filter(Boolean).join('; ');
-  if (content.type === 'structured-content') return textFromGlossaryContent(content.content);
-  if (content.type === 'image' || content.tag === 'img') return content.title || content.data?.alt || '';
-  return textFromGlossaryContent(content.content ?? content.children ?? content.data?.content ?? '');
+function constructFuriganaPlain(expression, reading) {
+  if (!reading || reading === expression) return expression;
+  return segmentFurigana(expression, reading)
+    .map(([text, furigana]) => furigana ? `${'$'}{text}[${'$'}{furigana}]` : `${'$'}{text} `)
+    .join('')
+    .trim();
 }
-function glossaryText(item) {
-  try { return textFromGlossaryContent(JSON.parse(item.content)); } catch { return textFromGlossaryContent(item.content); }
+function applyTableStyles(html) {
+  const tableStyle = 'table-layout:auto;border-collapse:collapse;';
+  const cellStyle = 'border-style:solid;padding:0.25em;vertical-align:top;border-width:1px;border-color:currentColor;';
+  const thStyle = 'font-weight:bold;' + cellStyle;
+  return html
+    .replace(/<table(?=[>\s])/g, `<table style="${'$'}{tableStyle}"`)
+    .replace(/<th(?=[>\s])/g, `<th style="${'$'}{thStyle}"`)
+    .replace(/<td(?=[>\s])/g, `<td style="${'$'}{cellStyle}"`);
+}
+function applyImageStyles(node, imageContainer, aspectRatioSizer, imageBackground, image, filename, appearance, useEmUnits) {
+  node.style.cssText += 'display:inline-block;position:relative;line-height:1;max-width:100%;';
+  imageContainer.style.cssText += `display:inline-block;white-space:nowrap;max-width:100%;max-height:100vh;position:relative;vertical-align:top;line-height:0;overflow:hidden;font-size:${'$'}{useEmUnits ? '1em' : '1px'};`;
+  aspectRatioSizer.style.cssText += 'display:inline-block;width:0;vertical-align:top;font-size:0;';
+  image.style.cssText += 'display:inline-block;vertical-align:top;object-fit:contain;border:none;outline:none;position:absolute;left:0;top:0;width:100%;height:100%;';
+  if (appearance === 'monochrome') {
+    imageBackground.style.cssText += `--image:url("${'$'}{filename}");position:absolute;left:0;top:0;width:100%;height:100%;-webkit-mask-repeat:no-repeat;-webkit-mask-position:center center;-webkit-mask-mode:alpha;-webkit-mask-size:contain;-webkit-mask-image:var(--image);mask-repeat:no-repeat;mask-position:center center;mask-mode:alpha;mask-size:contain;mask-image:var(--image);background-color:currentColor;`;
+    image.style.opacity = '0';
+  }
+}
+function scopedDictionaryStyle(dictName, css) {
+  if (!css) return '';
+  const scopedCss = constructDictCss(css, dictName, '.yomitan-glossary');
+  return scopedCss
+    .replace(/\s+/g, ' ')
+    .replace(/\s*\{\s*/g, ' { ')
+    .replace(/\s*\}\s*/g, ' }\n')
+    .replace(/;\s*/g, '; ')
+    .trim();
+}
+function renderGlossaryContent(g, exporting = false) {
+  const tempDiv = document.createElement('div');
+  try {
+    renderStructuredContent(tempDiv, JSON.parse(g.content), null, g.dictionary || '', exporting);
+  } catch {
+    renderStructuredContent(tempDiv, g.content, null, g.dictionary || '', exporting);
+  }
+  return applyTableStyles(tempDiv.innerHTML);
+}
+function constructSingleGlossaryHtml(entryIndex) {
+  if (!window.lookupEntries || entryIndex >= window.lookupEntries.length) return {};
+  const entry = window.lookupEntries[entryIndex];
+  const glossaries = {};
+  let lastDict = null;
+  let currentGlossary = '';
+  let prevTags = null;
+  const flush = () => {
+    if (!lastDict) return;
+    let html = `<div style="text-align: left;" class="yomitan-glossary"><ol>${'$'}{currentGlossary}</ol>`;
+    const css = window.dictionaryStyles?.[lastDict] ?? '';
+    if (css) html += `<style>${'$'}{scopedDictionaryStyle(lastDict, css)}</style>`;
+    if (window.compactGlossariesAnki) html += `<style>${'$'}{COMPACT_GLOSSARIES_ANKI}</style>`;
+    html += `</div>`;
+    glossaries[lastDict] = html;
+    currentGlossary = '';
+  };
+  (entry.glossaries || []).forEach(g => {
+    const dictName = g.dictionary || '';
+    const dictChanged = lastDict !== dictName;
+    if (dictChanged) {
+      flush();
+      lastDict = dictName;
+      prevTags = null;
+    }
+    const parsedTags = parseTags(g.definitionTags).filter(tag => !NUMERIC_TAG.test(tag));
+    const posTags = [...new Set(parsedTags.filter(isPartOfSpeech))].sort();
+    const currentTags = JSON.stringify(posTags);
+    const filteredTags = parsedTags.filter(tag => !isPartOfSpeech(tag) || !(prevTags !== null && prevTags === currentTags));
+    const tags = filteredTags.length > 0 ? filteredTags.join(', ') : '';
+    const label = dictChanged ? (tags ? `(${'$'}{tags}, ${'$'}{dictName})` : `(${'$'}{dictName})`) : (tags ? `(${'$'}{tags})` : '');
+    currentGlossary += `<li data-dictionary="${'$'}{dictName}"><i>${'$'}{label}</i> <span>${'$'}{renderGlossaryContent(g, true)}</span></li>`;
+    prevTags = currentTags;
+  });
+  flush();
+  return glossaries;
+}
+function constructGlossaryHtml(entryIndex) {
+  if (!window.lookupEntries || entryIndex >= window.lookupEntries.length) return '';
+  const entry = window.lookupEntries[entryIndex];
+  let glossaryItems = '';
+  const styles = {};
+  let lastDict = '';
+  let prevTags = null;
+  let index = 0;
+  (entry.glossaries || []).forEach(g => {
+    const dictName = g.dictionary || '';
+    index++;
+    let label = '';
+    const parsedTags = parseTags(g.definitionTags).filter(tag => !NUMERIC_TAG.test(tag));
+    const posTags = [...new Set(parsedTags.filter(isPartOfSpeech))].sort();
+    const currentTags = JSON.stringify(posTags);
+    const filteredTags = parsedTags.filter(tag => !isPartOfSpeech(tag) || !(prevTags !== null && prevTags === currentTags));
+    const tags = filteredTags.length > 0 ? filteredTags.join(', ') : '';
+    if (dictName !== lastDict) {
+      index = 1;
+      lastDict = dictName;
+      label = tags ? `(${'$'}{index}, ${'$'}{tags}, ${'$'}{dictName})` : `(${'$'}{index}, ${'$'}{dictName})`;
+    } else {
+      label = tags ? `(${'$'}{index}, ${'$'}{tags})` : `(${'$'}{index})`;
+    }
+    glossaryItems += `<li data-dictionary="${'$'}{dictName}"><i>${'$'}{label}</i> <span>${'$'}{renderGlossaryContent(g, true)}</span></li>`;
+    prevTags = currentTags;
+    const css = window.dictionaryStyles?.[dictName];
+    if (css && !styles[dictName]) styles[dictName] = css;
+  });
+  let result = '<div style="text-align: left;" class="yomitan-glossary"><ol>';
+  result += glossaryItems;
+  result += '</ol>';
+  for (const [dictName, css] of Object.entries(styles)) {
+    result += `<style>${'$'}{scopedDictionaryStyle(dictName, css)}</style>`;
+  }
+  if (window.compactGlossariesAnki) result += `<style>${'$'}{COMPACT_GLOSSARIES_ANKI}</style>`;
+  result += '</div>';
+  return result;
+}
+function constructFrequencyHtml(frequencies) {
+  if (!frequencies || frequencies.length === 0) return '';
+  let result = '<ul style="text-align: left;">';
+  frequencies.forEach(group => {
+    if (!group?.frequencies?.length) return;
+    const dictName = group.dictionary || '';
+    group.frequencies.forEach(freq => {
+      result += `<li>${'$'}{dictName}: ${'$'}{freq.displayValue || freq.value}</li>`;
+    });
+  });
+  result += '</ul>';
+  return result;
+}
+function constructPitchPositionHtml(pitches) {
+  if (!pitches?.length) return '';
+  let result = '<ol>';
+  pitches.forEach(group => {
+    (group.pitchPositions || []).forEach(pos => {
+      result += `<li><span style="display:inline;"><span>[</span><span>${'$'}{pos}</span><span>]</span></span></li>`;
+    });
+  });
+  result += '</ol>';
+  return result;
+}
+function buildMiningPayload(entry, entryIndex, popupSelectionText) {
+  const audioUrl = audioUrls[`${'$'}{entryIndex}:${'$'}{entry.expression}:${'$'}{entry.reading || entry.expression}`];
+  currentDictionaryMedia = new Map();
+  const glossary = constructGlossaryHtml(entryIndex);
+  const singleGlossaries = constructSingleGlossaryHtml(entryIndex);
+  const dictionaryMedia = currentDictionaryMedia;
+  currentDictionaryMedia = null;
+  const selectedDictionary = selectedDictionaries[entryIndex]?.name || '';
+  return {
+    expression: entry.expression || '',
+    reading: entry.reading || '',
+    matched: entry.matched || entry.expression || '',
+    furiganaPlain: constructFuriganaPlain(entry.expression || '', entry.reading || ''),
+    frequenciesHtml: constructFrequencyHtml(entry.frequencies),
+    freqHarmonicRank: getFrequencyHarmonicRank(entry.frequencies),
+    glossary,
+    glossaryFirst: Object.values(singleGlossaries)[0] || '',
+    singleGlossaries,
+    pitchPositions: constructPitchPositionHtml(entry.pitches),
+    pitchCategories: pitchCategories(entry).replace(/\s+/g, ''),
+    selectedDictionary,
+    popupSelectionText: popupSelectionText || '',
+    audio: audioUrl || '',
+    dictionaryMedia: Array.from(dictionaryMedia.values())
+  };
+}
+function createMineButton(entry, entryIndex) {
+  const button = el('button', {
+    className: 'mine-button',
+    textContent: '+',
+    title: 'Add to Anki',
+    ontouchstart: () => {
+      window.lastPopupSelectionText = window.getSelection()?.toString() || '';
+    },
+    onclick: async () => {
+      if (button.disabled && !window.allowDupes) return;
+      button.disabled = true;
+      button.textContent = '…';
+      try {
+        if (window.needsAudio && !audioUrls[`${'$'}{entryIndex}:${'$'}{entry.expression}:${'$'}{entry.reading || entry.expression}`] && window.audioSources?.length) {
+          audioUrls[`${'$'}{entryIndex}:${'$'}{entry.expression}:${'$'}{entry.reading || entry.expression}`] = await fetchAudioUrl(entry.expression, entry.reading || entry.expression);
+        }
+        const payload = buildMiningPayload(entry, entryIndex, window.lastPopupSelectionText || '');
+        AndroidHoshi.mineEntry(JSON.stringify(payload));
+        AndroidHoshi.checkDuplicate?.(entry.expression || '');
+        button.textContent = '+';
+        button.disabled = false;
+      } catch {
+        button.textContent = '+';
+        button.disabled = false;
+      }
+    }
+  });
+  if (window.ankiDuplicateExpression && window.ankiDuplicateExpression === entry.expression) {
+    button.textContent = '✓';
+    button.classList.add('duplicate');
+    button.disabled = !window.allowDupes;
+  } else {
+    try { AndroidHoshi.checkDuplicate?.(entry.expression || ''); } catch {}
+  }
+  return button;
 }
 function pitchCategories(entry) {
   const tags = parseTags((entry.glossaries || []).map(g => g.termTags).join(' '));
@@ -479,6 +815,7 @@ function createEntry(entry, index) {
   const headerChildren = [expression];
   const buttons = [];
   if (window.audioSources?.length) buttons.push(createAudioButton(entry.expression, entry.reading, index));
+  buttons.push(createMineButton(entry, index));
   if (buttons.length) {
     headerChildren.push(el('div', { className: 'header-buttons' }, buttons));
   }
@@ -490,17 +827,76 @@ function createEntry(entry, index) {
   Object.entries(grouped).forEach(([dictName, items], dictIndex) => {
     const details = el('details', { className: 'glossary-group' });
     details.open = !window.collapseDictionaries || dictIndex === 0;
-    details.appendChild(el('summary', { textContent: dictName }));
+    const summary = el('summary', { textContent: dictName });
+    let timer = null;
+    let longPressed = false;
+    const toggleSelection = () => {
+      longPressed = true;
+      const selected = selectedDictionaries[index];
+      selected?.label.classList.remove('selected');
+      if (selected?.name === dictName) {
+        delete selectedDictionaries[index];
+      } else {
+        selectedDictionaries[index] = { name: dictName, label: summary };
+        summary.classList.add('selected');
+      }
+    };
+    summary.addEventListener('pointerdown', () => {
+      longPressed = false;
+      timer = setTimeout(toggleSelection, 400);
+    });
+    const cancel = () => { clearTimeout(timer); };
+    summary.addEventListener('pointerup', cancel);
+    summary.addEventListener('pointercancel', cancel);
+    summary.addEventListener('click', e => { if (longPressed) e.preventDefault(); });
+    details.appendChild(summary);
     const wrapper = el('div', { className: window.compactGlossaries ? 'compact' : '' });
     wrapper.setAttribute('data-dictionary', dictName);
-    if (window.dictionaryStyles?.[dictName]) wrapper.appendChild(el('style', { textContent: constructDictCss(window.dictionaryStyles[dictName], dictName) }));
-    items.forEach(item => {
-      const content = el('div', { className: 'glossary-content' });
-      const tags = parseTags(item.definitionTags).filter(t => !/^\d+$/.test(t) && !isPartOfSpeech(t));
-      if (tags.length) content.appendChild(el('div', { className: 'tag-row' }, tags.map(t => el('span', { className: 'expr-tag', textContent: t }))));
-      try { renderStructuredContent(content, JSON.parse(item.content), dictName); } catch { renderStructuredContent(content, item.content, dictName); }
-      wrapper.appendChild(content);
-    });
+    const dictStyle = window.dictionaryStyles?.[dictName] ?? '';
+    wrapper.appendChild(el('style', {
+      textContent: `
+        [data-dictionary="${'$'}{dictName}"] {
+          @media (prefers-color-scheme: light) { color: #000; }
+          @media (prefers-color-scheme: dark) { color: #fff; }
+          ${'$'}{dictStyle}
+        }
+      `.trim()
+    }));
+    const termTags = [...new Set(parseTags(items[0]?.termTags))];
+    const termTagsRow = createGlossaryTags(termTags);
+    if (termTagsRow) wrapper.appendChild(termTagsRow);
+    const renderContent = (parent, content) => {
+      try { renderStructuredContent(parent, JSON.parse(content), null, dictName); } catch { renderStructuredContent(parent, content, null, dictName); }
+    };
+    if (items.length > 1) {
+      const ol = el('ol');
+      let prevTags = null;
+      items.forEach(item => {
+        const li = el('li');
+        const parsedTags = parseTags(item.definitionTags).filter(tag => !NUMERIC_TAG.test(tag));
+        const posTags = [...new Set(parsedTags.filter(isPartOfSpeech))].sort();
+        const currentTags = JSON.stringify(posTags);
+        const filteredTags = parsedTags.filter(tag => !isPartOfSpeech(tag) || !(prevTags !== null && prevTags === currentTags));
+        const tags = createGlossaryTags(filteredTags);
+        if (tags) li.appendChild(tags);
+        const content = el('div', { className: 'glossary-content' });
+        renderContent(content, item.content);
+        li.appendChild(content);
+        ol.appendChild(li);
+        prevTags = currentTags;
+      });
+      wrapper.appendChild(ol);
+    } else {
+      items.forEach(item => {
+        const itemWrapper = el('div');
+        const tags = createGlossaryTags(parseTags(item.definitionTags).filter(tag => !NUMERIC_TAG.test(tag)));
+        if (tags) itemWrapper.appendChild(tags);
+        const content = el('div', { className: 'glossary-content' });
+        renderContent(content, item.content);
+        itemWrapper.appendChild(content);
+        wrapper.appendChild(itemWrapper);
+      });
+    }
     details.appendChild(wrapper);
     entryDiv.appendChild(details);
   });
@@ -520,6 +916,64 @@ function renderEntries(entries, target) {
     }
   });
 }
+function snapshot() {
+  const container = document.getElementById('entries-container');
+  return {
+    nodes: [...container.childNodes],
+    scrollTop: document.scrollingElement.scrollTop,
+    lookupEntries: window.lookupEntries,
+    dictionaryStyles: window.dictionaryStyles,
+    lookupQuery: window.lookupQuery,
+    emptyMessage: document.getElementById('empty-state').textContent || ''
+  };
+}
+function restore(state) {
+  const container = document.getElementById('entries-container');
+  const emptyState = document.getElementById('empty-state');
+  container.replaceChildren(...state.nodes);
+  window.lookupEntries = state.lookupEntries;
+  window.dictionaryStyles = state.dictionaryStyles;
+  window.lookupQuery = state.lookupQuery;
+  emptyState.textContent = state.emptyMessage || '';
+  audioUrls = {};
+  selectedDictionaries = {};
+  normalizeRubyTextContainers(container);
+  requestAnimationFrame(() => {
+    document.scrollingElement.scrollTop = state.scrollTop;
+  });
+  notifyNavigationState();
+}
+function redirectToLookup(result, query) {
+  if (!result?.entries?.length) return false;
+  backStack.push(snapshot());
+  forwardStack.length = 0;
+  audioUrls = {};
+  selectedDictionaries = {};
+  window.lookupEntries = result.entries;
+  window.dictionaryStyles = result.styles || {};
+  window.lookupQuery = query || '';
+  const container = document.getElementById('entries-container');
+  const emptyState = document.getElementById('empty-state');
+  emptyState.textContent = '';
+  renderEntries(window.lookupEntries, container);
+  normalizeRubyTextContainers(container);
+  requestAnimationFrame(() => {
+    document.scrollingElement.scrollTop = 0;
+    requestAnimationFrame(() => {
+      document.scrollingElement.scrollTop = 0;
+    });
+  });
+  notifyNavigationState();
+  return true;
+}
+function navigate(from, to) {
+  if (!from.length) return false;
+  to.push(snapshot());
+  restore(from.pop());
+  return true;
+}
+window.navigateBack = () => navigate(backStack, forwardStack);
+window.navigateForward = () => navigate(forwardStack, backStack);
 window.hoshiSelection = {
     selection: null,
     scanDelimiters: '。、！？…‥「」『』（）()【】〈〉《》〔〕｛｝{}［］[]・：；:;，,.─\n\r',
@@ -914,4 +1368,5 @@ if (window.lookupEntries.length) {
 } else {
   document.getElementById('empty-state').textContent = window.emptyMessage || '';
 }
+notifyNavigationState();
     """.trimIndent()

@@ -3,6 +3,7 @@ package app.mori.reader.ui.pages.dictionary
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
+import android.util.Log
 import android.view.MotionEvent
 import android.view.ViewConfiguration
 import android.view.ViewGroup
@@ -15,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import app.mori.reader.data.anki.AnkiMiningContent
 import app.mori.reader.data.dictionary.DictionaryFrequency
 import app.mori.reader.data.dictionary.DictionaryFrequencyGroup
 import app.mori.reader.data.dictionary.DictionaryGlossary
@@ -34,6 +36,8 @@ internal val WebJson =
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
+
+private const val DICTIONARY_WEB_VIEW_LOG_TAG = "MoriDictionaryWebView"
 
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 @Composable
@@ -66,12 +70,26 @@ actual fun DictionaryWebView(
     val transparentBackground = config.transparentBackground
     val enableInternalPopup = config.enableInternalPopup
     val swipeDismissThreshold = config.swipeDismissThreshold
+    val ankiNeedsAudio = config.ankiNeedsAudio
+    val ankiAllowDuplicates = config.ankiAllowDuplicates
+    val ankiUseAnkiConnect = config.ankiUseAnkiConnect
+    val ankiEmbedMedia = config.ankiEmbedMedia
+    val ankiCompactGlossaries = config.ankiCompactGlossaries
+    val ankiDuplicateExpression = config.ankiDuplicateExpression
+    val navigateBackToken = config.navigateBackToken
+    val navigateForwardToken = config.navigateForwardToken
     val onVerticalScrollActiveChange = callbacks.onVerticalScrollActiveChange
     val onPopupTextSelected = callbacks.onPopupTextSelected
+    val onMineEntry = callbacks.onMineEntry
+    val onCheckDuplicate = callbacks.onCheckDuplicate
     val onSwipeDismiss = callbacks.onSwipeDismiss
+    val onNavigationStateChange = callbacks.onNavigationStateChange
     val currentOnVerticalScrollActiveChange = rememberUpdatedState(onVerticalScrollActiveChange)
     val currentOnPopupTextSelected = rememberUpdatedState(onPopupTextSelected)
+    val currentOnMineEntry = rememberUpdatedState(onMineEntry)
+    val currentOnCheckDuplicate = rememberUpdatedState(onCheckDuplicate)
     val currentOnSwipeDismiss = rememberUpdatedState(onSwipeDismiss)
+    val currentOnNavigationStateChange = rememberUpdatedState(onNavigationStateChange)
     val bridge = remember { DictionaryBridge() }
     val resourceHandler = remember { DictionaryWebResourceHandler(bridge.audioSourceResolver) }
     val html =
@@ -103,6 +121,12 @@ actual fun DictionaryWebView(
             transparentBackground,
             enableInternalPopup,
             swipeDismissThreshold,
+            ankiNeedsAudio,
+            ankiAllowDuplicates,
+            ankiUseAnkiConnect,
+            ankiEmbedMedia,
+            ankiCompactGlossaries,
+            ankiDuplicateExpression,
         ) {
             dictionaryHtml(
                 query = query,
@@ -132,6 +156,12 @@ actual fun DictionaryWebView(
                 transparentBackground = transparentBackground,
                 enableInternalPopup = enableInternalPopup,
                 swipeDismissThreshold = swipeDismissThreshold,
+                ankiNeedsAudio = ankiNeedsAudio,
+                ankiAllowDuplicates = ankiAllowDuplicates,
+                ankiUseAnkiConnect = ankiUseAnkiConnect,
+                ankiEmbedMedia = ankiEmbedMedia,
+                ankiCompactGlossaries = ankiCompactGlossaries,
+                ankiDuplicateExpression = ankiDuplicateExpression,
             )
         }
 
@@ -163,7 +193,12 @@ actual fun DictionaryWebView(
                         this.onPopupTextSelected = { text, rect ->
                             currentOnPopupTextSelected.value(text, rect)
                         }
+                        this.onMineEntry = { content -> currentOnMineEntry.value(content) }
+                        this.onCheckDuplicate = { expression -> currentOnCheckDuplicate.value(expression) }
                         this.onSwipeDismiss = { currentOnSwipeDismiss.value() }
+                        this.onNavigationStateChange = { back, forward ->
+                            currentOnNavigationStateChange.value(back, forward)
+                        }
                     },
                     "AndroidHoshi",
                 )
@@ -221,7 +256,20 @@ actual fun DictionaryWebView(
             bridge.attach(webView)
             bridge.onPopupTextSelected =
                 { text, rect -> currentOnPopupTextSelected.value(text, rect) }
+            bridge.onMineEntry = { content -> currentOnMineEntry.value(content) }
+            bridge.onCheckDuplicate = { expression -> currentOnCheckDuplicate.value(expression) }
             bridge.onSwipeDismiss = { currentOnSwipeDismiss.value() }
+            bridge.onNavigationStateChange = { back, forward ->
+                currentOnNavigationStateChange.value(back, forward)
+            }
+            if (bridge.lastNavigateBackToken != navigateBackToken) {
+                bridge.lastNavigateBackToken = navigateBackToken
+                webView.evaluateJavascript("window.navigateBack?.()", null)
+            }
+            if (bridge.lastNavigateForwardToken != navigateForwardToken) {
+                bridge.lastNavigateForwardToken = navigateForwardToken
+                webView.evaluateJavascript("window.navigateForward?.()", null)
+            }
             if (webView.tag != html) {
                 webView.tag = html
                 webView.loadDataWithBaseURL(
@@ -241,7 +289,12 @@ private class DictionaryBridge {
     val audioSourceResolver = DictionaryAudioSourceResolver()
     private val player = AndroidWordAudioPlayer()
     var onPopupTextSelected: ((String, ReaderSelectionRect?) -> Unit)? = null
+    var onMineEntry: ((AnkiMiningContent) -> Unit)? = null
+    var onCheckDuplicate: ((String) -> Unit)? = null
     var onSwipeDismiss: (() -> Unit)? = null
+    var onNavigationStateChange: ((Boolean, Boolean) -> Unit)? = null
+    var lastNavigateBackToken: Int = 0
+    var lastNavigateForwardToken: Int = 0
 
     fun attach(webView: WebView) {
         this.webView = webView
@@ -354,9 +407,46 @@ private class DictionaryBridge {
     }
 
     @JavascriptInterface
+    fun mineEntry(payload: String) {
+        val content =
+            runCatching { WebJson.decodeFromString<AnkiMiningContent>(payload) }
+                .getOrElse { throwable ->
+                    Log.e(
+                        DICTIONARY_WEB_VIEW_LOG_TAG,
+                        "Failed to decode Anki mining payload: ${payload.take(500)}",
+                        throwable,
+                    )
+                    throw IllegalArgumentException("Invalid Anki mining payload", throwable)
+                }
+        onMineEntry?.invoke(content)
+    }
+
+    @JavascriptInterface
+    fun checkDuplicate(expression: String) {
+        val trimmed = expression.trim()
+        if (trimmed.isNotBlank()) {
+            onCheckDuplicate?.invoke(trimmed)
+        }
+    }
+
+    @JavascriptInterface
+    fun updateNavigationState(
+        backCount: Int,
+        forwardCount: Int,
+    ) {
+        onNavigationStateChange?.invoke(backCount > 0, forwardCount > 0)
+    }
+
+    @JavascriptInterface
     fun openLink(url: String) {
         DictionaryExternalLinkOpener.open(context, url)
     }
+
+    @JavascriptInterface
+    fun lookupRedirect(
+        text: String,
+        maxResults: Int,
+    ): String = lookup(text, maxResults)
 
     @JavascriptInterface
     fun consumeAutoplay(key: String): Boolean = DictionaryAutoplayTracker.consume(key)

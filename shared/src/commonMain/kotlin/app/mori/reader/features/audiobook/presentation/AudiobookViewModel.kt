@@ -11,13 +11,16 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.error_audiobook_asset_delete_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_asset_load_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_audio_import_failed
+import app.mori.reader.shared.generated.resources.error_audiobook_import_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_match_delete_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_match_failed
 import app.mori.reader.shared.generated.resources.error_audiobook_subtitle_import_failed
 import app.mori.reader.shared.generated.resources.toast_audiobook_asset_deleted
 import app.mori.reader.shared.generated.resources.toast_audiobook_audio_imported
+import app.mori.reader.shared.generated.resources.toast_audiobook_import_complete
 import app.mori.reader.shared.generated.resources.toast_audiobook_match_complete
 import app.mori.reader.shared.generated.resources.toast_audiobook_match_deleted
+import app.mori.reader.shared.generated.resources.toast_audiobook_removed
 import app.mori.reader.shared.generated.resources.toast_audiobook_subtitle_imported
 import app.mori.reader.ui.text.UiText
 import app.mori.reader.ui.text.uiText
@@ -63,7 +66,15 @@ class AudiobookViewModel(
 
             AudiobookIntent.CloseAudiobookManager -> {
                 _state.update {
-                    it.copy(selectedBookId = null, errorMessage = null)
+                    it.copy(
+                        selectedBookId = null,
+                        audioAssetInfo = null,
+                        subtitleAssetInfo = null,
+                        subtitleData = null,
+                        matchData = null,
+                        isLoadingAssets = false,
+                        errorMessage = null,
+                    )
                 }
             }
 
@@ -85,11 +96,24 @@ class AudiobookViewModel(
                 )
             }
 
+            is AudiobookIntent.ImportAudiobook -> {
+                importAudiobook(
+                    bookId = intent.bookId,
+                    audioUriString = intent.audioUriString,
+                    subtitleUriString = intent.subtitleUriString,
+                    searchWindow = intent.searchWindow,
+                )
+            }
+
             is AudiobookIntent.DeleteAudiobookAsset -> {
                 deleteAudiobookAsset(
                     intent.bookId,
                     intent.type,
                 )
+            }
+
+            is AudiobookIntent.RemoveAudiobook -> {
+                removeAudiobook(intent.bookId)
             }
 
             is AudiobookIntent.RunAudiobookMatch -> {
@@ -123,6 +147,11 @@ class AudiobookViewModel(
         _state.update {
             it.copy(
                 selectedBookId = bookId,
+                audioAssetInfo = null,
+                subtitleAssetInfo = null,
+                subtitleData = null,
+                matchData = null,
+                isLoadingAssets = true,
                 preferredStorageMode = preferredStorageMode,
                 errorMessage = null,
             )
@@ -134,6 +163,11 @@ class AudiobookViewModel(
         _state.update {
             it.copy(
                 selectedBookId = bookId,
+                audioAssetInfo = null,
+                subtitleAssetInfo = null,
+                subtitleData = null,
+                matchData = null,
+                isLoadingAssets = true,
                 errorMessage = null,
             )
         }
@@ -143,6 +177,7 @@ class AudiobookViewModel(
                 .onFailure { throwable ->
                     _state.update {
                         it.copy(
+                            isLoadingAssets = false,
                             errorMessage = throwable.uiTextOr(Res.string.error_audiobook_asset_load_failed),
                         )
                     }
@@ -210,6 +245,72 @@ class AudiobookViewModel(
         }
     }
 
+    private fun importAudiobook(
+        bookId: String,
+        audioUriString: String,
+        subtitleUriString: String,
+        searchWindow: Int,
+    ) {
+        val storageMode = _state.value.preferredStorageMode
+        val clampedWindow = searchWindow.coerceSearchWindow()
+        _state.update {
+            it.copy(
+                isImportingAudio = true,
+                isImportingSubtitle = false,
+                isMatching = false,
+                searchWindow = clampedWindow,
+                errorMessage = null,
+            )
+        }
+        viewModelScope.launch {
+            runCatching {
+                audiobookRepository.importAudio(bookId, audioUriString, storageMode).also { bundle ->
+                    updateAudiobookBundle(bookId, bundle) {
+                        it.copy(
+                            isImportingAudio = false,
+                            isImportingSubtitle = true,
+                            searchWindow = clampedWindow,
+                        )
+                    }
+                }
+                audiobookRepository.importSubtitle(bookId, subtitleUriString, AudiobookStorageMode.Copy).also { bundle ->
+                    updateAudiobookBundle(bookId, bundle) {
+                        it.copy(
+                            isImportingSubtitle = false,
+                            isMatching = true,
+                            searchWindow = clampedWindow,
+                        )
+                    }
+                }
+                audiobookRepository.runMatch(bookId, clampedWindow)
+            }.onSuccess { bundle ->
+                updateAudiobookBundle(bookId, bundle) {
+                    it.copy(
+                        selectedBookId = null,
+                        isImportingAudio = false,
+                        isImportingSubtitle = false,
+                        isMatching = false,
+                        searchWindow = clampedWindow,
+                    )
+                }
+                val matched = bundle.matchData?.matches?.size ?: 0
+                val total = matched + (bundle.matchData?.unmatched ?: 0)
+                sendEffect(uiText(Res.string.toast_audiobook_import_complete, matched, total, matchRatePercent(matched, total)))
+            }.onFailure { throwable ->
+                val message = throwable.uiTextOr(Res.string.error_audiobook_import_failed)
+                _state.update {
+                    it.copy(
+                        isImportingAudio = false,
+                        isImportingSubtitle = false,
+                        isMatching = false,
+                        errorMessage = message,
+                    )
+                }
+                sendEffect(message)
+            }
+        }
+    }
+
     private fun deleteAudiobookAsset(
         bookId: String,
         type: AudiobookAssetType,
@@ -218,7 +319,13 @@ class AudiobookViewModel(
             runCatching { audiobookRepository.deleteAsset(bookId, type) }
                 .onSuccess { bundle ->
                     updateAudiobookBundle(bookId, bundle)
-                    sendEffect(uiText(Res.string.toast_audiobook_asset_deleted))
+                    val isRemoved = bundle.audioAssetInfo == null && bundle.subtitleAssetInfo == null
+                    if (isRemoved) {
+                        _state.update { it.copy(selectedBookId = null) }
+                        sendEffect(uiText(Res.string.toast_audiobook_removed))
+                    } else {
+                        sendEffect(uiText(Res.string.toast_audiobook_asset_deleted))
+                    }
                 }.onFailure { throwable ->
                     val message = throwable.uiTextOr(Res.string.error_audiobook_asset_delete_failed)
                     _state.update { it.copy(errorMessage = message) }
@@ -227,11 +334,29 @@ class AudiobookViewModel(
         }
     }
 
+    private fun removeAudiobook(bookId: String) {
+        viewModelScope.launch {
+            runCatching {
+                audiobookRepository.deleteAsset(bookId, AudiobookAssetType.Subtitle)
+                audiobookRepository.deleteAsset(bookId, AudiobookAssetType.Audio)
+            }.onSuccess { bundle ->
+                updateAudiobookBundle(bookId, bundle) {
+                    it.copy(selectedBookId = null)
+                }
+                sendEffect(uiText(Res.string.toast_audiobook_removed))
+            }.onFailure { throwable ->
+                val message = throwable.uiTextOr(Res.string.error_audiobook_asset_delete_failed)
+                _state.update { it.copy(errorMessage = message) }
+                sendEffect(message)
+            }
+        }
+    }
+
     private fun runAudiobookMatch(
         bookId: String,
         searchWindow: Int,
     ) {
-        val clampedWindow = searchWindow.coerceIn(50, 350)
+        val clampedWindow = searchWindow.coerceSearchWindow()
         _state.update {
             it.copy(
                 isMatching = true,
@@ -276,7 +401,7 @@ class AudiobookViewModel(
     }
 
     private fun setAudiobookSearchWindow(value: Int) {
-        val clamped = value.coerceIn(50, 350)
+        val clamped = value.coerceSearchWindow()
         _state.update { it.copy(searchWindow = clamped) }
     }
 
@@ -302,6 +427,7 @@ class AudiobookViewModel(
                     subtitleAssetInfo = bundle.subtitleAssetInfo,
                     subtitleData = bundle.subtitleData,
                     matchData = bundle.matchData,
+                    isLoadingAssets = false,
                     errorMessage = null,
                 ),
             )
@@ -312,3 +438,16 @@ class AudiobookViewModel(
         effect.trySend(message)
     }
 }
+
+private fun matchRatePercent(
+    matched: Int,
+    total: Int,
+): String {
+    if (total <= 0) return "0.0%"
+    val rounded = kotlin.math.round(matched * 1000.0 / total) / 10.0
+    return "$rounded%"
+}
+
+private fun Int.coerceSearchWindow(): Int =
+    ((this + 25) / 50)
+        .coerceIn(1, 20) * 50

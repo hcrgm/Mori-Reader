@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.audiobook.AudiobookPlayerRepository
 import app.mori.reader.data.audiobook.AudiobookRepository
+import app.mori.reader.data.audiobook.SasayakiMediaInfo
 import app.mori.reader.data.book.BookRepository
 import app.mori.reader.data.book.ReaderBook
 import app.mori.reader.data.book.ReaderBookmark
@@ -65,10 +66,12 @@ class ReaderViewModel(
                 openReaderAdjacentChapter(delta = -1)
             }
 
-            ReaderIntent.ToggleSheet -> {
-                _state.update {
-                    it.copy(sasayakiSheetOpen = !it.sasayakiSheetOpen)
-                }
+            is ReaderIntent.JumpToCharacter -> {
+                jumpReaderToCharacter(intent.characterCount)
+            }
+
+            ReaderIntent.CloseBook -> {
+                closeBook()
             }
 
             ReaderIntent.TogglePlayback -> {
@@ -199,7 +202,12 @@ class ReaderViewModel(
     private fun observeAudiobookAssets() {
         viewModelScope.launch {
             audiobookRepository.observeAssets(bookId).collect { bundle ->
-                _state.update { it.copy(sasayakiMatches = bundle.matchData?.matches.orEmpty()) }
+                _state.update {
+                    it.copy(
+                        sasayakiAudioAssetInfo = bundle.audioAssetInfo,
+                        sasayakiMatches = bundle.matchData?.matches.orEmpty(),
+                    )
+                }
             }
         }
     }
@@ -227,6 +235,7 @@ class ReaderViewModel(
                         state.copy(
                             bookId = bookId,
                             book = book,
+                            sasayakiAudioAssetInfo = audiobookBundle?.audioAssetInfo,
                             sasayakiMatches = sasayakiMatches,
                             chapterIndex = chapterIndex,
                             chapterProgress = chapterProgress,
@@ -239,12 +248,18 @@ class ReaderViewModel(
                     val audioAsset = audiobookBundle?.audioAssetInfo
                     if (audioAsset != null && sasayakiMatches.isNotEmpty()) {
                         runCatching {
-                            audiobookPlayerRepository.prepare(bookId, audioAsset, sasayakiMatches)
+                            audiobookPlayerRepository.prepare(
+                                bookId = bookId,
+                                audioAssetInfo = audioAsset,
+                                matches = sasayakiMatches,
+                                mediaInfo = book.sasayakiMediaInfo(),
+                            )
                         }
                     }
                 }.onFailure { throwable ->
                     _state.update {
                         it.copy(
+                            sasayakiAudioAssetInfo = null,
                             sasayakiMatches = emptyList(),
                             isLoading = false,
                             errorMessage = throwable.uiTextOr(Res.string.error_reader_load_failed),
@@ -312,6 +327,44 @@ class ReaderViewModel(
         persistReaderProgress(destination.chapterIndex, 0.0)
     }
 
+    private fun jumpReaderToCharacter(characterCount: Int) {
+        val reader = _state.value
+        val book = reader.book ?: return
+        if (book.chapters.isEmpty()) return
+
+        val lastCharacter = (book.totalCharacterCount - 1).coerceAtLeast(0)
+        val targetCharacter =
+            if (book.totalCharacterCount > 0) {
+                characterCount.coerceIn(0, lastCharacter)
+            } else {
+                0
+            }
+
+        val targetChapter =
+            book.chapters.lastOrNull { chapter ->
+                targetCharacter >= chapter.characterStart
+            } ?: book.chapters.first()
+        val offsetInChapter = (targetCharacter - targetChapter.characterStart).coerceAtLeast(0)
+        val progress =
+            if (targetChapter.characterCount <= 0) {
+                0.0
+            } else {
+                ((offsetInChapter.toDouble() + 0.000001) / targetChapter.characterCount.toDouble())
+                    .coerceIn(0.0, 0.999999)
+            }
+
+        _state.update {
+            it
+                .withBookmark(
+                    chapterIndex = targetChapter.index,
+                    chapterProgress = progress,
+                    fragment = null,
+                    navigationVersion = it.navigationVersion + 1,
+                ).copy(lookupStack = emptyList())
+        }
+        persistReaderProgress(targetChapter.index, progress)
+    }
+
     private fun openReaderAdjacentChapter(delta: Int) {
         val reader = _state.value
         val book = reader.book ?: return
@@ -372,10 +425,16 @@ class ReaderViewModel(
                 if (audio == null || matches.isEmpty()) {
                     return@launch
                 }
-                runCatching { audiobookPlayerRepository.prepare(bookId, audio, matches) }
-                    .onFailure {
-                        return@launch
-                    }
+                runCatching {
+                    audiobookPlayerRepository.prepare(
+                        bookId = bookId,
+                        audioAssetInfo = audio,
+                        matches = matches,
+                        mediaInfo = reader.book?.sasayakiMediaInfo() ?: SasayakiMediaInfo(),
+                    )
+                }.onFailure {
+                    return@launch
+                }
             }
             runCatching { audiobookPlayerRepository.togglePlayPause() }
         }
@@ -384,6 +443,12 @@ class ReaderViewModel(
     private fun pauseSasayakiPlayback() {
         viewModelScope.launch {
             runCatching { audiobookPlayerRepository.pause() }
+        }
+    }
+
+    private fun closeBook() {
+        viewModelScope.launch {
+            runCatching { audiobookPlayerRepository.stop(bookId) }
         }
     }
 
@@ -528,7 +593,20 @@ class ReaderViewModel(
             }
         }
     }
+
+    override fun onCleared() {
+        viewModelScope.launch {
+            runCatching { audiobookPlayerRepository.stop(bookId) }
+        }
+        super.onCleared()
+    }
 }
+
+private fun ReaderBook.sasayakiMediaInfo(): SasayakiMediaInfo =
+    SasayakiMediaInfo(
+        title = info.title,
+        coverPath = info.coverPath,
+    )
 
 private fun ReaderState.withBookmark(
     chapterIndex: Int,

@@ -8,17 +8,23 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.mori.reader.data.anki.AnkiConnectConfig
+import app.mori.reader.data.anki.AnkiConnectionMode
+import app.mori.reader.data.anki.AnkiDuplicateScope
+import app.mori.reader.data.anki.AnkiSettings
+import app.mori.reader.data.anki.AnkiSettingsRepository
 import app.mori.reader.data.audiobook.AudiobookStorageMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import okio.IOException
 
 class SettingsRepository(
     private val dataStore: DataStore<Preferences>,
-) {
+) : AnkiSettingsRepository {
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -65,6 +71,8 @@ class SettingsRepository(
                             readerThemeMode =
                                 preferences[Keys.ReaderThemeMode]?.toReaderThemeMode()
                                     ?: ReaderThemeMode.FollowApp,
+                            monetEnabled = preferences[Keys.MonetEnabled] ?: false,
+                            monetKeyColor = preferences[Keys.MonetKeyColor] ?: 0L,
                             blurEnabled = preferences[Keys.BlurEnabled] ?: true,
                             readerFullscreen = preferences[Keys.ReaderFullscreen] ?: false,
                         ),
@@ -144,8 +152,11 @@ class SettingsRepository(
                                     ?.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) }
                                     ?: "#FFC0485C",
                         ),
+                    anki = preferences[Keys.AnkiSettings]?.toAnkiSettings(json) ?: AnkiSettings(),
                 )
             }
+
+    override val settingsFlow: Flow<AnkiSettings> = settings.map { it.anki }
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[Keys.ThemeMode] = mode.name }
@@ -165,6 +176,14 @@ class SettingsRepository(
 
     suspend fun setBlurEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.BlurEnabled] = enabled }
+    }
+
+    suspend fun setMonetEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.MonetEnabled] = enabled }
+    }
+
+    suspend fun setMonetKeyColor(value: Long) {
+        dataStore.edit { it[Keys.MonetKeyColor] = value.coerceAtLeast(0L) }
     }
 
     suspend fun setMaxResults(value: Int) {
@@ -343,6 +362,78 @@ class SettingsRepository(
         val normalized = value.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
         dataStore.edit { it[Keys.SasayakiHighlightColor] = normalized }
     }
+
+    override suspend fun updateSettings(transform: (AnkiSettings) -> AnkiSettings) {
+        dataStore.edit { preferences ->
+            val current = preferences[Keys.AnkiSettings]?.toAnkiSettings(json) ?: AnkiSettings()
+            preferences[Keys.AnkiSettings] = json.encodeToString(transform(current))
+        }
+    }
+
+    suspend fun setAnkiConnectionMode(mode: AnkiConnectionMode) {
+        updateSettings { it.copy(connectionMode = mode) }
+    }
+
+    suspend fun setAnkiConnectUrl(url: String) {
+        updateSettings { it.copy(ankiConnect = it.ankiConnect.copy(url = url)) }
+    }
+
+    suspend fun setAnkiConnectTimeoutMillis(timeoutMillis: Int) {
+        updateSettings {
+            it.copy(ankiConnect = it.ankiConnect.copy(timeoutMillis = timeoutMillis.coerceIn(1_000, 60_000)))
+        }
+    }
+
+    suspend fun setAnkiConnectConfig(config: AnkiConnectConfig) {
+        updateSettings {
+            it.copy(
+                ankiConnect =
+                    config.copy(
+                        timeoutMillis = config.timeoutMillis.coerceIn(1_000, 60_000),
+                    ),
+            )
+        }
+    }
+
+    suspend fun setAnkiDuplicateScope(scope: AnkiDuplicateScope) {
+        updateSettings { it.copy(duplicateScope = scope) }
+    }
+
+    suspend fun setAnkiCheckAllModels(enabled: Boolean) {
+        updateSettings { it.copy(checkAllModels = enabled) }
+    }
+
+    suspend fun setAnkiForceSync(enabled: Boolean) {
+        updateSettings { it.copy(forceSync = enabled) }
+    }
+
+    suspend fun setAnkiSelectedDeck(deckName: String?) {
+        updateSettings { it.copy(selectedDeck = deckName?.takeIf(String::isNotBlank)) }
+    }
+
+    suspend fun setAnkiSelectedNoteType(noteTypeName: String?) {
+        updateSettings { it.copy(selectedNoteType = noteTypeName?.takeIf(String::isNotBlank)) }
+    }
+
+    suspend fun setAnkiFieldMappings(mappings: Map<String, String>) {
+        updateSettings { it.copy(fieldMappings = mappings) }
+    }
+
+    suspend fun setAnkiTags(tags: List<String>) {
+        updateSettings { it.copy(tags = tags.map(String::trim).filter(String::isNotBlank).distinct()) }
+    }
+
+    suspend fun setAnkiAllowDuplicates(enabled: Boolean) {
+        updateSettings { it.copy(allowDuplicates = enabled) }
+    }
+
+    suspend fun setAnkiCompactGlossaries(enabled: Boolean) {
+        updateSettings { it.copy(compactGlossaries = enabled) }
+    }
+
+    suspend fun setAnkiEmbedMedia(enabled: Boolean) {
+        updateSettings { it.copy(embedMedia = enabled) }
+    }
 }
 
 private object Keys {
@@ -350,6 +441,8 @@ private object Keys {
     val ThemeMode = stringPreferencesKey("theme_mode")
     val LanguageMode = stringPreferencesKey("language_mode")
     val ReaderThemeMode = stringPreferencesKey("reader_theme_mode")
+    val MonetEnabled = booleanPreferencesKey("monet_enabled")
+    val MonetKeyColor = longPreferencesKey("monet_key_color")
     val BlurEnabled = booleanPreferencesKey("blur_enabled")
     val MaxResults = intPreferencesKey("dictionary_max_results")
     val ScanLength = intPreferencesKey("dictionary_scan_length")
@@ -386,6 +479,7 @@ private object Keys {
     val SasayakiAutoPauseOnLookup = booleanPreferencesKey("sasayaki_auto_pause_lookup")
     val SasayakiHighlightEnabled = booleanPreferencesKey("sasayaki_highlight_enabled")
     val SasayakiHighlightColor = stringPreferencesKey("sasayaki_highlight_color")
+    val AnkiSettings = stringPreferencesKey("anki_settings")
 }
 
 private fun String.toThemeMode(): ThemeMode = ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.System
@@ -413,6 +507,17 @@ private fun String.toAudioSources(json: Json): List<AudioSource> =
     }.getOrDefault(listOf(AudioSource.Default))
 
 private fun List<AudioSource>.toAudioSourcesJson(json: Json): String = json.encodeToString(ListSerializer(AudioSource.serializer()), this)
+
+private fun String.toAnkiSettings(json: Json): AnkiSettings =
+    runCatching {
+        json.decodeFromString<AnkiSettings>(this)
+    }.recoverCatching { throwable ->
+        if (throwable is SerializationException || throwable is IllegalArgumentException) {
+            AnkiSettings()
+        } else {
+            throw throwable
+        }
+    }.getOrDefault(AnkiSettings())
 
 private fun normalizeAudioSources(
     sources: List<AudioSource>,

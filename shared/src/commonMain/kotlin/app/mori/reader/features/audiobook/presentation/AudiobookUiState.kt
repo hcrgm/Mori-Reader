@@ -15,6 +15,7 @@ data class AudiobookUiState(
     val isImportingAudio: Boolean = false,
     val isImportingSubtitle: Boolean = false,
     val isMatching: Boolean = false,
+    val isLoadingAssets: Boolean = false,
     val searchWindow: Int = 200,
     val preferredStorageMode: AudiobookStorageMode = AudiobookStorageMode.Copy,
     val errorMessage: UiText? = null,

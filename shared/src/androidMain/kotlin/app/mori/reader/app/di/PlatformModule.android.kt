@@ -1,5 +1,12 @@
 package app.mori.reader.app.di
 
+import app.mori.reader.data.anki.AndroidAnkiShareFallback
+import app.mori.reader.data.anki.AnkiConnectTransport
+import app.mori.reader.data.anki.AnkiDroidTransport
+import app.mori.reader.data.anki.AnkiService
+import app.mori.reader.data.anki.AnkiSettingsRepository
+import app.mori.reader.data.anki.AnkiShareFallback
+import app.mori.reader.data.anki.AnkiTransport
 import app.mori.reader.data.audio.AndroidAudioRepository
 import app.mori.reader.data.audio.AudioRepository
 import app.mori.reader.data.audiobook.AndroidAudiobookPlayerRepository
@@ -19,9 +26,21 @@ import org.koin.dsl.module
 actual fun platformModule(): Module =
     module {
         single<SettingsRepository> { createAndroidSettingsRepository(androidApplication()) }
+        single<AnkiSettingsRepository> { get<SettingsRepository>() }
         single<AudioRepository> { AndroidAudioRepository(androidApplication()) }
         single<AudiobookRepository> { AndroidAudiobookRepository(androidApplication()) }
         single<AudiobookPlayerRepository> { AndroidAudiobookPlayerRepository(androidApplication()) }
         single<BookRepository> { AndroidBookRepository(androidApplication()) }
         single<DictionaryRepository> { AndroidDictionaryRepository(androidApplication()) }
+        single { AnkiDroidTransport(androidApplication()) }
+        single { AnkiConnectTransport(androidApplication()) }
+        single<AnkiShareFallback> { AndroidAnkiShareFallback(androidApplication()) }
+        single<List<AnkiTransport>> { listOf(get<AnkiDroidTransport>(), get<AnkiConnectTransport>()) }
+        single {
+            AnkiService(
+                settingsRepository = get(),
+                transports = get(),
+                shareFallback = get(),
+            )
+        }
     }

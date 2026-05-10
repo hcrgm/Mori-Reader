@@ -25,6 +25,8 @@
     <string name="cd_import_dictionary">导入词典</string>
     <string name="cd_play">播放</string>
     <string name="cd_pause">暂停</string>
+    <string name="cd_previous">上一个</string>
+    <string name="cd_next">下一个</string>
     <string name="cd_play_pronunciation">播放发音</string>
 
     <!-- Button labels -->
@@ -38,6 +40,7 @@
     <string name="btn_refresh">刷新</string>
     <string name="btn_close">关闭</string>
     <string name="btn_dismiss">关闭</string>
+    <string name="value_none">无</string>
 
     <!-- ===================== Bookshelf (HomePage) ===================== -->
     <string name="home_tab_all">全部</string>
@@ -71,16 +74,32 @@
     <string name="reader_loading_epub">正在加载 EPUB</string>
     <string name="reader_no_chapter">没有可阅读章节</string>
     <string name="reader_chapter_sheet_title">目录</string>
+    <string name="reader_chapter_sheet_empty">此书没有可用目录</string>
+    <string name="reader_chapter_jump">跳转</string>
+    <string name="reader_chapter_jump_title">跳转到</string>
+    <string name="reader_chapter_jump_summary">当前：%1$d / %2$d</string>
+    <string name="reader_chapter_jump_label">字符数</string>
+    <string name="reader_chapter_jump_invalid_title">输入无效</string>
+    <string name="reader_chapter_jump_invalid_message">请输入大于等于 0 的整数</string>
     <string name="reader_appearance_sheet_title">外观</string>
 
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">设置</string>
     <string name="settings_appearance_title">外观</string>
-    <string name="settings_appearance_summary">应用主题、模糊效果和阅读器排版</string>
+    <string name="settings_appearance_summary">应用主题、语言和模糊效果</string>
+    <string name="settings_reader_title">阅读器</string>
+    <string name="settings_reader_summary">阅读版式、排版和词典弹窗</string>
     <string name="settings_dictionary_title">词典</string>
     <string name="settings_dictionary_summary">导入、启用、排序和维护本地词典</string>
     <string name="settings_audio_title">音频</string>
     <string name="settings_audio_summary">配置词条发音、自动播放和离线音频</string>
+    <string name="settings_anki_title">Anki</string>
+    <string name="settings_anki_summary">牌组、笔记字段、重复项和制卡选项</string>
+    <string name="settings_anki_status_connected">已连接</string>
+    <string name="settings_anki_status_disconnected">未连接</string>
+    <string name="reader_settings_display_title">阅读模式</string>
+    <string name="reader_settings_typography_title">排版</string>
+    <string name="reader_settings_popup_title">词典弹窗</string>
 
     <!-- ===================== Appearance Settings ===================== -->
     <string name="appearance_title">外观</string>
@@ -95,6 +114,10 @@
     <string name="language_chinese">中文</string>
     <string name="appearance_theme_title">应用主题</string>
     <string name="appearance_theme_summary">选择跟随系统、浅色或深色</string>
+    <string name="appearance_monet_title">Monet 颜色</string>
+    <string name="appearance_monet_summary">使用系统壁纸生成的动态颜色</string>
+    <string name="appearance_monet_key_color_title">强调色</string>
+    <string name="monet_key_color_default">默认</string>
     <string name="appearance_blur_title">全局模糊效果</string>
     <string name="appearance_blur_summary">控制应用部分控件的模糊效果</string>
     <string name="appearance_writing_vertical">竖排</string>
@@ -135,6 +158,9 @@
     <string name="audio_auto_play_title">自动播放</string>
     <string name="audio_auto_play_summary">查词后播放第一条发音</string>
     <string name="audio_background_title">后台音频</string>
+    <string name="audio_source_enabled">已启用</string>
+    <string name="audio_source_disabled">已停用</string>
+    <string name="audio_source_local_unavailable">本地库未导入，暂不可用</string>
     <string name="audio_source_title">音源</string>
     <string name="audio_add_source_title">添加音源</string>
     <string name="audio_edit_source_title">编辑音源</string>
@@ -158,15 +184,69 @@
     <string name="audio_mode_duck">降低其他音量</string>
     <string name="audio_mode_mix">保持其他音量</string>
 
+    <!-- ===================== Anki Settings ===================== -->
+    <string name="anki_title">Anki</string>
+    <string name="anki_connection_title">连接</string>
+    <string name="anki_connection_mode_title">连接方式</string>
+    <string name="anki_ankidroid_guidance">推荐使用 AnkiDroid 本地路径。请安装 AnkiDroid，启用 API，并在提示时授予数据库权限。</string>
+    <string name="anki_http_title">AnkiConnect HTTP</string>
+    <string name="anki_http_url_label">端点 URL</string>
+    <string name="anki_http_timeout_label">超时时间（毫秒）</string>
+    <string name="anki_status_title">状态</string>
+    <string name="anki_status_connected">已连接</string>
+    <string name="anki_status_disconnected">未连接</string>
+    <string name="anki_deck_title">牌组</string>
+    <string name="anki_model_title">笔记类型</string>
+    <string name="anki_no_decks">请先获取牌组</string>
+    <string name="anki_no_models">请先获取笔记类型</string>
+    <string name="anki_no_fields">选择笔记类型后编辑字段映射。</string>
+    <string name="anki_field_mapping_title">字段映射</string>
+    <string name="anki_lapis_template_hint">选择 Lapis 笔记模板时，将自动填入推荐占位符。</string>
+    <string name="anki_options_title">选项</string>
+    <string name="anki_allow_duplicates_title">允许重复</string>
+    <string name="anki_allow_duplicates_summary">表达式已存在时仍允许 Anki 添加笔记</string>
+    <string name="anki_embed_media_title">嵌入媒体</string>
+    <string name="anki_embed_media_summary">在当前连接方式支持时包含音频和图片</string>
+    <string name="anki_compact_glossaries_title">紧凑释义</string>
+    <string name="anki_compact_glossaries_summary">用更紧凑的格式渲染释义列表</string>
+    <string name="anki_tags_label">标签，用空格分隔</string>
+    <string name="anki_handlebars_title">可用占位符</string>
+    <string name="anki_duplicate_scope_title">重复检查范围</string>
+    <string name="anki_duplicate_scope_collection">整个集合</string>
+    <string name="anki_duplicate_scope_deck">牌组</string>
+    <string name="anki_duplicate_scope_note_type">笔记类型</string>
+    <string name="anki_check_all_models_title">检查所有模板</string>
+    <string name="anki_check_all_models_summary">跨所有笔记类型检查重复表达式</string>
+    <string name="anki_force_sync_title">添加后强制同步</string>
+    <string name="anki_force_sync_summary">成功添加笔记后执行 Anki 同步</string>
+
     <!-- ===================== Audiobook Import ===================== -->
     <string name="cd_open_audiobook">打开有声书</string>
     <string name="audiobook_title">有声书</string>
+    <string name="audiobook_import_title">导入有声书</string>
     <string name="audiobook_storage_title">音频存储方式</string>
     <string name="audiobook_storage_copy">复制到本地</string>
     <string name="audiobook_storage_reference">引用原文件</string>
     <string name="audiobook_subtitle_storage_note">仅作用于音频；字幕始终导入书内并解析为 JSON</string>
-    <string name="audiobook_audio_title">音频</string>
-    <string name="audiobook_subtitle_title">字幕</string>
+    <string name="audiobook_audio_title">选择音频</string>
+    <string name="audiobook_subtitle_title">选择字幕</string>
+    <string name="audiobook_audio_section">音频</string>
+    <string name="audiobook_subtitle_section">字幕</string>
+    <string name="audiobook_choose">选择</string>
+    <string name="audiobook_change">更换</string>
+    <string name="audiobook_no_audio_selected">请选择音频文件</string>
+    <string name="audiobook_no_subtitle_selected">请选择字幕文件</string>
+    <string name="audiobook_importing">正在导入</string>
+    <string name="audiobook_progress_audio">音频信息保存和解析</string>
+    <string name="audiobook_progress_subtitle_match">字幕匹配</string>
+    <string name="audiobook_progress_waiting">等待</string>
+    <string name="audiobook_progress_processing">处理中</string>
+    <string name="audiobook_progress_done">完成</string>
+    <string name="audiobook_matched_full">字幕已匹配 %1$s</string>
+    <string name="audiobook_playback_hint">播放时将自动高亮句子并可选跟随滚动</string>
+    <string name="audiobook_remove">移除有声书</string>
+    <string name="audiobook_remove_confirm_title">确定移除有声书吗？</string>
+    <string name="audiobook_remove_confirm_message">源文件不会被删除。</string>
     <string name="audiobook_import_audio">导入音频</string>
     <string name="audiobook_import_subtitle">导入字幕</string>
     <string name="audiobook_reimport">重新导入</string>
@@ -179,7 +259,11 @@
     <string name="audiobook_status_import_subtitle_first">请先导入 SRT 字幕</string>
     <string name="audiobook_status_matching">正在匹配字幕与正文</string>
     <string name="audiobook_status_not_matched">尚未匹配</string>
-    <string name="audiobook_status_matched">已匹配 %s</string>
+    <string name="audiobook_status_matched">已匹配 %1$s</string>
+    <string name="audiobook_matching_short">匹配中</string>
+    <string name="audiobook_summary_audio_imported">已导入音频</string>
+    <string name="audiobook_summary_subtitle_imported">已导入字幕</string>
+    <string name="audiobook_summary_ready_to_match">可开始匹配</string>
     <string name="audiobook_match_title">字幕匹配</string>
     <string name="audiobook_match_unmatched">未匹配 %d · 窗口 %d</string>
     <string name="audiobook_match_start">开始匹配</string>
@@ -194,11 +278,16 @@
     <string name="audiobook_rematch_confirm">重新匹配会覆盖当前 sasayaki_match.json。</string>
     <string name="audiobook_delete_match_confirm">确认删除当前字幕匹配结果吗？音频和字幕不会被删除。</string>
     <string name="audiobook_delete_asset_confirm">确认删除当前有声书资产吗？</string>
+    <string name="audiobook_delete_audio">删除音频</string>
+    <string name="audiobook_delete_subtitle">删除字幕</string>
+    <string name="audiobook_delete_subtitle_confirm">确认删除当前字幕吗？删除后将同时清除匹配结果。</string>
     <string name="audiobook_replace_asset_confirm">当前类型已有资产，继续后会覆盖原有文件。</string>
     <string name="toast_audiobook_audio_imported">有声书音频已导入</string>
     <string name="toast_audiobook_subtitle_imported">有声书字幕已导入</string>
+    <string name="toast_audiobook_import_complete">导入成功！匹配字幕：%1$d/%2$d (%3$s)</string>
     <string name="toast_audiobook_import_failed">有声书导入失败</string>
     <string name="toast_audiobook_asset_deleted">有声书资产已删除</string>
+    <string name="toast_audiobook_removed">已移除有声书</string>
     <string name="toast_audiobook_match_complete">字幕匹配完成：%d/%d</string>
     <string name="toast_audiobook_match_deleted">字幕匹配已删除</string>
 
@@ -206,9 +295,9 @@
     <string name="dict_settings_title">词典</string>
     <string name="dict_settings_dictionaries">词典</string>
     <string name="dict_settings_options">设置</string>
-    <string name="dict_settings_term">Term 词典</string>
-    <string name="dict_settings_frequency">Frequency 词频</string>
-    <string name="dict_settings_pitch">Pitch 音调</string>
+    <string name="dict_settings_term">Term</string>
+    <string name="dict_settings_frequency">Frequency</string>
+    <string name="dict_settings_pitch">Pitch</string>
     <string name="dict_settings_loading">正在加载词典</string>
     <string name="dict_settings_empty">当前分类还没有导入词典。</string>
     <string name="dict_settings_query_display">查询显示</string>
@@ -228,15 +317,30 @@
     <string name="dict_settings_delete_summary">删除后需要重新导入才能恢复。</string>
     <string name="dict_settings_delete_confirm">确认删除「%s」吗？</string>
     <string name="dict_settings_revision_prefix">revision </string>
-    <string name="dict_settings_type_term">Term 词典</string>
-    <string name="dict_settings_type_frequency">Frequency 词频</string>
-    <string name="dict_settings_type_pitch">Pitch 音调</string>
+    <string name="dict_settings_type_term">Term</string>
+    <string name="dict_settings_type_frequency">Frequency</string>
+    <string name="dict_settings_type_pitch">Pitch</string>
 
     <!-- ===================== Theme Mode Labels ===================== -->
     <string name="theme_follow_system">跟随系统</string>
     <string name="theme_light">浅色模式</string>
     <string name="theme_dark">深色模式</string>
     <string name="reader_theme_follow_app">跟随应用主题</string>
+    <string name="color_red">红色</string>
+    <string name="color_pink">粉色</string>
+    <string name="color_purple">紫色</string>
+    <string name="color_deep_purple">深紫</string>
+    <string name="color_indigo">靛青</string>
+    <string name="color_blue">蓝色</string>
+    <string name="color_cyan">青色</string>
+    <string name="color_teal">青绿</string>
+    <string name="color_green">绿色</string>
+    <string name="color_yellow">黄色</string>
+    <string name="color_amber">琥珀</string>
+    <string name="color_orange">橙色</string>
+    <string name="color_brown">棕色</string>
+    <string name="color_blue_grey">灰蓝</string>
+    <string name="color_sakura">樱花</string>
 
     <!-- ===================== Toast / Effect Messages ===================== -->
     <!-- Blur -->
@@ -284,6 +388,7 @@
     <string name="error_category_sort_failed">分类排序失败</string>
     <string name="error_category_operation_failed">分类操作失败</string>
     <string name="error_audiobook_asset_load_failed">有声书资产加载失败</string>
+    <string name="error_audiobook_import_failed">有声书导入失败</string>
     <string name="error_audiobook_audio_import_failed">有声书音频导入失败</string>
     <string name="error_audiobook_subtitle_import_failed">有声书字幕导入失败</string>
     <string name="error_audiobook_asset_delete_failed">有声书资产删除失败</string>

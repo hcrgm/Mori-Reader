@@ -37,6 +37,7 @@ import app.mori.reader.shared.generated.resources.audio_delete_source_confirm
 import app.mori.reader.shared.generated.resources.audio_delete_source_summary
 import app.mori.reader.shared.generated.resources.audio_dialog_summary
 import app.mori.reader.shared.generated.resources.audio_edit_source_title
+import app.mori.reader.shared.generated.resources.audio_local_description
 import app.mori.reader.shared.generated.resources.audio_local_importing
 import app.mori.reader.shared.generated.resources.audio_local_not_imported
 import app.mori.reader.shared.generated.resources.audio_local_summary
@@ -53,6 +54,7 @@ import app.mori.reader.shared.generated.resources.btn_save
 import app.mori.reader.shared.generated.resources.cd_add_source
 import app.mori.reader.shared.generated.resources.cd_delete_source
 import app.mori.reader.shared.generated.resources.cd_drag_sort
+import app.mori.reader.ui.components.settings.MoriInfoCard
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
@@ -73,8 +75,6 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
-
-internal val AudioSettingsHorizontalPadding = 12.dp
 
 internal enum class PendingAudioDeletionType {
     Source,
@@ -154,7 +154,7 @@ private fun LazyItemScope.AudioSourceRow(
         Card(
             modifier =
                 Modifier
-                    .padding(horizontal = AudioSettingsHorizontalPadding)
+                    .padding(horizontal = app.mori.reader.ui.components.settings.MoriSettingsHorizontalPadding)
                     .fillMaxWidth()
                     .then(
                         with(this) {
@@ -336,6 +336,11 @@ private fun AudioTextField(
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
     )
+}
+
+@Composable
+internal fun LocalAudioDescriptionCard() {
+    MoriInfoCard(text = stringResource(Res.string.audio_local_description))
 }
 
 @Composable

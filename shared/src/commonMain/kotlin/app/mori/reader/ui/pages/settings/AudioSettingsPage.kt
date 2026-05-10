@@ -2,6 +2,7 @@ package app.mori.reader.ui.pages.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -27,7 +28,6 @@ import app.mori.reader.data.settings.AudioSource
 import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.features.settings.presentation.SettingsUiState
 import app.mori.reader.shared.generated.resources.Res
-import app.mori.reader.shared.generated.resources.audio_local_description
 import app.mori.reader.shared.generated.resources.audio_local_title
 import app.mori.reader.shared.generated.resources.audio_playback_title
 import app.mori.reader.shared.generated.resources.audio_source_title
@@ -35,15 +35,15 @@ import app.mori.reader.shared.generated.resources.audio_title
 import app.mori.reader.shared.generated.resources.cd_add_source
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MoriSettingsHorizontalPadding
+import app.mori.reader.ui.components.settings.MoriSettingsSection
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.SmallTitle
-import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.Back
@@ -74,11 +74,11 @@ fun AudioSettingsPage(
         localSources = settings.audio.sources
     }
 
+    val audioSourceListStartIndex = remember { 2 }
     val reorderableState =
         rememberReorderableLazyListState(listState) { from, to ->
-            val listStartIndex = 4
-            val fromRelative = from.index - listStartIndex
-            val toRelative = to.index - listStartIndex
+            val fromRelative = from.index - audioSourceListStartIndex
+            val toRelative = to.index - audioSourceListStartIndex
             if (
                 fromRelative !in localSources.indices ||
                 toRelative !in localSources.indices
@@ -148,10 +148,7 @@ fun AudioSettingsPage(
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
                 item {
-                    SmallTitle(text = stringResource(Res.string.audio_playback_title))
-                }
-                item {
-                    Card(modifier = Modifier.padding(horizontal = AudioSettingsHorizontalPadding)) {
+                    MoriSettingsSection(title = stringResource(Res.string.audio_playback_title)) {
                         PlaybackCard(settings = settings, onIntent = onIntent)
                     }
                 }
@@ -173,26 +170,13 @@ fun AudioSettingsPage(
                     },
                 )
                 item {
-                    SmallTitle(text = stringResource(Res.string.audio_local_title))
-                }
-                item {
-                    Card(
-                        modifier = Modifier.padding(horizontal = AudioSettingsHorizontalPadding),
-                        colors =
-                            CardDefaults.defaultColors(
-                                color = MiuixTheme.colorScheme.primaryContainer.copy(alpha = 0.25f),
-                                contentColor = MiuixTheme.colorScheme.onSurface,
-                            ),
-                        insideMargin = PaddingValues(16.dp),
-                    ) {
-                        Text(
-                            text = stringResource(Res.string.audio_local_description),
-                            color = MiuixTheme.colorScheme.primary,
-                        )
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        SmallTitle(text = stringResource(Res.string.audio_local_title))
+                        LocalAudioDescriptionCard()
                     }
                 }
                 item {
-                    Card(modifier = Modifier.padding(horizontal = AudioSettingsHorizontalPadding)) {
+                    Card(modifier = Modifier.padding(horizontal = MoriSettingsHorizontalPadding)) {
                         LocalAudioCard(
                             settings = settings,
                             onImport = launchDbPicker,

@@ -1,5 +1,6 @@
 package app.mori.reader.features.reader.presentation
 
+import app.mori.reader.data.audiobook.AudiobookAssetInfo
 import app.mori.reader.data.audiobook.SasayakiCueRange
 import app.mori.reader.data.audiobook.SasayakiMatch
 import app.mori.reader.data.audiobook.SasayakiPlayerSnapshot
@@ -10,9 +11,9 @@ import app.mori.reader.ui.text.UiText
 data class ReaderState(
     val bookId: String? = null,
     val book: ReaderBook? = null,
+    val sasayakiAudioAssetInfo: AudiobookAssetInfo? = null,
     val sasayakiMatches: List<SasayakiMatch> = emptyList(),
     val sasayakiPlayer: SasayakiPlayerSnapshot = SasayakiPlayerSnapshot(),
-    val sasayakiSheetOpen: Boolean = false,
     val resumeSasayakiAfterLookup: Boolean = false,
     val chapterIndex: Int = 0,
     val chapterProgress: Double = 0.0,

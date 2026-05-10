@@ -1,12 +1,21 @@
 package app.mori.reader.data.audiobook
 
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import android.os.Build
+import android.os.Looper
+import androidx.annotation.OptIn
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.session.MediaSession
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,11 +42,22 @@ internal class AndroidAudiobookPlayerRepository(
             prettyPrint = true
             encodeDefaults = true
         }
-    private val player = ExoPlayer.Builder(context).build()
     private var preparedBookId: String? = null
+    private var preparedAudioAssetInfo: AudiobookAssetInfo? = null
+    private var preparedMediaInfo: SasayakiMediaInfo = SasayakiMediaInfo()
     private var preparedMatches: List<SasayakiMatch> = emptyList()
+    private var publishedCueId: String? = null
     private var tickJob: Job? = null
     private var lastPersistAt = 0L
+    private val player = ExoPlayer.Builder(context).build()
+    private val sessionPlayer =
+        SasayakiSessionPlayer(
+            player = player,
+            hasCues = { preparedMatches.isNotEmpty() },
+            onNextCue = ::seekToNextCueFromSession,
+            onPreviousCue = ::seekToPreviousCueFromSession,
+        )
+    private val mediaSession = createMediaSession(context, sessionPlayer)
 
     private val _snapshot = MutableStateFlow(SasayakiPlayerSnapshot())
     override val snapshot: StateFlow<SasayakiPlayerSnapshot> = _snapshot
@@ -62,12 +82,22 @@ internal class AndroidAudiobookPlayerRepository(
         bookId: String,
         audioAssetInfo: AudiobookAssetInfo,
         matches: List<SasayakiMatch>,
+        mediaInfo: SasayakiMediaInfo,
     ) = withContext(Dispatchers.Main.immediate) {
         val audioUri = resolveAudioUri(bookId, audioAssetInfo)
         val playback = loadPlayback(bookId)
         preparedBookId = bookId
+        preparedAudioAssetInfo = audioAssetInfo
+        preparedMediaInfo = mediaInfo
         preparedMatches = matches.sortedBy { it.startTimeMs }
-        player.setMediaItem(MediaItem.fromUri(audioUri))
+        publishedCueId = cueAtOrBefore(playback.positionMs, playback.delayMs)?.id
+        player.setMediaItem(
+            MediaItem
+                .Builder()
+                .setUri(audioUri)
+                .setMediaMetadata(buildMediaMetadata(currentCue()))
+                .build(),
+        )
         player.playbackParameters = PlaybackParameters(playback.rate.coerceIn(MIN_RATE, MAX_RATE))
         player.prepare()
         if (playback.positionMs > 0L) {
@@ -81,7 +111,7 @@ internal class AndroidAudiobookPlayerRepository(
                 positionMs = playback.positionMs,
                 delayMs = playback.delayMs.coerceIn(MIN_DELAY_MS, MAX_DELAY_MS),
                 rate = playback.rate.coerceIn(MIN_RATE, MAX_RATE),
-                currentCueId = cueAt(playback.positionMs, playback.delayMs)?.id,
+                currentCueId = publishedCueId,
                 errorMessage = null,
             )
         }
@@ -93,6 +123,7 @@ internal class AndroidAudiobookPlayerRepository(
             if (player.isPlaying) {
                 player.pause()
             } else {
+                startMediaSessionService()
                 player.play()
                 startTicker()
             }
@@ -101,6 +132,7 @@ internal class AndroidAudiobookPlayerRepository(
 
     override suspend fun play() =
         withContext(Dispatchers.Main.immediate) {
+            startMediaSessionService()
             player.play()
             startTicker()
             publishSnapshot()
@@ -131,26 +163,12 @@ internal class AndroidAudiobookPlayerRepository(
 
     override suspend fun nextCue() =
         withContext(Dispatchers.Main.immediate) {
-            val current = player.currentPosition + _snapshot.value.delayMs
-            val cue =
-                preparedMatches.firstOrNull { it.startTimeMs > current + 250L }
-                    ?: preparedMatches.lastOrNull()
-                    ?: return@withContext
-            player.seekTo(cue.startTimeMs)
-            publishSnapshot()
-            persistCurrent()
+            seekToNextCue()
         }
 
     override suspend fun previousCue() =
         withContext(Dispatchers.Main.immediate) {
-            val current = player.currentPosition + _snapshot.value.delayMs
-            val cue =
-                preparedMatches.lastOrNull { it.startTimeMs < current - 750L }
-                    ?: preparedMatches.firstOrNull()
-                    ?: return@withContext
-            player.seekTo(cue.startTimeMs)
-            publishSnapshot()
-            persistCurrent()
+            seekToPreviousCue()
         }
 
     override suspend fun setDelay(delayMs: Long) =
@@ -158,7 +176,7 @@ internal class AndroidAudiobookPlayerRepository(
             _snapshot.update {
                 it.copy(
                     delayMs = delayMs.coerceIn(MIN_DELAY_MS, MAX_DELAY_MS),
-                    currentCueId = cueAt(player.currentPosition, delayMs)?.id,
+                    currentCueId = cueAtOrBefore(player.currentPosition, delayMs)?.id,
                 )
             }
             persistCurrent()
@@ -172,14 +190,20 @@ internal class AndroidAudiobookPlayerRepository(
             persistCurrent()
         }
 
+    override suspend fun stop(bookId: String?) =
+        withContext(Dispatchers.Main.immediate) {
+            if (bookId != null && preparedBookId != bookId) return@withContext
+            stopInternal()
+        }
+
     override suspend fun release() =
         withContext(Dispatchers.Main.immediate) {
             close()
         }
 
     fun close() {
-        tickJob?.cancel()
-        persistCurrent()
+        stopInternal()
+        mediaSession.release()
         player.release()
         scope.coroutineContext[Job]?.cancel()
     }
@@ -204,6 +228,8 @@ internal class AndroidAudiobookPlayerRepository(
         val duration = player.duration.takeIf { it != C.TIME_UNSET } ?: 0L
         val position = player.currentPosition.coerceAtLeast(0L)
         val delay = _snapshot.value.delayMs
+        val cue = cueAtOrBefore(position, delay)
+        updateMediaMetadataIfNeeded(cue)
         _snapshot.update {
             it.copy(
                 bookId = preparedBookId,
@@ -211,19 +237,54 @@ internal class AndroidAudiobookPlayerRepository(
                 isPlaying = player.isPlaying,
                 positionMs = position,
                 durationMs = duration.coerceAtLeast(0L),
-                currentCueId = cueAt(position, delay)?.id,
+                currentCueId = cue?.id,
                 errorMessage = null,
             )
         }
     }
 
-    private fun cueAt(
+    private fun cueAtOrBefore(
         positionMs: Long,
         delayMs: Long,
     ): SasayakiMatch? {
         val adjusted = positionMs + delayMs
-        return preparedMatches.firstOrNull { cue ->
-            adjusted in cue.startTimeMs until cue.endTimeMs
+        return preparedMatches.lastOrNull { cue -> adjusted >= cue.startTimeMs }
+    }
+
+    private fun seekToNextCue() {
+        val current = player.currentPosition + _snapshot.value.delayMs
+        val cue =
+            preparedMatches.firstOrNull { it.startTimeMs > current + CUE_NAVIGATION_TOLERANCE_MS }
+                ?: preparedMatches.lastOrNull()
+                ?: return
+        player.seekTo(cue.startTimeMs)
+        publishSnapshot()
+        persistCurrent()
+    }
+
+    private fun seekToPreviousCue() {
+        val current = player.currentPosition + _snapshot.value.delayMs
+        val currentIndex = preparedMatches.indexOfLast { it.startTimeMs <= current + CUE_NAVIGATION_TOLERANCE_MS }
+        val targetIndex = (currentIndex - 1).coerceAtLeast(0)
+        val cue = preparedMatches.getOrNull(targetIndex) ?: return
+        player.seekTo(cue.startTimeMs)
+        publishSnapshot()
+        persistCurrent()
+    }
+
+    private fun seekToNextCueFromSession() {
+        runOnPlayerLooper { seekToNextCue() }
+    }
+
+    private fun seekToPreviousCueFromSession() {
+        runOnPlayerLooper { seekToPreviousCue() }
+    }
+
+    private fun runOnPlayerLooper(action: () -> Unit) {
+        if (Looper.myLooper() == player.applicationLooper) {
+            action()
+        } else {
+            scope.launch { action() }
         }
     }
 
@@ -255,6 +316,25 @@ internal class AndroidAudiobookPlayerRepository(
         }.getOrDefault(SasayakiPlaybackData())
     }
 
+    private fun stopInternal() {
+        tickJob?.cancel()
+        tickJob = null
+        persistCurrent()
+        player.pause()
+        player.stop()
+        player.clearMediaItems()
+        preparedBookId = null
+        preparedAudioAssetInfo = null
+        preparedMediaInfo = SasayakiMediaInfo()
+        preparedMatches = emptyList()
+        publishedCueId = null
+        _snapshot.value =
+            SasayakiPlayerSnapshot(
+                delayMs = _snapshot.value.delayMs,
+                rate = _snapshot.value.rate,
+            )
+    }
+
     private fun resolveAudioUri(
         bookId: String,
         asset: AudiobookAssetInfo,
@@ -280,6 +360,56 @@ internal class AndroidAudiobookPlayerRepository(
                 File(bookDir, METADATA_FILE).readText(),
             )
         }.getOrNull()
+
+    private fun currentCue(): SasayakiMatch? = publishedCueId?.let { cueId -> preparedMatches.firstOrNull { it.id == cueId } }
+
+    private fun updateMediaMetadataIfNeeded(cue: SasayakiMatch?) {
+        if (publishedCueId == cue?.id) return
+        publishedCueId = cue?.id
+        if (player.mediaItemCount == 0) return
+        val current = player.currentMediaItem ?: return
+        player.replaceMediaItem(
+            player.currentMediaItemIndex.coerceAtLeast(0),
+            current
+                .buildUpon()
+                .setMediaMetadata(buildMediaMetadata(cue))
+                .build(),
+        )
+    }
+
+    private fun buildMediaMetadata(cue: SasayakiMatch?): MediaMetadata {
+        val audio = preparedAudioAssetInfo
+        val sentence = cue?.text?.trim()?.takeIf { it.isNotBlank() }
+        val bookTitle = preparedMediaInfo.title?.trim()?.takeIf { it.isNotBlank() }
+        val audioTitle = audio?.displayName?.trim()?.takeIf { it.isNotBlank() }
+        val coverUri =
+            preparedMediaInfo.coverPath
+                ?.takeIf { it.isNotBlank() }
+                ?.let(::File)
+                ?.takeIf { it.exists() }
+                ?.let(Uri::fromFile)
+        return MediaMetadata
+            .Builder()
+            .setTitle(bookTitle ?: audioTitle)
+            .setDisplayTitle(bookTitle ?: audioTitle)
+            .setArtist(sentence)
+            .setSubtitle(sentence)
+            .setDescription(sentence)
+            .setAlbumTitle(audioTitle ?: "Sasayaki")
+            .setArtworkUri(coverUri)
+            .build()
+    }
+
+    private fun startMediaSessionService() {
+        val intent = Intent(context, AndroidAudiobookMediaSessionService::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            context.startForegroundService(intent)
+        } else {
+            context.startService(intent)
+        }
+    }
+
+    internal fun mediaSession(): MediaSession = mediaSession
 }
 
 @Serializable
@@ -294,3 +424,77 @@ private const val MIN_DELAY_MS = -2_000L
 private const val MAX_DELAY_MS = 2_000L
 private const val MIN_RATE = 0.5f
 private const val MAX_RATE = 1.5f
+private const val CUE_NAVIGATION_TOLERANCE_MS = 250L
+
+@OptIn(UnstableApi::class)
+private class SasayakiSessionPlayer(
+    player: Player,
+    private val hasCues: () -> Boolean,
+    private val onNextCue: () -> Unit,
+    private val onPreviousCue: () -> Unit,
+) : ForwardingPlayer(player) {
+    override fun isCommandAvailable(command: Int): Boolean =
+        if (command.isCueNavigationCommand()) {
+            hasCues()
+        } else {
+            super.isCommandAvailable(command)
+        }
+
+    override fun getAvailableCommands(): Player.Commands {
+        val builder = Player.Commands.Builder().addAll(super.getAvailableCommands())
+        if (hasCues()) {
+            builder.addAll(
+                Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_PREVIOUS,
+                Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM,
+                Player.COMMAND_SEEK_TO_NEXT,
+            )
+        }
+        return builder.build()
+    }
+
+    override fun hasPreviousMediaItem(): Boolean = hasCues()
+
+    override fun hasNextMediaItem(): Boolean = hasCues()
+
+    override fun seekToPreviousMediaItem() {
+        onPreviousCue()
+    }
+
+    override fun seekToPrevious() {
+        onPreviousCue()
+    }
+
+    override fun seekToNextMediaItem() {
+        onNextCue()
+    }
+
+    override fun seekToNext() {
+        onNextCue()
+    }
+
+    private fun Int.isCueNavigationCommand(): Boolean =
+        this == Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM ||
+            this == Player.COMMAND_SEEK_TO_PREVIOUS ||
+            this == Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM ||
+            this == Player.COMMAND_SEEK_TO_NEXT
+}
+
+private fun createMediaSession(
+    context: Context,
+    player: Player,
+): MediaSession {
+    val builder = MediaSession.Builder(context, player)
+    context.createSessionActivity()?.let(builder::setSessionActivity)
+    return builder.build()
+}
+
+private fun Context.createSessionActivity(): PendingIntent? {
+    val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+    return PendingIntent.getActivity(
+        this,
+        0,
+        launchIntent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
+}

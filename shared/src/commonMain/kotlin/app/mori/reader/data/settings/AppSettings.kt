@@ -1,5 +1,6 @@
 package app.mori.reader.data.settings
 
+import app.mori.reader.data.anki.AnkiSettings
 import app.mori.reader.data.audiobook.AudiobookStorageMode
 import kotlinx.serialization.Serializable
 
@@ -11,6 +12,8 @@ data class AppearanceSettings(
     val themeMode: ThemeMode = ThemeMode.System,
     val languageMode: LanguageMode = LanguageMode.System,
     val readerThemeMode: ReaderThemeMode = ReaderThemeMode.FollowApp,
+    val monetEnabled: Boolean = false,
+    val monetKeyColor: Long = 0L,
     val blurEnabled: Boolean = true,
     val readerFullscreen: Boolean = false,
 )
@@ -76,6 +79,7 @@ data class AppSettings(
     val dictionary: DictionarySettings = DictionarySettings(),
     val audio: AudioSettings = AudioSettings(),
     val sasayaki: SasayakiSettings = SasayakiSettings(),
+    val anki: AnkiSettings = AnkiSettings(),
 )
 
 enum class BookshelfSortMode(

@@ -19,6 +19,8 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import app.mori.reader.app.navigation.AppNavigationState
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.anki.presentation.AnkiIntent
+import app.mori.reader.features.anki.presentation.AnkiState
 import app.mori.reader.features.audiobook.presentation.AudiobookIntent
 import app.mori.reader.features.audiobook.presentation.AudiobookUiState
 import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
@@ -46,15 +48,19 @@ internal fun MainTabsContent(
     dictionary: DictionaryState,
     settings: AppSettings,
     audiobook: AudiobookUiState,
+    ankiState: AnkiState,
     navigationState: AppNavigationState,
     onIntent: (AppIntent) -> Unit,
     onBookshelfIntent: (BookshelfIntent) -> Unit,
     onDictionaryIntent: (DictionaryIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
     onAudiobookIntent: (AudiobookIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onOpenAppearanceSettings: () -> Unit,
+    onOpenReaderSettings: () -> Unit,
     onOpenDictionarySettings: () -> Unit,
     onOpenAudioSettings: () -> Unit,
+    onOpenAnkiSettings: () -> Unit,
 ) {
     val pagerState =
         rememberPagerState(
@@ -106,6 +112,7 @@ internal fun MainTabsContent(
                     dictionary = dictionary,
                     settings = settings,
                     audiobook = audiobook,
+                    ankiState = ankiState,
                     fixedPadding = navigationRailPadding,
                     pagerState = pagerState,
                     navigationState = navigationState,
@@ -114,9 +121,12 @@ internal fun MainTabsContent(
                     onDictionaryIntent = onDictionaryIntent,
                     onSettingsIntent = onSettingsIntent,
                     onAudiobookIntent = onAudiobookIntent,
+                    onAnkiIntent = onAnkiIntent,
                     onOpenAppearanceSettings = onOpenAppearanceSettings,
+                    onOpenReaderSettings = onOpenReaderSettings,
                     onOpenDictionarySettings = onOpenDictionarySettings,
                     onOpenAudioSettings = onOpenAudioSettings,
+                    onOpenAnkiSettings = onOpenAnkiSettings,
                     onWebViewVerticalScrollActiveChange = navigationState::onDictionaryScrollActiveChange,
                 )
             }
@@ -151,6 +161,7 @@ internal fun MainTabsContent(
                     dictionary = dictionary,
                     settings = settings,
                     audiobook = audiobook,
+                    ankiState = ankiState,
                     fixedPadding = fixedPadding,
                     pagerState = pagerState,
                     navigationState = navigationState,
@@ -159,9 +170,12 @@ internal fun MainTabsContent(
                     onDictionaryIntent = onDictionaryIntent,
                     onSettingsIntent = onSettingsIntent,
                     onAudiobookIntent = onAudiobookIntent,
+                    onAnkiIntent = onAnkiIntent,
                     onOpenAppearanceSettings = onOpenAppearanceSettings,
+                    onOpenReaderSettings = onOpenReaderSettings,
                     onOpenDictionarySettings = onOpenDictionarySettings,
                     onOpenAudioSettings = onOpenAudioSettings,
+                    onOpenAnkiSettings = onOpenAnkiSettings,
                     onWebViewVerticalScrollActiveChange = navigationState::onDictionaryScrollActiveChange,
                 )
             }
@@ -175,6 +189,7 @@ private fun MainTabsPager(
     dictionary: DictionaryState,
     settings: AppSettings,
     audiobook: AudiobookUiState,
+    ankiState: AnkiState,
     fixedPadding: PaddingValues,
     pagerState: PagerState,
     navigationState: AppNavigationState,
@@ -183,9 +198,12 @@ private fun MainTabsPager(
     onDictionaryIntent: (DictionaryIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
     onAudiobookIntent: (AudiobookIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onOpenAppearanceSettings: () -> Unit,
+    onOpenReaderSettings: () -> Unit,
     onOpenDictionarySettings: () -> Unit,
     onOpenAudioSettings: () -> Unit,
+    onOpenAnkiSettings: () -> Unit,
     onWebViewVerticalScrollActiveChange: (Boolean) -> Unit,
 ) {
     HorizontalPager(
@@ -215,8 +233,10 @@ private fun MainTabsPager(
                 DictionaryPage(
                     dictionaryState = dictionary,
                     settings = settings,
+                    ankiState = ankiState,
                     fixedPadding = fixedPadding,
                     onDictionaryIntent = onDictionaryIntent,
+                    onAnkiIntent = onAnkiIntent,
                     onWebViewVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
                 )
             }
@@ -224,10 +244,13 @@ private fun MainTabsPager(
             AppTab.Settings -> {
                 SettingsPage(
                     settings = settings,
+                    ankiState = ankiState,
                     fixedPadding = fixedPadding,
                     onOpenAppearanceSettings = onOpenAppearanceSettings,
+                    onOpenReaderSettings = onOpenReaderSettings,
                     onOpenDictionarySettings = onOpenDictionarySettings,
                     onOpenAudioSettings = onOpenAudioSettings,
+                    onOpenAnkiSettings = onOpenAnkiSettings,
                 )
             }
         }

@@ -4,13 +4,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -18,7 +23,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import app.mori.reader.data.anki.AnkiConnectionMode
+import app.mori.reader.data.anki.AnkiMiningContext
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.features.anki.presentation.AnkiIntent
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.shared.generated.resources.Res
@@ -39,6 +47,7 @@ internal fun DictionaryLookupPopup(
     lookup: ReaderLookupState,
     popupIndex: Int,
     settings: AppSettings,
+    ankiDuplicateExpression: String?,
     isDark: Boolean,
     viewportWidth: Dp,
     viewportHeight: Dp,
@@ -47,6 +56,7 @@ internal fun DictionaryLookupPopup(
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
     onDictionaryIntent: (DictionaryIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onVerticalScrollActiveChange: (Boolean) -> Unit,
     onSwipeDismiss: () -> Unit,
     onDismiss: () -> Unit,
@@ -98,6 +108,12 @@ internal fun DictionaryLookupPopup(
     val outsideInteractionSource = remember { MutableInteractionSource() }
     val popupInteractionSource = remember { MutableInteractionSource() }
     val popupShape = RoundedCornerShape(10.dp)
+    val ankiSettings = settings.anki
+    val ankiNeedsAudio = ankiSettings.fieldMappings.values.any { it.contains("{audio}") }
+    var canNavigateBack by remember(lookup.id) { mutableStateOf(false) }
+    var canNavigateForward by remember(lookup.id) { mutableStateOf(false) }
+    var navigateBackToken by remember(lookup.id) { mutableIntStateOf(0) }
+    var navigateForwardToken by remember(lookup.id) { mutableIntStateOf(0) }
     Box(
         modifier =
             Modifier
@@ -155,59 +171,94 @@ internal fun DictionaryLookupPopup(
                             },
                         ),
             )
-            DictionaryWebView(
-                state =
-                    DictionaryWebViewState(
-                        query = lookup.selectedText,
-                        entries = lookup.entries,
-                        dictionaryStyles = lookup.dictionaryStyles,
-                        isSearching = lookup.isSearching,
-                        hasSearched = lookup.selectedText.isNotBlank(),
-                        errorMessage = lookup.errorMessage?.asString(),
-                        searchingMessage = stringResource(Res.string.dict_searching),
-                        noResultsMessage = stringResource(Res.string.dict_no_results),
-                        idleMessage = stringResource(Res.string.dict_placeholder),
-                        playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
-                    ),
-                config =
-                    DictionaryWebViewSettings(
-                        maxResults = settings.dictionary.maxResults,
-                        scanLength = settings.dictionary.scanLength,
-                        collapseDictionaries = settings.dictionary.collapseDictionaries,
-                        compactGlossaries = settings.dictionary.compactGlossaries,
-                        showExpressionTags = settings.dictionary.showExpressionTags,
-                        harmonicFrequency = settings.dictionary.harmonicFrequency,
-                        deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
-                        isDark = isDark,
-                        audioSources = settings.audio.sources,
-                        audioEnableAutoplay = settings.audio.enableAutoplay,
-                        audioPlaybackMode = settings.audio.playbackMode,
-                        enableInternalPopup = false,
-                        swipeDismissThreshold =
-                            if (settings.popup.swipeToDismiss) {
-                                settings.popup.swipeThreshold
-                            } else {
-                                0
+            Column(modifier = Modifier.fillMaxSize()) {
+                DictionaryPopupActionBar(
+                    canNavigateBack = canNavigateBack,
+                    canNavigateForward = canNavigateForward,
+                    blurEnabled = blurEnabled,
+                    backdrop = backdrop,
+                    isDark = isDark,
+                    onNavigateBack = { navigateBackToken++ },
+                    onNavigateForward = { navigateForwardToken++ },
+                    onClose = onDismiss,
+                )
+                DictionaryWebView(
+                    state =
+                        DictionaryWebViewState(
+                            query = lookup.selectedText,
+                            entries = lookup.entries,
+                            dictionaryStyles = lookup.dictionaryStyles,
+                            isSearching = lookup.isSearching,
+                            hasSearched = lookup.selectedText.isNotBlank(),
+                            errorMessage = lookup.errorMessage?.asString(),
+                            searchingMessage = stringResource(Res.string.dict_searching),
+                            noResultsMessage = stringResource(Res.string.dict_no_results),
+                            idleMessage = stringResource(Res.string.dict_placeholder),
+                            playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
+                        ),
+                    config =
+                        DictionaryWebViewSettings(
+                            maxResults = settings.dictionary.maxResults,
+                            scanLength = settings.dictionary.scanLength,
+                            collapseDictionaries = settings.dictionary.collapseDictionaries,
+                            compactGlossaries = settings.dictionary.compactGlossaries,
+                            showExpressionTags = settings.dictionary.showExpressionTags,
+                            harmonicFrequency = settings.dictionary.harmonicFrequency,
+                            deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
+                            isDark = isDark,
+                            audioSources = settings.audio.sources,
+                            audioEnableAutoplay = settings.audio.enableAutoplay,
+                            audioPlaybackMode = settings.audio.playbackMode,
+                            enableInternalPopup = false,
+                            swipeDismissThreshold =
+                                if (settings.popup.swipeToDismiss) {
+                                    settings.popup.swipeThreshold
+                                } else {
+                                    0
+                                },
+                            edgeToEdgeContent = true,
+                            transparentBackground = blurEnabled,
+                            ankiNeedsAudio = ankiNeedsAudio,
+                            ankiAllowDuplicates = ankiSettings.allowDuplicates,
+                            ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,
+                            ankiEmbedMedia = ankiSettings.embedMedia,
+                            ankiCompactGlossaries = ankiSettings.compactGlossaries,
+                            ankiDuplicateExpression = ankiDuplicateExpression,
+                            navigateBackToken = navigateBackToken,
+                            navigateForwardToken = navigateForwardToken,
+                        ),
+                    callbacks =
+                        DictionaryWebViewCallbacks(
+                            onVerticalScrollActiveChange = onVerticalScrollActiveChange,
+                            onPopupTextSelected = { text, rect ->
+                                onDictionaryIntent(
+                                    DictionaryIntent.PopupTextSelected(
+                                        parentIndex = popupIndex,
+                                        text = text,
+                                        rect = rect,
+                                    ),
+                                )
                             },
-                        edgeToEdgeContent = true,
-                        transparentBackground = blurEnabled,
-                    ),
-                callbacks =
-                    DictionaryWebViewCallbacks(
-                        onVerticalScrollActiveChange = onVerticalScrollActiveChange,
-                        onPopupTextSelected = { text, rect ->
-                            onDictionaryIntent(
-                                DictionaryIntent.PopupTextSelected(
-                                    parentIndex = popupIndex,
-                                    text = text,
-                                    rect = rect,
-                                ),
-                            )
-                        },
-                        onSwipeDismiss = onSwipeDismiss,
-                    ),
-                modifier = Modifier.fillMaxSize(),
-            )
+                            onMineEntry = { content ->
+                                onAnkiIntent(
+                                    AnkiIntent.MineNote(
+                                        content = content,
+                                        context = AnkiMiningContext(sentence = lookup.selectedText),
+                                    ),
+                                )
+                            },
+                            onCheckDuplicate = { expression ->
+                                onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
+                            },
+                            onSwipeDismiss = onSwipeDismiss,
+                            onNavigationStateChange = { back, forward ->
+                                canNavigateBack = back
+                                canNavigateForward = forward
+                            },
+                        ),
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }

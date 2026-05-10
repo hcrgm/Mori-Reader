@@ -24,9 +24,20 @@ sealed interface AudiobookIntent {
         val uriString: String,
     ) : AudiobookIntent
 
+    data class ImportAudiobook(
+        val bookId: String,
+        val audioUriString: String,
+        val subtitleUriString: String,
+        val searchWindow: Int,
+    ) : AudiobookIntent
+
     data class DeleteAudiobookAsset(
         val bookId: String,
         val type: AudiobookAssetType,
+    ) : AudiobookIntent
+
+    data class RemoveAudiobook(
+        val bookId: String,
     ) : AudiobookIntent
 
     data class RunAudiobookMatch(

@@ -50,7 +50,9 @@ internal class AndroidAudiobookRepository(
             val displayName =
                 displayName(uri) ?: uri.lastPathSegment
                     .orEmpty()
+                    .let(Uri::decode)
                     .substringAfterLast('/')
+                    .substringAfterLast(':')
                     .ifBlank { "audio" }
             val format =
                 audioFormat(displayName, mimeType(uri))
@@ -105,7 +107,9 @@ internal class AndroidAudiobookRepository(
             val displayName =
                 displayName(uri) ?: uri.lastPathSegment
                     .orEmpty()
+                    .let(Uri::decode)
                     .substringAfterLast('/')
+                    .substringAfterLast(':')
                     .ifBlank { "subtitle.srt" }
             val format =
                 subtitleFormat(displayName, mimeType(uri))

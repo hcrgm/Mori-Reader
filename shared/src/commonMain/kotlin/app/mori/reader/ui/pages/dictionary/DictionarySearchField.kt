@@ -3,10 +3,10 @@ package app.mori.reader.ui.pages.dictionary
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -18,8 +18,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_clear_search
 import app.mori.reader.shared.generated.resources.dict_search_hint
@@ -32,8 +34,8 @@ import top.yukonga.miuix.kmp.blur.BlurColors
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
 import top.yukonga.miuix.kmp.blur.textureBlur
 import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Clear
-import top.yukonga.miuix.kmp.icon.extended.Search
+import top.yukonga.miuix.kmp.icon.basic.Search
+import top.yukonga.miuix.kmp.icon.basic.SearchCleanup
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal val DictionarySearchFieldHeight = 56.dp
@@ -61,7 +63,7 @@ internal fun DictionarySearchField(
                     if (blurEnabled && backdrop != null) {
                         Modifier.textureBlur(
                             backdrop = backdrop,
-                            shape = RoundedCornerShape(22.dp),
+                            shape = RoundedCornerShape(percent = 50),
                             blurRadius = 25f * density.density,
                             colors =
                                 BlurColors(
@@ -78,17 +80,21 @@ internal fun DictionarySearchField(
                         )
                     } else {
                         Modifier
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(percent = 50))
                             .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f))
                     },
-                ).padding(start = 16.dp, end = 8.dp),
+                ).padding(start = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(
-            imageVector = MiuixIcons.Search,
+            imageVector = MiuixIcons.Basic.Search,
             contentDescription = null,
-            tint = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            modifier =
+                Modifier
+                    .size(44.dp)
+                    .padding(start = 16.dp, end = 8.dp),
+            tint = MiuixTheme.colorScheme.onSurfaceContainer,
         )
 
         BasicTextField(
@@ -106,6 +112,8 @@ internal fun DictionarySearchField(
                 ),
             textStyle =
                 MiuixTheme.textStyles.main.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 17.sp,
                     color = MiuixTheme.colorScheme.onSurface,
                 ),
             cursorBrush = SolidColor(MiuixTheme.colorScheme.primary),
@@ -122,16 +130,13 @@ internal fun DictionarySearchField(
 
         if (query.isNotEmpty()) {
             IconButton(
-                modifier = Modifier.padding(end = 2.dp),
                 onClick = onClear,
             ) {
                 Icon(
-                    imageVector = MiuixIcons.Clear,
+                    imageVector = MiuixIcons.Basic.SearchCleanup,
                     contentDescription = stringResource(Res.string.cd_clear_search),
                 )
             }
-        } else {
-            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }

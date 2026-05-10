@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.features.anki.presentation.AnkiIntent
+import app.mori.reader.features.anki.presentation.AnkiState
 import app.mori.reader.features.reader.presentation.ReaderIntent
 import app.mori.reader.features.reader.presentation.ReaderState
 import app.mori.reader.features.settings.presentation.SettingsIntent
@@ -37,9 +40,11 @@ import top.yukonga.miuix.kmp.blur.layerBackdrop
 fun ReaderPage(
     reader: ReaderState,
     settings: AppSettings,
+    ankiState: AnkiState,
     bookId: String,
     onReaderIntent: (ReaderIntent) -> Unit,
     onSettingsIntent: (SettingsIntent) -> Unit,
+    onAnkiIntent: (AnkiIntent) -> Unit,
     onBack: () -> Unit,
 ) {
     val book = reader.book
@@ -47,6 +52,7 @@ fun ReaderPage(
     val fullscreen = settings.appearance.readerFullscreen
     var chaptersOpen by remember { mutableStateOf(false) }
     var appearanceOpen by remember { mutableStateOf(false) }
+    var sasayakiOpen by rememberSaveable(bookId) { mutableStateOf(false) }
     var exitingReader by remember { mutableStateOf(false) }
     val handleBack = {
         exitingReader = true
@@ -189,11 +195,13 @@ fun ReaderPage(
 
             ReaderBottomChrome(
                 isDark = isDark,
+                monetEnabled = settings.appearance.monetEnabled,
+                monetKeyColor = settings.appearance.monetKeyColor,
                 bottomPadding = if (fullscreen) 0.dp else navigationBarPadding,
                 onBack = handleBack,
                 onMenu = { chaptersOpen = true },
                 onAppearance = { appearanceOpen = true },
-                onSasayaki = { onReaderIntent(ReaderIntent.ToggleSheet) },
+                onSasayaki = { sasayakiOpen = true },
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
@@ -204,6 +212,7 @@ fun ReaderPage(
                 popupIndex = index,
                 reader = reader,
                 settings = settings,
+                ankiDuplicateExpression = ankiState.duplicateExpression,
                 isDark = isDark,
                 isVertical = index == 0 && reader.verticalWriting,
                 viewportWidth = maxWidth,
@@ -213,6 +222,7 @@ fun ReaderPage(
                 blurEnabled = settings.appearance.blurEnabled,
                 backdrop = popupBackdrop,
                 onReaderIntent = onReaderIntent,
+                onAnkiIntent = onAnkiIntent,
                 onDismiss = { onReaderIntent(ReaderIntent.DismissLookup(index)) },
                 onSwipeDismiss = { onReaderIntent(ReaderIntent.DismissLookup(index)) },
             )
@@ -222,6 +232,8 @@ fun ReaderPage(
     ReaderChapterSheet(
         show = chaptersOpen,
         isDark = isDark,
+        monetEnabled = settings.appearance.monetEnabled,
+        monetKeyColor = settings.appearance.monetKeyColor,
         title = book?.info?.title.orEmpty(),
         currentCharacter = reader.currentCharacter,
         totalCharacters = book?.totalCharacterCount ?: 0,
@@ -232,11 +244,17 @@ fun ReaderPage(
             onReaderIntent(ReaderIntent.OpenChapter(row.chapterIndex, row.fragment))
             chaptersOpen = false
         },
+        onJumpToCharacter = { characterCount ->
+            onReaderIntent(ReaderIntent.JumpToCharacter(characterCount))
+            chaptersOpen = false
+        },
     )
 
     ReaderAppearanceSheet(
         show = appearanceOpen,
         isDark = isDark,
+        monetEnabled = settings.appearance.monetEnabled,
+        monetKeyColor = settings.appearance.monetKeyColor,
         readerThemeMode = settings.appearance.readerThemeMode,
         verticalWriting = reader.verticalWriting,
         continuousMode = settings.reader.continuousMode,
@@ -285,27 +303,27 @@ fun ReaderPage(
     )
 
     ReaderSasayakiSheet(
-        show = reader.sasayakiSheetOpen,
+        show = sasayakiOpen,
         isDark = isDark,
+        monetEnabled = settings.appearance.monetEnabled,
+        monetKeyColor = settings.appearance.monetKeyColor,
         player = reader.sasayakiPlayer,
         currentCueText =
             reader.sasayakiPlayer.currentCueId?.let { cueId ->
                 reader.sasayakiMatches.firstOrNull { it.id == cueId }?.text
             },
         enabled = reader.sasayakiMatches.isNotEmpty(),
-        syncEnabled = settings.sasayaki.syncEnabled,
         autoScroll = settings.sasayaki.autoScroll,
         autoPauseOnLookup = settings.sasayaki.autoPauseOnLookup,
         highlightEnabled = settings.sasayaki.highlightEnabled,
         highlightColor = settings.sasayaki.highlightColor,
-        onDismiss = { onReaderIntent(ReaderIntent.ToggleSheet) },
+        onDismiss = { sasayakiOpen = false },
         onPlayPause = { onReaderIntent(ReaderIntent.TogglePlayback) },
         onPrevious = { onReaderIntent(ReaderIntent.PreviousCue) },
         onNext = { onReaderIntent(ReaderIntent.NextCue) },
         onSeek = { onReaderIntent(ReaderIntent.SeekTo(it)) },
         onDelay = { onReaderIntent(ReaderIntent.SetDelay(it)) },
         onRate = { onReaderIntent(ReaderIntent.SetRate(it)) },
-        onSyncEnabled = { onSettingsIntent(SettingsIntent.SetSasayakiSyncEnabled(it)) },
         onAutoScroll = { onSettingsIntent(SettingsIntent.SetSasayakiAutoScroll(it)) },
         onAutoPauseOnLookup = { onSettingsIntent(SettingsIntent.SetSasayakiAutoPauseOnLookup(it)) },
         onHighlightEnabled = { onSettingsIntent(SettingsIntent.SetSasayakiHighlightEnabled(it)) },

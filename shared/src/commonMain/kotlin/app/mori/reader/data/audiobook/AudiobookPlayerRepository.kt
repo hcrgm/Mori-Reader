@@ -23,6 +23,11 @@ data class SasayakiPlayerSnapshot(
     val errorMessage: String? = null,
 )
 
+data class SasayakiMediaInfo(
+    val title: String? = null,
+    val coverPath: String? = null,
+)
+
 interface AudiobookPlayerRepository {
     val snapshot: StateFlow<SasayakiPlayerSnapshot>
 
@@ -30,6 +35,7 @@ interface AudiobookPlayerRepository {
         bookId: String,
         audioAssetInfo: AudiobookAssetInfo,
         matches: List<SasayakiMatch>,
+        mediaInfo: SasayakiMediaInfo = SasayakiMediaInfo(),
     )
 
     suspend fun togglePlayPause()
@@ -49,6 +55,8 @@ interface AudiobookPlayerRepository {
     suspend fun setDelay(delayMs: Long)
 
     suspend fun setRate(rate: Float)
+
+    suspend fun stop(bookId: String? = null)
 
     suspend fun release()
 }
