@@ -856,8 +856,7 @@ function createEntry(entry, index) {
     wrapper.appendChild(el('style', {
       textContent: `
         [data-dictionary="${'$'}{dictName}"] {
-          @media (prefers-color-scheme: light) { color: #000; }
-          @media (prefers-color-scheme: dark) { color: #fff; }
+          color: var(--mori-text);
           ${'$'}{dictStyle}
         }
       `.trim()

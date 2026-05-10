@@ -42,15 +42,26 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
 
 @Composable
-internal fun ReaderStatus(text: String?) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
+internal fun ReaderStatus(
+    text: String?,
+    isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
+) {
+    ReaderSheetTheme(
+        isDark = isDark,
+        monetEnabled = monetEnabled,
+        monetKeyColor = monetKeyColor,
     ) {
-        Text(
-            text = text.orEmpty(),
-            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-        )
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = text.orEmpty(),
+                color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+            )
+        }
     }
 }
 
@@ -58,32 +69,41 @@ internal fun ReaderStatus(text: String?) {
 internal fun ReaderHeaderInfo(
     title: String,
     progress: String?,
+    isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
     modifier: Modifier = Modifier,
 ) {
     if (title.isBlank() && progress.isNullOrBlank()) return
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    ReaderSheetTheme(
+        isDark = isDark,
+        monetEnabled = monetEnabled,
+        monetKeyColor = monetKeyColor,
     ) {
-        if (title.isNotBlank()) {
-            Text(
-                text = title,
-                modifier = Modifier.weight(1f),
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.44f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        } else {
-            Spacer(modifier = Modifier.weight(1f))
-        }
-        progress?.let {
-            Text(
-                text = it,
-                color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.44f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Row(
+            modifier = modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (title.isNotBlank()) {
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f),
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.44f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                Spacer(modifier = Modifier.weight(1f))
+            }
+            progress?.let {
+                Text(
+                    text = it,
+                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary.copy(alpha = 0.44f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

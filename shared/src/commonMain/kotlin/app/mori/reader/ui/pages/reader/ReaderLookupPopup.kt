@@ -79,6 +79,8 @@ internal fun ReaderLookupPopup(
     settings: AppSettings,
     ankiDuplicateExpression: String?,
     isDark: Boolean,
+    monetEnabled: Boolean,
+    monetKeyColor: Long,
     isVertical: Boolean,
     viewportWidth: Dp,
     viewportHeight: Dp,
@@ -148,169 +150,175 @@ internal fun ReaderLookupPopup(
     var canNavigateForward by remember(lookup.id) { mutableStateOf(false) }
     var navigateBackToken by remember(lookup.id) { mutableIntStateOf(0) }
     var navigateForwardToken by remember(lookup.id) { mutableIntStateOf(0) }
-    Box(
-        modifier =
-            Modifier
-                .fillMaxSize()
-                .zIndex(20f)
-                .clickable(
-                    interactionSource = outsideInteractionSource,
-                    indication = null,
-                    onClick = onDismiss,
-                ),
+    ReaderSheetTheme(
+        isDark = isDark,
+        monetEnabled = monetEnabled,
+        monetKeyColor = monetKeyColor,
     ) {
         Box(
             modifier =
                 Modifier
-                    .offset(x = layout.left, y = layout.top)
-                    .width(layout.width)
-                    .height(layout.height)
-                    .shadow(
-                        elevation = 18.dp,
-                        shape = popupShape,
-                        spotColor = Color.Black.copy(alpha = 0.22f),
-                    ).clip(popupShape)
+                    .fillMaxSize()
+                    .zIndex(20f)
                     .clickable(
-                        interactionSource = popupInteractionSource,
+                        interactionSource = outsideInteractionSource,
                         indication = null,
-                        onClick = {},
+                        onClick = onDismiss,
                     ),
         ) {
             Box(
                 modifier =
                     Modifier
-                        .fillMaxSize()
-                        .then(
-                            if (blurEnabled && backdrop != null) {
-                                Modifier.textureBlur(
-                                    backdrop = backdrop,
-                                    shape = popupShape,
-                                    blurRadius = 28f,
-                                    noiseCoefficient = 0f,
-                                    colors =
-                                        BlurColors(
-                                            blendColors =
-                                                listOf(
-                                                    BlendColorEntry(
-                                                        color =
-                                                            MiuixTheme.colorScheme.surface.copy(
-                                                                alpha = if (isDark) 0.9f else 0.86f,
-                                                            ),
-                                                    ),
-                                                ),
-                                        ),
-                                )
-                            } else {
-                                Modifier.background(MiuixTheme.colorScheme.surface.copy(alpha = 0.96f))
-                            },
+                        .offset(x = layout.left, y = layout.top)
+                        .width(layout.width)
+                        .height(layout.height)
+                        .shadow(
+                            elevation = 18.dp,
+                            shape = popupShape,
+                            spotColor = Color.Black.copy(alpha = 0.22f),
+                        ).clip(popupShape)
+                        .clickable(
+                            interactionSource = popupInteractionSource,
+                            indication = null,
+                            onClick = {},
                         ),
-            )
-            Column(modifier = Modifier.fillMaxSize()) {
-                DictionaryPopupActionBar(
-                    canNavigateBack = canNavigateBack,
-                    canNavigateForward = canNavigateForward,
-                    blurEnabled = blurEnabled,
-                    backdrop = backdrop,
-                    isDark = isDark,
-                    onNavigateBack = { navigateBackToken++ },
-                    onNavigateForward = { navigateForwardToken++ },
-                    onClose = onDismiss,
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxSize()
+                            .then(
+                                if (blurEnabled && backdrop != null) {
+                                    Modifier.textureBlur(
+                                        backdrop = backdrop,
+                                        shape = popupShape,
+                                        blurRadius = 28f,
+                                        noiseCoefficient = 0f,
+                                        colors =
+                                            BlurColors(
+                                                blendColors =
+                                                    listOf(
+                                                        BlendColorEntry(
+                                                            color =
+                                                                MiuixTheme.colorScheme.surface.copy(
+                                                                    alpha = if (isDark) 0.9f else 0.86f,
+                                                                ),
+                                                        ),
+                                                    ),
+                                            ),
+                                    )
+                                } else {
+                                    Modifier.background(MiuixTheme.colorScheme.surface.copy(alpha = 0.96f))
+                                },
+                            ),
                 )
-                lookup.sasayakiCueId?.let { cueId ->
-                    SasayakiPopupControls(
-                        isPlaying = reader.sasayakiPlayer.isPlaying,
+                Column(modifier = Modifier.fillMaxSize()) {
+                    DictionaryPopupActionBar(
+                        canNavigateBack = canNavigateBack,
+                        canNavigateForward = canNavigateForward,
                         blurEnabled = blurEnabled,
                         backdrop = backdrop,
                         isDark = isDark,
-                        onReplay = { onReaderIntent(ReaderIntent.ReplayCue(cueId)) },
-                        onToggle = { onReaderIntent(ReaderIntent.TogglePlayback) },
-                        onContinue = { onReaderIntent(ReaderIntent.ContinueFromCue(cueId)) },
+                        onNavigateBack = { navigateBackToken++ },
+                        onNavigateForward = { navigateForwardToken++ },
+                        onClose = onDismiss,
+                    )
+                    lookup.sasayakiCueId?.let { cueId ->
+                        SasayakiPopupControls(
+                            isPlaying = reader.sasayakiPlayer.isPlaying,
+                            blurEnabled = blurEnabled,
+                            backdrop = backdrop,
+                            isDark = isDark,
+                            onReplay = { onReaderIntent(ReaderIntent.ReplayCue(cueId)) },
+                            onToggle = { onReaderIntent(ReaderIntent.TogglePlayback) },
+                            onContinue = { onReaderIntent(ReaderIntent.ContinueFromCue(cueId)) },
+                        )
+                    }
+                    DictionaryWebView(
+                        state =
+                            DictionaryWebViewState(
+                                query = lookup.selectedText,
+                                entries = lookup.entries,
+                                dictionaryStyles = lookup.dictionaryStyles,
+                                isSearching = lookup.isSearching,
+                                hasSearched = lookup.selectedText.isNotBlank(),
+                                errorMessage = lookup.errorMessage?.asString(),
+                                searchingMessage = stringResource(Res.string.dict_searching),
+                                noResultsMessage = stringResource(Res.string.dict_no_results),
+                                idleMessage = stringResource(Res.string.dict_placeholder),
+                                playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
+                            ),
+                        config =
+                            DictionaryWebViewSettings(
+                                maxResults = settings.dictionary.maxResults,
+                                scanLength = settings.dictionary.scanLength,
+                                collapseDictionaries = settings.dictionary.collapseDictionaries,
+                                compactGlossaries = settings.dictionary.compactGlossaries,
+                                showExpressionTags = settings.dictionary.showExpressionTags,
+                                harmonicFrequency = settings.dictionary.harmonicFrequency,
+                                deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
+                                isDark = isDark,
+                                audioSources = settings.audio.sources,
+                                audioEnableAutoplay = settings.audio.enableAutoplay,
+                                audioPlaybackMode = settings.audio.playbackMode,
+                                enableInternalPopup = false,
+                                swipeDismissThreshold =
+                                    if (settings.popup.swipeToDismiss) {
+                                        settings.popup.swipeThreshold
+                                    } else {
+                                        0
+                                    },
+                                contentBottomPadding = 0.dp,
+                                edgeToEdgeContent = true,
+                                transparentBackground = blurEnabled,
+                                ankiNeedsAudio = ankiNeedsAudio,
+                                ankiAllowDuplicates = ankiSettings.allowDuplicates,
+                                ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,
+                                ankiEmbedMedia = ankiSettings.embedMedia,
+                                ankiCompactGlossaries = ankiSettings.compactGlossaries,
+                                ankiDuplicateExpression = ankiDuplicateExpression,
+                                navigateBackToken = navigateBackToken,
+                                navigateForwardToken = navigateForwardToken,
+                            ),
+                        callbacks =
+                            DictionaryWebViewCallbacks(
+                                onPopupTextSelected = { text, rect ->
+                                    onReaderIntent(
+                                        ReaderIntent.PopupTextSelected(
+                                            popupIndex,
+                                            text,
+                                            rect,
+                                        ),
+                                    )
+                                },
+                                onMineEntry = { content ->
+                                    onAnkiIntent(
+                                        AnkiIntent.MineNote(
+                                            content = content,
+                                            context =
+                                                buildReaderAnkiMiningContext(
+                                                    book = reader.book,
+                                                    sentence = lookup.sentence.ifBlank { lookup.selectedText },
+                                                    sasayakiAudioAssetInfo = reader.sasayakiAudioAssetInfo,
+                                                    sasayakiMatches = reader.sasayakiMatches,
+                                                    sasayakiDelayMs = reader.sasayakiPlayer.delayMs,
+                                                    sasayakiCueId = lookup.sasayakiCueId,
+                                                ),
+                                        ),
+                                    )
+                                },
+                                onCheckDuplicate = { expression ->
+                                    onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
+                                },
+                                onSwipeDismiss = onSwipeDismiss,
+                                onNavigationStateChange = { back, forward ->
+                                    canNavigateBack = back
+                                    canNavigateForward = forward
+                                },
+                            ),
+                        modifier = Modifier.weight(1f),
                     )
                 }
-                DictionaryWebView(
-                    state =
-                        DictionaryWebViewState(
-                            query = lookup.selectedText,
-                            entries = lookup.entries,
-                            dictionaryStyles = lookup.dictionaryStyles,
-                            isSearching = lookup.isSearching,
-                            hasSearched = lookup.selectedText.isNotBlank(),
-                            errorMessage = lookup.errorMessage?.asString(),
-                            searchingMessage = stringResource(Res.string.dict_searching),
-                            noResultsMessage = stringResource(Res.string.dict_no_results),
-                            idleMessage = stringResource(Res.string.dict_placeholder),
-                            playPronunciationLabel = stringResource(Res.string.cd_play_pronunciation),
-                        ),
-                    config =
-                        DictionaryWebViewSettings(
-                            maxResults = settings.dictionary.maxResults,
-                            scanLength = settings.dictionary.scanLength,
-                            collapseDictionaries = settings.dictionary.collapseDictionaries,
-                            compactGlossaries = settings.dictionary.compactGlossaries,
-                            showExpressionTags = settings.dictionary.showExpressionTags,
-                            harmonicFrequency = settings.dictionary.harmonicFrequency,
-                            deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
-                            isDark = isDark,
-                            audioSources = settings.audio.sources,
-                            audioEnableAutoplay = settings.audio.enableAutoplay,
-                            audioPlaybackMode = settings.audio.playbackMode,
-                            enableInternalPopup = false,
-                            swipeDismissThreshold =
-                                if (settings.popup.swipeToDismiss) {
-                                    settings.popup.swipeThreshold
-                                } else {
-                                    0
-                                },
-                            contentBottomPadding = 0.dp,
-                            edgeToEdgeContent = true,
-                            transparentBackground = blurEnabled,
-                            ankiNeedsAudio = ankiNeedsAudio,
-                            ankiAllowDuplicates = ankiSettings.allowDuplicates,
-                            ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,
-                            ankiEmbedMedia = ankiSettings.embedMedia,
-                            ankiCompactGlossaries = ankiSettings.compactGlossaries,
-                            ankiDuplicateExpression = ankiDuplicateExpression,
-                            navigateBackToken = navigateBackToken,
-                            navigateForwardToken = navigateForwardToken,
-                        ),
-                    callbacks =
-                        DictionaryWebViewCallbacks(
-                            onPopupTextSelected = { text, rect ->
-                                onReaderIntent(
-                                    ReaderIntent.PopupTextSelected(
-                                        popupIndex,
-                                        text,
-                                        rect,
-                                    ),
-                                )
-                            },
-                            onMineEntry = { content ->
-                                onAnkiIntent(
-                                    AnkiIntent.MineNote(
-                                        content = content,
-                                        context =
-                                            buildReaderAnkiMiningContext(
-                                                book = reader.book,
-                                                sentence = lookup.sentence.ifBlank { lookup.selectedText },
-                                                sasayakiAudioAssetInfo = reader.sasayakiAudioAssetInfo,
-                                                sasayakiMatches = reader.sasayakiMatches,
-                                                sasayakiDelayMs = reader.sasayakiPlayer.delayMs,
-                                                sasayakiCueId = lookup.sasayakiCueId,
-                                            ),
-                                    ),
-                                )
-                            },
-                            onCheckDuplicate = { expression ->
-                                onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
-                            },
-                            onSwipeDismiss = onSwipeDismiss,
-                            onNavigationStateChange = { back, forward ->
-                                canNavigateBack = back
-                                canNavigateForward = forward
-                            },
-                        ),
-                    modifier = Modifier.weight(1f),
-                )
             }
         }
     }

@@ -112,15 +112,30 @@ fun ReaderPage(
         ) {
             when {
                 reader.isLoading -> {
-                    ReaderStatus(text = stringResource(Res.string.reader_loading_epub))
+                    ReaderStatus(
+                        text = stringResource(Res.string.reader_loading_epub),
+                        isDark = isDark,
+                        monetEnabled = settings.appearance.monetEnabled,
+                        monetKeyColor = settings.appearance.monetKeyColor,
+                    )
                 }
 
                 reader.errorMessage != null -> {
-                    ReaderStatus(text = reader.errorMessage.asString())
+                    ReaderStatus(
+                        text = reader.errorMessage.asString(),
+                        isDark = isDark,
+                        monetEnabled = settings.appearance.monetEnabled,
+                        monetKeyColor = settings.appearance.monetKeyColor,
+                    )
                 }
 
                 chapter == null -> {
-                    ReaderStatus(text = stringResource(Res.string.reader_no_chapter))
+                    ReaderStatus(
+                        text = stringResource(Res.string.reader_no_chapter),
+                        isDark = isDark,
+                        monetEnabled = settings.appearance.monetEnabled,
+                        monetKeyColor = settings.appearance.monetKeyColor,
+                    )
                 }
 
                 else -> {
@@ -183,6 +198,9 @@ fun ReaderPage(
                     book?.let {
                         "${reader.currentCharacter} / ${it.totalCharacterCount} ${reader.progressPercent.formatPercent()}%"
                     },
+                isDark = isDark,
+                monetEnabled = settings.appearance.monetEnabled,
+                monetKeyColor = settings.appearance.monetKeyColor,
                 modifier =
                     Modifier
                         .align(Alignment.TopCenter)
@@ -214,6 +232,8 @@ fun ReaderPage(
                 settings = settings,
                 ankiDuplicateExpression = ankiState.duplicateExpression,
                 isDark = isDark,
+                monetEnabled = settings.appearance.monetEnabled,
+                monetKeyColor = settings.appearance.monetKeyColor,
                 isVertical = index == 0 && reader.verticalWriting,
                 viewportWidth = maxWidth,
                 viewportHeight = maxHeight,
