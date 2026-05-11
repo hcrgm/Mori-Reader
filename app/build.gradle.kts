@@ -25,8 +25,8 @@ android {
         targetSdk = 37
         ndk.abiFilters.add("arm64-v8a")
 //        ndk.abiFilters.add("x86_64")
-        versionCode = 200
-        versionName = "0.2.0"
+        versionCode = 201
+        versionName = "0.2.1"
     }
 
     buildFeatures {
@@ -67,7 +67,7 @@ android {
 
 base {
     archivesName.set(
-        "mori" + "-v" + "0.2.0",
+        "mori" + "-v" + "0.2.1",
     )
 }
 
