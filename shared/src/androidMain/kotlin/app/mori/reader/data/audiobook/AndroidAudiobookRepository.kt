@@ -25,7 +25,7 @@ internal class AndroidAudiobookRepository(
     private val json =
         Json {
             ignoreUnknownKeys = true
-            prettyPrint = true
+            prettyPrint = false
             encodeDefaults = true
         }
 

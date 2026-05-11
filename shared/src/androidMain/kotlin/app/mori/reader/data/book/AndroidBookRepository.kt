@@ -31,7 +31,7 @@ internal class AndroidBookRepository(
     private val json =
         Json {
             ignoreUnknownKeys = true
-            prettyPrint = true
+            prettyPrint = false
             encodeDefaults = true
         }
 

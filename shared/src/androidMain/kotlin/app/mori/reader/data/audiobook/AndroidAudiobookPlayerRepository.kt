@@ -39,7 +39,7 @@ internal class AndroidAudiobookPlayerRepository(
     private val json =
         Json {
             ignoreUnknownKeys = true
-            prettyPrint = true
+            prettyPrint = false
             encodeDefaults = true
         }
     private var preparedBookId: String? = null
