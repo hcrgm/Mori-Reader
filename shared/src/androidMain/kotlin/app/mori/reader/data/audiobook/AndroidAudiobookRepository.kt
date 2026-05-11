@@ -16,7 +16,6 @@ import kotlinx.serialization.json.Json
 import java.io.File
 import java.net.URI
 import java.nio.charset.Charset
-import java.util.UUID
 
 internal class AndroidAudiobookRepository(
     private val context: Context,
@@ -310,44 +309,40 @@ internal class AndroidAudiobookRepository(
         searchWindow: Int,
     ): SasayakiMatchData {
         val matches = mutableListOf<SasayakiMatch>()
+        val source = chapters.joinToString(separator = "") { it.text }
+        val chapterRanges = chapters.toChapterRanges()
         val effectiveCues = subtitleData.cues.map { cue -> cue to cue.text.filteredReaderText() }
-        val firstCue =
-            effectiveCues
-                .filter { (_, text) -> text.isUsefulMatchCue() }
-                .take(15)
-                .firstOrNull()
-        var chapterCursor = 0
-        var offsetCursor = 0
-        if (firstCue != null) {
-            val firstText = firstCue.second
-            val initial =
-                chapters.firstNotNullOfOrNull { chapter ->
-                    val found = chapter.text.indexOf(firstText)
-                    if (found >= 0) chapter to found else null
-                }
-            if (initial != null) {
-                chapterCursor = chapters.indexOf(initial.first)
-                offsetCursor = initial.second
-            }
-        }
+
+        var cursor = effectiveCues.findInitialCursor(source)
 
         effectiveCues.forEach { (cue, cueText) ->
-            if (!cueText.isUsefulMatchCue()) return@forEach
+            if (!cue.isUsefulMatchCue(cueText)) return@forEach
+
             val found =
-                findCue(chapters, chapterCursor, offsetCursor, cueText, searchWindow)
+                findCue(
+                    source = source,
+                    cueText = cueText,
+                    start = cursor,
+                    endExclusive = minOf(source.length, cursor + cueText.length + searchWindow),
+                ) ?: return@forEach
+
+            val matchEnd = found + cueText.length
+            val chapterRange =
+                chapterRanges.firstOrNull { found >= it.start && found < it.end }
                     ?: return@forEach
+            if (matchEnd > chapterRange.end) return@forEach
+
+            cursor = matchEnd
             matches +=
                 SasayakiMatch(
                     id = cue.id,
                     startTimeMs = cue.startTimeMs,
                     endTimeMs = cue.endTimeMs,
                     text = cue.text,
-                    chapterIndex = found.chapterIndex,
-                    start = found.start,
+                    chapterIndex = chapterRange.chapterIndex,
+                    start = found - chapterRange.start,
                     length = cueText.length,
                 )
-            chapterCursor = found.chapterListIndex
-            offsetCursor = found.start + cueText.length
         }
 
         return SasayakiMatchData(
@@ -359,29 +354,17 @@ internal class AndroidAudiobookRepository(
     }
 
     private fun findCue(
-        chapters: List<MatchChapter>,
-        chapterListIndex: Int,
-        offset: Int,
+        source: String,
         cueText: String,
-        searchWindow: Int,
-    ): MatchLocation? {
-        var currentIndex = chapterListIndex.coerceIn(chapters.indices)
-        var currentOffset = offset.coerceAtLeast(0)
-        while (currentIndex < chapters.size) {
-            val chapter = chapters[currentIndex]
-            val from = currentOffset.coerceIn(0, chapter.text.length)
-            val to = (from + searchWindow + cueText.length).coerceAtMost(chapter.text.length)
-            val found =
-                chapter.text.indexOf(cueText, startIndex = from).takeIf { it >= 0 && it < to }
-            if (found != null) {
-                return MatchLocation(
-                    chapterListIndex = currentIndex,
-                    chapterIndex = chapter.index,
-                    start = found,
-                )
+        start: Int,
+        endExclusive: Int,
+    ): Int? {
+        var index = start.coerceAtLeast(0)
+        while (index + cueText.length <= endExclusive) {
+            if (source.regionMatches(index, cueText, 0, cueText.length)) {
+                return index
             }
-            currentIndex += 1
-            currentOffset = 0
+            index++
         }
         return null
     }
@@ -481,48 +464,56 @@ private fun decodeText(bytes: ByteArray): String {
         .ifBlank { data.toString(Charset.forName("UTF-8")) }
 }
 
-private fun parseSrt(rawText: String): List<AudiobookCue> {
-    val normalized = rawText.replace("\r\n", "\n").replace('\r', '\n').trim()
-    require(normalized.isNotBlank()) { "字幕文件为空" }
-    val blocks = normalized.split(Regex("\\n{2,}")).filter { it.isNotBlank() }
-    val cues =
-        blocks.mapIndexed { blockIndex, block ->
-            val lines = block.lines().filter { it.isNotBlank() }
-            require(lines.size >= 2) { "SRT 格式无效" }
-            val timeLineIndex = lines.indexOfFirst { "-->" in it }
-            require(timeLineIndex >= 0) { "SRT 缺少时间轴" }
-            val sequence = lines.firstOrNull()?.trim()?.toIntOrNull() ?: (blockIndex + 1)
-            val parts = lines[timeLineIndex].split("-->")
-            require(parts.size == 2) { "SRT 时间轴无效" }
-            val start = parseSrtTime(parts[0].trim())
-            val end = parseSrtTime(parts[1].trim().substringBefore(' '))
-            require(end > start) { "SRT 时间范围无效" }
-            val text = lines.drop(timeLineIndex + 1).joinToString("\n").trim()
-            require(text.isNotBlank()) { "SRT 字幕文本为空" }
-            AudiobookCue(
-                id = UUID.nameUUIDFromBytes("$sequence:$start:$end:$text".toByteArray()).toString(),
-                startTimeMs = start,
-                endTimeMs = end,
-                text = text,
-                sequence = sequence,
+private fun List<Pair<AudiobookCue, String>>.findInitialCursor(source: String): Int {
+    var minStart: Int? = null
+    for ((cue, text) in asSequence().take(INITIAL_CUE_SCAN_LIMIT)) {
+        if (!cue.isUsefulAnchorCue(text)) continue
+        val found = findExactText(source, text, 0, source.length) ?: continue
+        minStart = minOf(minStart ?: found, found)
+    }
+    return minStart ?: 0
+}
+
+private fun AudiobookCue.isUsefulAnchorCue(filteredText: String): Boolean {
+    if (text.startsWith("＊")) return false
+    return filteredText.length >= MIN_ANCHOR_CUE_LENGTH
+}
+
+private fun AudiobookCue.isUsefulMatchCue(filteredText: String): Boolean {
+    if (filteredText.isBlank()) return false
+    return !(text.startsWith("＊") && filteredText.length < MIN_STAR_CUE_LENGTH)
+}
+
+private fun List<MatchChapter>.toChapterRanges(): List<MatchChapterRange> {
+    val ranges = ArrayList<MatchChapterRange>(size)
+    var start = 0
+    for (chapter in this) {
+        ranges +=
+            MatchChapterRange(
+                chapterIndex = chapter.index,
+                start = start,
+                length = chapter.text.length,
             )
+        start += chapter.text.length
+    }
+    return ranges
+}
+
+private fun findExactText(
+    source: String,
+    text: String,
+    start: Int,
+    endExclusive: Int,
+): Int? {
+    var index = start.coerceAtLeast(0)
+    while (index + text.length <= endExclusive) {
+        if (source.regionMatches(index, text, 0, text.length)) {
+            return index
         }
-    require(cues.isNotEmpty()) { "SRT 没有可用字幕" }
-    return cues
+        index++
+    }
+    return null
 }
-
-private fun parseSrtTime(value: String): Long {
-    val match =
-        Regex("""(\d{2}):(\d{2}):(\d{2}),(\d{3})""").matchEntire(value)
-            ?: throw IllegalArgumentException("SRT 时间格式无效")
-    val (hours, minutes, seconds, millis) = match.destructured
-    return hours.toLong() * 3_600_000L +
-        minutes.toLong() * 60_000L +
-        seconds.toLong() * 1_000L +
-        millis.toLong()
-}
-
-private fun String.isUsefulMatchCue(): Boolean = isNotBlank() && length >= MIN_CUE_LENGTH && !startsWith("＊")
 
 @Serializable
 private data class BookMetadataStorage(
@@ -557,11 +548,18 @@ private data class MatchChapter(
     val text: String,
 )
 
-private data class MatchLocation(
-    val chapterListIndex: Int,
+private data class MatchChapterRange(
     val chapterIndex: Int,
     val start: Int,
+    val length: Int,
 )
+
+private val MatchChapterRange.end: Int
+    get() = start + length
+
+private const val INITIAL_CUE_SCAN_LIMIT = 15
+private const val MIN_ANCHOR_CUE_LENGTH = 6
+private const val MIN_STAR_CUE_LENGTH = 5
 
 private const val BOOKS_DIR_NAME = "Books"
 private const val METADATA_FILE = "metadata.json"
@@ -573,4 +571,3 @@ private const val SUBTITLE_DATA_FILE = "audiobook_subtitle.json"
 private const val MATCH_DATA_FILE = "sasayaki_match.json"
 private const val MIN_SEARCH_WINDOW = 50
 private const val MAX_SEARCH_WINDOW = 350
-private const val MIN_CUE_LENGTH = 2
