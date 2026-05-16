@@ -1,38 +1,85 @@
 package app.mori.reader.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.data.settings.UiThemeEngine
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
+import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppTheme(
-    themeMode: ThemeMode,
-    monetEnabled: Boolean,
-    monetKeyColor: Long,
+    themeState: MoriThemeState,
     content: @Composable () -> Unit,
 ) {
-    val darkTheme = themeMode.isDarkTheme(isSystemInDarkTheme())
+    val darkTheme = themeState.themeMode.isDarkTheme(isSystemInDarkTheme())
+    val baseDensity = LocalDensity.current
+    val densityScale = themeState.uiScalePercent / 100f
+    val scaledDensity =
+        remember(baseDensity, densityScale) {
+            Density(
+                density = baseDensity.density * densityScale,
+                fontScale = baseDensity.fontScale,
+            )
+        }
     val controller =
-        remember(themeMode, monetEnabled, monetKeyColor) {
+        remember(themeState.themeMode, themeState.monetEnabled, themeState.monetKeyColor, darkTheme) {
             ThemeController(
-                colorSchemeMode = themeMode.toColorSchemeMode(monetEnabled),
-                keyColor = monetKeyColor.takeIf { it != 0L }?.let(::Color),
+                colorSchemeMode = themeState.themeMode.toColorSchemeMode(themeState.monetEnabled),
+                keyColor = themeState.monetKeyColor.takeIf { it != 0L }?.let(::Color),
+                colorSpec = ThemeColorSpec.Spec2025,
+                paletteStyle = ThemePaletteStyle.TonalSpot,
+                isDark = darkTheme,
             )
         }
 
-    MiuixTheme(
-        controller = controller,
-        smoothRounding = true,
-        content = {
-            ApplySystemBarsThemeEffect(darkTheme = darkTheme)
-            content()
-        },
-    )
+    CompositionLocalProvider(LocalDensity provides scaledDensity) {
+        when (themeState.uiThemeEngine) {
+            UiThemeEngine.Miuix -> {
+                MiuixTheme(
+                    controller = controller,
+                ) {
+                    ProvideMoriTheme(
+                        themeMode = themeState.themeMode,
+                        uiThemeEngine = themeState.uiThemeEngine,
+                    ) {
+                        ApplySystemBarsThemeEffect(darkTheme = darkTheme)
+                        content()
+                    }
+                }
+            }
+
+            UiThemeEngine.Material -> {
+                MaterialExpressiveTheme(
+                    colorScheme =
+                        rememberMaterialColorScheme(
+                            darkTheme = darkTheme,
+                            monetEnabled = themeState.monetEnabled,
+                            monetKeyColor = themeState.monetKeyColor,
+                        ),
+                ) {
+                    ProvideMoriTheme(
+                        themeMode = themeState.themeMode,
+                        uiThemeEngine = themeState.uiThemeEngine,
+                    ) {
+                        ApplySystemBarsThemeEffect(darkTheme = darkTheme)
+                        content()
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -27,7 +27,6 @@ import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Close
 import top.yukonga.miuix.kmp.preference.ArrowPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.MiuixTheme.isDynamicColor
 
 val MoriSettingsHorizontalPadding: Dp = 12.dp
 
@@ -77,17 +76,16 @@ fun MoriWarningCard(
     textColor: Color? = null,
     dismissTint: Color? = null,
 ) {
-    val resolvedContainerColor =
-        containerColor ?: if (isDynamicColor) MiuixTheme.colorScheme.errorContainer else Color(0xFFF8E2E2)
-    val resolvedTextColor =
-        textColor ?: if (isDynamicColor) MiuixTheme.colorScheme.onErrorContainer else Color(0xFFF72727)
+    val colors = MiuixTheme.colorScheme
+    val resolvedContainerColor = containerColor ?: colors.errorContainer
+    val resolvedTextColor = textColor ?: colors.onErrorContainer
     val resolvedDismissTint = dismissTint ?: resolvedTextColor
     Card(
         modifier = modifier.fillMaxWidth(),
         colors =
             CardDefaults.defaultColors(
                 color = resolvedContainerColor,
-                contentColor = MiuixTheme.colorScheme.onSurface,
+                contentColor = colors.onSurface,
             ),
     ) {
         Row(

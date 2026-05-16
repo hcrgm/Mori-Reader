@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -51,7 +50,6 @@ internal fun DictionarySearchField(
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val density = LocalDensity.current
     val focusManager = LocalFocusManager.current
 
     Row(
@@ -64,7 +62,7 @@ internal fun DictionarySearchField(
                         Modifier.textureBlur(
                             backdrop = backdrop,
                             shape = RoundedCornerShape(percent = 50),
-                            blurRadius = 25f * density.density,
+                            blurRadius = 25f,
                             colors =
                                 BlurColors(
                                     blendColors =
@@ -94,7 +92,7 @@ internal fun DictionarySearchField(
                 Modifier
                     .size(44.dp)
                     .padding(start = 16.dp, end = 8.dp),
-            tint = MiuixTheme.colorScheme.onSurfaceContainer,
+            tint = MiuixTheme.colorScheme.onSurface,
         )
 
         BasicTextField(

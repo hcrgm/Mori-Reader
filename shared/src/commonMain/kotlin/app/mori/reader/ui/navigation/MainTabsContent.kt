@@ -1,7 +1,8 @@
 package app.mori.reader.ui.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.pager.HorizontalPager
@@ -11,12 +12,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import app.mori.reader.app.navigation.AppNavigationState
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.anki.presentation.AnkiIntent
@@ -30,17 +31,16 @@ import app.mori.reader.features.dictionary.presentation.DictionaryState
 import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppTab
-import app.mori.reader.ui.components.navigation.MoriNavigationBar
-import app.mori.reader.ui.components.navigation.MoriNavigationRail
+import app.mori.reader.ui.components.scaffold.MoriMainTabsScaffold
 import app.mori.reader.ui.layout.shouldShowWideLayout
 import app.mori.reader.ui.pages.dictionary.DictionaryPage
 import app.mori.reader.ui.pages.home.HomePage
 import app.mori.reader.ui.pages.settings.SettingsPage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
-import top.yukonga.miuix.kmp.basic.Scaffold
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import kotlin.math.abs
 
 @Composable
 internal fun MainTabsContent(
@@ -61,6 +61,7 @@ internal fun MainTabsContent(
     onOpenDictionarySettings: () -> Unit,
     onOpenAudioSettings: () -> Unit,
     onOpenAnkiSettings: () -> Unit,
+    onOpenAbout: () -> Unit,
 ) {
     val pagerState =
         rememberPagerState(
@@ -68,120 +69,117 @@ internal fun MainTabsContent(
             pageCount = { AppTab.entries.size },
         )
     val coroutineScope = rememberCoroutineScope()
+    val mainPagerState = rememberMoriMainPagerState(pagerState, coroutineScope)
     val isWideScreen = shouldShowWideLayout()
-    val density = LocalDensity.current
-    val surfaceColor = MiuixTheme.colorScheme.surface
-    val navigationBackdrop =
-        rememberLayerBackdrop {
-            drawRect(surfaceColor)
-            drawContent()
-        }
-    val selectedTab = AppTab.entries[pagerState.currentPage]
+    val selectedTab = AppTab.entries[mainPagerState.selectedPage]
 
     LaunchedEffect(selectedTab, navigationState) {
         navigationState.onCurrentTabChanged(selectedTab)
     }
 
-    val onTabSelected: (AppTab) -> Unit = { tab ->
-        coroutineScope.launch {
-            pagerState.animateScrollToPage(tab.ordinal)
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.currentPage }.collect {
+            mainPagerState.syncPage()
         }
     }
 
-    if (isWideScreen) {
-        var navigationRailWidthPx by remember { mutableIntStateOf(0) }
-        val navigationRailPadding =
-            PaddingValues(
-                start = with(density) { navigationRailWidthPx.toDp() },
-            )
+    val onTabSelected: (AppTab) -> Unit = { tab ->
+        mainPagerState.animateToPage(tab.ordinal)
+    }
 
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .background(surfaceColor),
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .layerBackdrop(navigationBackdrop),
-            ) {
-                MainTabsPager(
-                    home = home,
-                    dictionary = dictionary,
-                    settings = settings,
-                    audiobook = audiobook,
-                    ankiState = ankiState,
-                    fixedPadding = navigationRailPadding,
-                    pagerState = pagerState,
-                    navigationState = navigationState,
-                    onIntent = onIntent,
-                    onBookshelfIntent = onBookshelfIntent,
-                    onDictionaryIntent = onDictionaryIntent,
-                    onSettingsIntent = onSettingsIntent,
-                    onAudiobookIntent = onAudiobookIntent,
-                    onAnkiIntent = onAnkiIntent,
-                    onOpenAppearanceSettings = onOpenAppearanceSettings,
-                    onOpenReaderSettings = onOpenReaderSettings,
-                    onOpenDictionarySettings = onOpenDictionarySettings,
-                    onOpenAudioSettings = onOpenAudioSettings,
-                    onOpenAnkiSettings = onOpenAnkiSettings,
-                    onWebViewVerticalScrollActiveChange = navigationState::onDictionaryScrollActiveChange,
-                )
+    MoriMainTabsScaffold(
+        isWideScreen = isWideScreen,
+        blurEnabled = settings.appearance.blurEnabled,
+        selectedTab = selectedTab,
+        onTabSelected = onTabSelected,
+    ) { fixedPadding ->
+        MainTabsPager(
+            home = home,
+            dictionary = dictionary,
+            settings = settings,
+            audiobook = audiobook,
+            ankiState = ankiState,
+            fixedPadding = fixedPadding,
+            pagerState = pagerState,
+            navigationState = navigationState,
+            onIntent = onIntent,
+            onBookshelfIntent = onBookshelfIntent,
+            onDictionaryIntent = onDictionaryIntent,
+            onSettingsIntent = onSettingsIntent,
+            onAudiobookIntent = onAudiobookIntent,
+            onAnkiIntent = onAnkiIntent,
+            onOpenAppearanceSettings = onOpenAppearanceSettings,
+            onOpenReaderSettings = onOpenReaderSettings,
+            onOpenDictionarySettings = onOpenDictionarySettings,
+            onOpenAudioSettings = onOpenAudioSettings,
+            onOpenAnkiSettings = onOpenAnkiSettings,
+            onOpenAbout = onOpenAbout,
+            onWebViewVerticalScrollActiveChange = navigationState::onDictionaryScrollActiveChange,
+        )
+    }
+}
+
+private class MoriMainPagerState(
+    val pagerState: PagerState,
+    private val coroutineScope: CoroutineScope,
+) {
+    var selectedPage by mutableIntStateOf(pagerState.currentPage)
+        private set
+
+    var isNavigating by mutableStateOf(false)
+        private set
+
+    private var navJob: Job? = null
+
+    fun animateToPage(targetIndex: Int) {
+        if (targetIndex == selectedPage) return
+
+        navJob?.cancel()
+
+        selectedPage = targetIndex
+        isNavigating = true
+
+        val distance = abs(targetIndex - pagerState.currentPage).coerceAtLeast(2)
+        val duration = 100 * distance + 100
+        val layoutInfo = pagerState.layoutInfo
+        val pageSize = layoutInfo.pageSize + layoutInfo.pageSpacing
+        val currentDistanceInPages = targetIndex - pagerState.currentPage - pagerState.currentPageOffsetFraction
+        val scrollPixels = currentDistanceInPages * pageSize
+
+        navJob =
+            coroutineScope.launch {
+                val myJob = coroutineContext.job
+                try {
+                    pagerState.animateScrollBy(
+                        value = scrollPixels,
+                        animationSpec = tween(easing = EaseInOut, durationMillis = duration),
+                    )
+                } finally {
+                    if (navJob == myJob) {
+                        isNavigating = false
+                        if (pagerState.currentPage != targetIndex) {
+                            selectedPage = pagerState.currentPage
+                        }
+                    }
+                }
             }
-            MoriNavigationRail(
-                selectedTab = selectedTab,
-                backdrop = navigationBackdrop,
-                blurEnabled = settings.appearance.blurEnabled,
-                onTabSelected = onTabSelected,
-                modifier = Modifier.onSizeChanged { navigationRailWidthPx = it.width },
-            )
-        }
-    } else {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            bottomBar = {
-                MoriNavigationBar(
-                    selectedTab = selectedTab,
-                    backdrop = navigationBackdrop,
-                    blurEnabled = settings.appearance.blurEnabled,
-                    onTabSelected = onTabSelected,
-                )
-            },
-        ) { fixedPadding ->
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxSize()
-                        .layerBackdrop(navigationBackdrop),
-            ) {
-                MainTabsPager(
-                    home = home,
-                    dictionary = dictionary,
-                    settings = settings,
-                    audiobook = audiobook,
-                    ankiState = ankiState,
-                    fixedPadding = fixedPadding,
-                    pagerState = pagerState,
-                    navigationState = navigationState,
-                    onIntent = onIntent,
-                    onBookshelfIntent = onBookshelfIntent,
-                    onDictionaryIntent = onDictionaryIntent,
-                    onSettingsIntent = onSettingsIntent,
-                    onAudiobookIntent = onAudiobookIntent,
-                    onAnkiIntent = onAnkiIntent,
-                    onOpenAppearanceSettings = onOpenAppearanceSettings,
-                    onOpenReaderSettings = onOpenReaderSettings,
-                    onOpenDictionarySettings = onOpenDictionarySettings,
-                    onOpenAudioSettings = onOpenAudioSettings,
-                    onOpenAnkiSettings = onOpenAnkiSettings,
-                    onWebViewVerticalScrollActiveChange = navigationState::onDictionaryScrollActiveChange,
-                )
-            }
+    }
+
+    fun syncPage() {
+        if (!isNavigating && selectedPage != pagerState.currentPage) {
+            selectedPage = pagerState.currentPage
         }
     }
 }
+
+@Composable
+private fun rememberMoriMainPagerState(
+    pagerState: PagerState,
+    coroutineScope: CoroutineScope,
+): MoriMainPagerState =
+    remember(pagerState, coroutineScope) {
+        MoriMainPagerState(pagerState, coroutineScope)
+    }
 
 @Composable
 private fun MainTabsPager(
@@ -204,12 +202,13 @@ private fun MainTabsPager(
     onOpenDictionarySettings: () -> Unit,
     onOpenAudioSettings: () -> Unit,
     onOpenAnkiSettings: () -> Unit,
+    onOpenAbout: () -> Unit,
     onWebViewVerticalScrollActiveChange: (Boolean) -> Unit,
 ) {
     HorizontalPager(
         state = pagerState,
         modifier = Modifier.fillMaxSize(),
-        beyondViewportPageCount = 0,
+        beyondViewportPageCount = AppTab.entries.lastIndex,
         userScrollEnabled =
             navigationState.canSwipeTabs(
                 hasDictionaryPopup = dictionary.popupStack.isNotEmpty(),
@@ -244,13 +243,13 @@ private fun MainTabsPager(
             AppTab.Settings -> {
                 SettingsPage(
                     settings = settings,
-                    ankiState = ankiState,
                     fixedPadding = fixedPadding,
                     onOpenAppearanceSettings = onOpenAppearanceSettings,
                     onOpenReaderSettings = onOpenReaderSettings,
                     onOpenDictionarySettings = onOpenDictionarySettings,
                     onOpenAudioSettings = onOpenAudioSettings,
                     onOpenAnkiSettings = onOpenAnkiSettings,
+                    onOpenAbout = onOpenAbout,
                 )
             }
         }

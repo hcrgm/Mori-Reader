@@ -5,8 +5,11 @@ import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.dictionary.DictionaryRepository
 import app.mori.reader.data.settings.SettingsRepository
 import app.mori.reader.features.dictionary.domain.DictionaryLookupUseCase
-import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
+import app.mori.reader.features.lookup.presentation.createLookupStackEntry
+import app.mori.reader.features.lookup.presentation.dismissLookupStack
+import app.mori.reader.features.lookup.presentation.withLookupError
+import app.mori.reader.features.lookup.presentation.withLookupResult
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.error_search_failed
 import app.mori.reader.ui.text.uiTextOr
@@ -171,57 +174,40 @@ class DictionaryViewModel(
         }
         val lookupId = ++readerLookupNextId
         _state.update {
-            val baseStack =
-                if (parentIndex == null) {
-                    emptyList()
-                } else {
-                    it.popupStack.take(parentIndex + 1)
-                }
             it.copy(
                 popupStack =
-                    baseStack +
-                        ReaderLookupState(
-                            id = lookupId,
-                            selectedText = trimmed,
-                            sentence = trimmed,
-                            rect = rect,
-                            isSearching = true,
-                        ),
+                    createLookupStackEntry(
+                        stack = it.popupStack,
+                        parentIndex = parentIndex,
+                        lookupId = lookupId,
+                        text = trimmed,
+                        sentence = trimmed,
+                        rect = rect,
+                    ),
             )
         }
         viewModelScope.launch {
             runCatching { lookupText(trimmed, maxResults) }
                 .onSuccess { result ->
                     _state.update {
-                        val updatedStack =
-                            it.popupStack.map { lookup ->
-                                if (lookup.id != lookupId) return@map lookup
-                                lookup.copy(
-                                    isSearching = false,
+                        it.copy(
+                            popupStack =
+                                it.popupStack.withLookupResult(
+                                    lookupId = lookupId,
                                     entries = result.entries,
                                     dictionaryStyles = result.styles,
-                                    highlightLength =
-                                        result.entries
-                                            .firstOrNull()
-                                            ?.matched
-                                            ?.codePointLength(),
-                                    errorMessage = null,
-                                )
-                            }
-                        it.copy(popupStack = updatedStack)
+                                ),
+                        )
                     }
                 }.onFailure { throwable ->
                     _state.update {
-                        val updatedStack =
-                            it.popupStack.map { lookup ->
-                                if (lookup.id != lookupId) return@map lookup
-                                lookup.copy(
-                                    isSearching = false,
-                                    highlightLength = null,
+                        it.copy(
+                            popupStack =
+                                it.popupStack.withLookupError(
+                                    lookupId = lookupId,
                                     errorMessage = throwable.uiTextOr(Res.string.error_search_failed),
-                                )
-                            }
-                        it.copy(popupStack = updatedStack)
+                                ),
+                        )
                     }
                 }
         }
@@ -229,28 +215,7 @@ class DictionaryViewModel(
 
     private fun dismissDictionaryPopup(index: Int?) {
         _state.update { state ->
-            val nextStack =
-                when (index) {
-                    null -> emptyList()
-                    else -> state.popupStack.take(index)
-                }
-            state.copy(popupStack = nextStack)
+            state.copy(popupStack = dismissLookupStack(state.popupStack, index))
         }
     }
-}
-
-private fun String.codePointLength(): Int {
-    var count = 0
-    var index = 0
-    while (index < length) {
-        val char = this[index]
-        index +=
-            if (char.isHighSurrogate() && index + 1 < length && this[index + 1].isLowSurrogate()) {
-                2
-            } else {
-                1
-            }
-        count++
-    }
-    return count
 }

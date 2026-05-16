@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_close
@@ -48,7 +47,6 @@ internal fun DictionaryPopupActionBar(
 ) {
     if (!canNavigateBack && !canNavigateForward) return
 
-    val density = LocalDensity.current
     val topBarShape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
 
     Column(
@@ -60,7 +58,7 @@ internal fun DictionaryPopupActionBar(
                         Modifier.textureBlur(
                             backdrop = backdrop,
                             shape = topBarShape,
-                            blurRadius = 25f * density.density,
+                            blurRadius = 25f,
                             noiseCoefficient = 0f,
                             colors =
                                 BlurColors(

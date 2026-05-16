@@ -1,4 +1,4 @@
-package app.mori.reader.ui.pages.settings
+package app.mori.reader.ui.pages.settings.dictionary
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -8,24 +8,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
-import app.mori.reader.core.platform.rememberDictionaryZipPicker
-import app.mori.reader.data.dictionary.DictionaryInfo
 import app.mori.reader.data.dictionary.DictionaryType
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.settings.presentation.DictionaryManagementState
@@ -38,7 +31,6 @@ import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
-import sh.calvin.reorderable.rememberReorderableLazyListState
 import top.yukonga.miuix.kmp.basic.DropdownImpl
 import top.yukonga.miuix.kmp.basic.FloatingActionButton
 import top.yukonga.miuix.kmp.basic.Icon
@@ -54,7 +46,7 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
 @Composable
-fun DictionarySettingsPage(
+internal fun MiuixDictionarySettingsPage(
     settings: AppSettings,
     dictionaryState: DictionaryManagementState,
     onIntent: (SettingsIntent) -> Unit,
@@ -68,79 +60,16 @@ fun DictionarySettingsPage(
     val selectedType = dictionaryState.selectedType
     val dictionaries = dictionaryState.dictionaries()
     val isBusy = dictionaryState.isImporting || dictionaryState.isUpdating
-    var importType by remember { mutableStateOf(DictionaryType.Term) }
     var showImportPopup by remember { mutableStateOf(false) }
-    val launchZipPicker =
-        rememberDictionaryZipPicker { uris ->
-            onIntent(SettingsIntent.ImportDictionaries(importType, uris))
-        }
     val pagerState = rememberPagerState(pageCount = { dictionarySettingsPages.size })
     val pagerCoroutineScope = rememberCoroutineScope()
     val selectedPage = pagerState.currentPage
-    val launchZipPickerForType: (DictionaryType) -> Unit = { type ->
-        importType = type
-        launchZipPicker()
-    }
-    val hapticFeedback = LocalHapticFeedback.current
-    val onIntentState by rememberUpdatedState(onIntent)
-    var localDictionaries by remember(selectedType) { mutableStateOf(dictionaries) }
-    var pendingDeletion by remember { mutableStateOf<PendingDictionaryDeletion?>(null) }
-
-    LaunchedEffect(dictionaries) {
-        localDictionaries = dictionaries
-    }
-
-    val listState = rememberLazyListState()
-    val dictionaryListStartIndex =
-        remember(
-            selectedPage,
-            dictionaryState.errorMessage,
-            dictionaryState.statusText,
-            dictionaryState.isLoading,
-        ) {
-            if (selectedPage != 0) {
-                -1
-            } else {
-                var index = 0
-                if (dictionaryState.errorMessage != null) index += 1
-                if (dictionaryState.statusText != null || dictionaryState.isLoading) index += 1
-                index += 1 // DictionaryTypeTabs
-                index
-            }
-        }
-    val reorderableState =
-        rememberReorderableLazyListState(listState) { from, to ->
-            if (dictionaryListStartIndex < 0) return@rememberReorderableLazyListState
-
-            val fromRelative = from.index - dictionaryListStartIndex
-            val toRelative = to.index - dictionaryListStartIndex
-            if (
-                fromRelative !in localDictionaries.indices ||
-                toRelative !in localDictionaries.indices
-            ) {
-                return@rememberReorderableLazyListState
-            }
-
-            localDictionaries =
-                localDictionaries.toMutableList().apply {
-                    add(toRelative, removeAt(fromRelative))
-                }
-            hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-        }
-
-    LaunchedEffect(
-        reorderableState.isAnyItemDragging,
-        dictionaries,
-        localDictionaries,
-        selectedType,
-    ) {
-        if (!reorderableState.isAnyItemDragging) {
-            val updatedIds = localDictionaries.map(DictionaryInfo::id)
-            if (updatedIds != dictionaries.map(DictionaryInfo::id)) {
-                onIntentState(SettingsIntent.ReorderDictionaries(selectedType, updatedIds))
-            }
-        }
-    }
+    val controller =
+        rememberDictionarySettingsController(
+            dictionaryState = dictionaryState,
+            selectedPage = selectedPage,
+            onIntent = onIntent,
+        )
 
     MoriPageScaffold(
         title = stringResource(Res.string.tab_dictionary),
@@ -197,7 +126,7 @@ fun DictionarySettingsPage(
                                     isSelected = false,
                                     index = index,
                                     onSelectedIndexChange = {
-                                        launchZipPickerForType(type)
+                                        controller.launchZipPickerForType(type)
                                         dismiss?.invoke()
                                     },
                                 )
@@ -207,7 +136,7 @@ fun DictionarySettingsPage(
                 }
             }
         },
-    ) { paddingValues, scrollBehavior ->
+    ) { paddingValues ->
         Column(
             modifier =
                 Modifier
@@ -237,20 +166,17 @@ fun DictionarySettingsPage(
                     0 -> {
                         DictionaryManagementPage(
                             paddingValues = paddingValues,
-                            scrollBehavior = scrollBehavior,
-                            listState = listState,
+                            listState = controller.listState,
                             errorMessage = dictionaryState.errorMessage,
                             statusText = dictionaryState.statusText,
                             isLoading = dictionaryState.isLoading,
                             selectedType = selectedType,
                             dictionaries = dictionaries,
-                            localDictionaries = localDictionaries,
+                            localDictionaries = controller.localDictionaries,
                             isBusy = isBusy,
-                            reorderableState = reorderableState,
+                            reorderableState = controller.reorderableState,
                             onIntent = onIntent,
-                            onDeleteRequest = { type, dictionary ->
-                                pendingDeletion = PendingDictionaryDeletion(type, dictionary)
-                            },
+                            onDeleteRequest = controller.requestDeletion,
                         )
                     }
 
@@ -258,7 +184,6 @@ fun DictionarySettingsPage(
                         DictionaryLookupSettingsPage(
                             settings = settings,
                             paddingValues = paddingValues,
-                            scrollBehavior = scrollBehavior,
                             onIntent = onIntent,
                         )
                     }
@@ -266,12 +191,9 @@ fun DictionarySettingsPage(
             }
 
             DeleteDictionaryDialog(
-                pendingDeletion = pendingDeletion,
-                onDismiss = { pendingDeletion = null },
-                onConfirm = { deletion ->
-                    onIntent(SettingsIntent.DeleteDictionary(deletion.type, deletion.dictionary.id))
-                    pendingDeletion = null
-                },
+                pendingDeletion = controller.pendingDeletion,
+                onDismiss = controller.dismissDeletion,
+                onConfirm = controller.confirmDeletion,
             )
         }
     }

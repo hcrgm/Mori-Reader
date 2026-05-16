@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.book.BookCategory
 import app.mori.reader.data.book.BookInfo
+import app.mori.reader.data.settings.UiThemeEngine
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_confirm
@@ -24,6 +25,7 @@ import app.mori.reader.shared.generated.resources.home_adjust_category
 import app.mori.reader.shared.generated.resources.home_delete_book
 import app.mori.reader.shared.generated.resources.home_delete_book_confirm
 import app.mori.reader.shared.generated.resources.home_no_categories_available
+import app.mori.reader.ui.theme.MoriTheme
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
@@ -36,6 +38,34 @@ import top.yukonga.miuix.kmp.window.WindowDialog
 
 @Composable
 fun EditBookCategoriesSheet(
+    book: BookInfo?,
+    categories: List<BookCategory>,
+    onDismiss: () -> Unit,
+    onConfirm: (BookInfo, List<String>) -> Unit,
+) {
+    when (MoriTheme.uiThemeEngine) {
+        UiThemeEngine.Miuix -> {
+            MiuixEditBookCategoriesSheet(
+                book = book,
+                categories = categories,
+                onDismiss = onDismiss,
+                onConfirm = onConfirm,
+            )
+        }
+
+        UiThemeEngine.Material -> {
+            MaterialEditBookCategoriesSheet(
+                book = book,
+                categories = categories,
+                onDismiss = onDismiss,
+                onConfirm = onConfirm,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiuixEditBookCategoriesSheet(
     book: BookInfo?,
     categories: List<BookCategory>,
     onDismiss: () -> Unit,
@@ -111,6 +141,15 @@ fun DeleteBookDialog(
     onDismiss: () -> Unit,
     onConfirm: (BookInfo) -> Unit,
 ) {
+    if (MoriTheme.uiThemeEngine == UiThemeEngine.Material) {
+        MaterialDeleteBookDialog(
+            book = book,
+            onDismiss = onDismiss,
+            onConfirm = onConfirm,
+        )
+        return
+    }
+
     WindowDialog(
         title = stringResource(Res.string.home_delete_book),
         show = book != null,
@@ -142,4 +181,34 @@ fun DeleteBookDialog(
             )
         }
     }
+}
+
+@Composable
+private fun MaterialDeleteBookDialog(
+    book: BookInfo?,
+    onDismiss: () -> Unit,
+    onConfirm: (BookInfo) -> Unit,
+) {
+    val current = book ?: return
+
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { androidx.compose.material3.Text(text = stringResource(Res.string.home_delete_book)) },
+        text = {
+            androidx.compose.material3.Text(
+                text = stringResource(Res.string.home_delete_book_confirm, current.title),
+                color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.Button(onClick = { onConfirm(current) }) {
+                androidx.compose.material3.Text(text = stringResource(Res.string.btn_delete))
+            }
+        },
+        dismissButton = {
+            androidx.compose.material3.TextButton(onClick = onDismiss) {
+                androidx.compose.material3.Text(text = stringResource(Res.string.btn_cancel))
+            }
+        },
+    )
 }

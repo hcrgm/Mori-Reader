@@ -1,9 +1,11 @@
 package app.mori.reader.ui.pages.reader
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -67,51 +69,57 @@ internal fun ReaderAppearanceSheet(
             title = stringResource(Res.string.cd_appearance),
             onDismissRequest = onDismiss,
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    ReaderAppearanceSettingsCard(
-                        readerThemeMode = readerThemeMode,
-                        verticalWriting = verticalWriting,
-                        continuousMode = continuousMode,
-                        hideFurigana = hideFurigana,
-                        fullscreen = fullscreen,
-                        fontSize = fontSize,
-                        lineHeight = lineHeight,
-                        horizontalPadding = horizontalPadding,
-                        verticalPadding = verticalPadding,
-                        avoidPageBreak = avoidPageBreak,
-                        justifyText = justifyText,
-                        characterSpacing = characterSpacing,
-                        popupWidth = popupWidth,
-                        popupHeight = popupHeight,
-                        popupFullWidth = popupFullWidth,
-                        popupSwipeToDismiss = popupSwipeToDismiss,
-                        popupSwipeThreshold = popupSwipeThreshold,
-                        modifier = Modifier.fillMaxWidth(),
-                        onReaderThemeModeSelected = onReaderThemeModeSelected,
-                        onToggleWritingMode = onToggleWritingMode,
-                        onToggleContinuousMode = onToggleContinuousMode,
-                        onToggleHideFurigana = onToggleHideFurigana,
-                        onFullscreenChanged = onFullscreenChanged,
-                        onFontSizeChanged = onFontSizeChanged,
-                        onLineHeightChanged = onLineHeightChanged,
-                        onHorizontalPaddingChanged = onHorizontalPaddingChanged,
-                        onVerticalPaddingChanged = onVerticalPaddingChanged,
-                        onAvoidPageBreakChanged = onAvoidPageBreakChanged,
-                        onJustifyTextChanged = onJustifyTextChanged,
-                        onCharacterSpacingChanged = onCharacterSpacingChanged,
-                        onPopupWidthChanged = onPopupWidthChanged,
-                        onPopupHeightChanged = onPopupHeightChanged,
-                        onTogglePopupFullWidth = onTogglePopupFullWidth,
-                        onTogglePopupSwipeToDismiss = onTogglePopupSwipeToDismiss,
-                        onPopupSwipeThresholdChanged = onPopupSwipeThresholdChanged,
-                    )
-                }
-                item {
-                    Spacer(modifier = Modifier.height(20.dp))
+            BoxWithConstraints {
+                val halfSheetHeight = maxHeight * 0.5f
+                LazyColumn(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = halfSheetHeight),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    item {
+                        ReaderAppearanceSettingsCard(
+                            readerThemeMode = readerThemeMode,
+                            verticalWriting = verticalWriting,
+                            continuousMode = continuousMode,
+                            hideFurigana = hideFurigana,
+                            fullscreen = fullscreen,
+                            fontSize = fontSize,
+                            lineHeight = lineHeight,
+                            horizontalPadding = horizontalPadding,
+                            verticalPadding = verticalPadding,
+                            avoidPageBreak = avoidPageBreak,
+                            justifyText = justifyText,
+                            characterSpacing = characterSpacing,
+                            popupWidth = popupWidth,
+                            popupHeight = popupHeight,
+                            popupFullWidth = popupFullWidth,
+                            popupSwipeToDismiss = popupSwipeToDismiss,
+                            popupSwipeThreshold = popupSwipeThreshold,
+                            modifier = Modifier.fillMaxWidth(),
+                            onReaderThemeModeSelected = onReaderThemeModeSelected,
+                            onToggleWritingMode = onToggleWritingMode,
+                            onToggleContinuousMode = onToggleContinuousMode,
+                            onToggleHideFurigana = onToggleHideFurigana,
+                            onFullscreenChanged = onFullscreenChanged,
+                            onFontSizeChanged = onFontSizeChanged,
+                            onLineHeightChanged = onLineHeightChanged,
+                            onHorizontalPaddingChanged = onHorizontalPaddingChanged,
+                            onVerticalPaddingChanged = onVerticalPaddingChanged,
+                            onAvoidPageBreakChanged = onAvoidPageBreakChanged,
+                            onJustifyTextChanged = onJustifyTextChanged,
+                            onCharacterSpacingChanged = onCharacterSpacingChanged,
+                            onPopupWidthChanged = onPopupWidthChanged,
+                            onPopupHeightChanged = onPopupHeightChanged,
+                            onTogglePopupFullWidth = onTogglePopupFullWidth,
+                            onTogglePopupSwipeToDismiss = onTogglePopupSwipeToDismiss,
+                            onPopupSwipeThresholdChanged = onPopupSwipeThresholdChanged,
+                        )
+                    }
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
                 }
             }
         }

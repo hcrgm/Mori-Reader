@@ -65,6 +65,13 @@ class SettingsRepository(
                             themeMode =
                                 preferences[Keys.ThemeMode]?.toThemeMode()
                                     ?: ThemeMode.System,
+                            uiThemeEngine =
+                                preferences[Keys.UiThemeEngine]?.toUiThemeEngine()
+                                    ?: UiThemeEngine.Miuix,
+                            uiScalePercent =
+                                normalizeUiScalePercent(
+                                    preferences[Keys.UiScalePercent] ?: 100,
+                                ),
                             languageMode =
                                 preferences[Keys.LanguageMode]?.toLanguageMode()
                                     ?: LanguageMode.System,
@@ -160,6 +167,14 @@ class SettingsRepository(
 
     suspend fun setThemeMode(mode: ThemeMode) {
         dataStore.edit { it[Keys.ThemeMode] = mode.name }
+    }
+
+    suspend fun setUiThemeEngine(engine: UiThemeEngine) {
+        dataStore.edit { it[Keys.UiThemeEngine] = engine.name }
+    }
+
+    suspend fun setUiScalePercent(value: Int) {
+        dataStore.edit { it[Keys.UiScalePercent] = normalizeUiScalePercent(value) }
     }
 
     suspend fun setLanguageMode(mode: LanguageMode) {
@@ -439,6 +454,8 @@ class SettingsRepository(
 private object Keys {
     val BookshelfSortMode = stringPreferencesKey("bookshelf_sort_mode")
     val ThemeMode = stringPreferencesKey("theme_mode")
+    val UiThemeEngine = stringPreferencesKey("ui_theme_engine")
+    val UiScalePercent = intPreferencesKey("ui_scale_percent")
     val LanguageMode = stringPreferencesKey("language_mode")
     val ReaderThemeMode = stringPreferencesKey("reader_theme_mode")
     val MonetEnabled = booleanPreferencesKey("monet_enabled")
@@ -484,6 +501,10 @@ private object Keys {
 
 private fun String.toThemeMode(): ThemeMode = ThemeMode.entries.firstOrNull { it.name == this } ?: ThemeMode.System
 
+private fun String.toUiThemeEngine(): UiThemeEngine =
+    UiThemeEngine.entries.firstOrNull { it.name == this }
+        ?: UiThemeEngine.Miuix
+
 private fun String.toLanguageMode(): LanguageMode = LanguageMode.entries.firstOrNull { it.name == this } ?: LanguageMode.System
 
 private fun String.toBookshelfSortMode(): BookshelfSortMode =
@@ -505,6 +526,8 @@ private fun String.toAudioSources(json: Json): List<AudioSource> =
     runCatching {
         json.decodeFromString(ListSerializer(AudioSource.serializer()), this)
     }.getOrDefault(listOf(AudioSource.Default))
+
+private fun normalizeUiScalePercent(value: Int): Int = ((value.coerceIn(80, 150) + 5) / 10) * 10
 
 private fun List<AudioSource>.toAudioSourcesJson(json: Json): String = json.encodeToString(ListSerializer(AudioSource.serializer()), this)
 

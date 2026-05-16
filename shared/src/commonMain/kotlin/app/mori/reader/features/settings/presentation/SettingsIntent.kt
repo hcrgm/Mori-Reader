@@ -8,10 +8,19 @@ import app.mori.reader.data.settings.BookshelfSortMode
 import app.mori.reader.data.settings.LanguageMode
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.data.settings.UiThemeEngine
 
 sealed interface SettingsIntent {
     data class SetThemeMode(
         val mode: ThemeMode,
+    ) : SettingsIntent
+
+    data class SetUiThemeEngine(
+        val engine: UiThemeEngine,
+    ) : SettingsIntent
+
+    data class SetUiScalePercent(
+        val value: Int,
     ) : SettingsIntent
 
     data class SetLanguageMode(

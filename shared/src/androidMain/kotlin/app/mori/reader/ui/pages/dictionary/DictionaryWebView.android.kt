@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Color
 import android.util.Log
 import android.view.MotionEvent
+import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
@@ -182,6 +183,7 @@ actual fun DictionaryWebView(
                 setBackgroundColor(Color.TRANSPARENT)
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
+                overScrollMode = View.OVER_SCROLL_NEVER
                 settings.javaScriptEnabled = true
                 settings.domStorageEnabled = true
                 settings.allowFileAccess = false

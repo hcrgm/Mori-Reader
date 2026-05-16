@@ -2,21 +2,22 @@ package app.mori.reader.app.navigation
 
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.navigation3.runtime.NavKey
 import app.mori.reader.ui.AppTab
 import app.mori.reader.ui.navigation.AppRoute
 
 @Stable
 class AppNavigationState {
-    var rootBackStack by mutableStateOf(listOf<NavKey>(AppRoute.Main))
-        private set
+    val rootBackStack: SnapshotStateList<NavKey> = mutableStateListOf(AppRoute.Main)
 
     private var dictionaryVerticalScrollActive by mutableStateOf(false)
 
     fun pushRoot(route: NavKey) {
-        rootBackStack = rootBackStack + route
+        rootBackStack.add(route)
     }
 
     fun openReader(bookId: String) {
@@ -25,7 +26,7 @@ class AppNavigationState {
 
     fun popRoot() {
         if (rootBackStack.size > 1) {
-            rootBackStack = rootBackStack.dropLast(1)
+            rootBackStack.removeLastOrNull()
         }
     }
 

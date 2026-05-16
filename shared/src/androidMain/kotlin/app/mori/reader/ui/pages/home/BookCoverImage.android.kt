@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,6 +14,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.mori.reader.data.settings.UiThemeEngine
+import app.mori.reader.ui.theme.MoriTheme
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
@@ -57,8 +60,24 @@ private fun PlaceholderCover(
     title: String,
     modifier: Modifier,
 ) {
+    val containerColor: androidx.compose.ui.graphics.Color
+    val accentColor: androidx.compose.ui.graphics.Color
+    val textColor: androidx.compose.ui.graphics.Color
+    when (MoriTheme.uiThemeEngine) {
+        UiThemeEngine.Miuix -> {
+            containerColor = MiuixTheme.colorScheme.tertiaryContainer
+            accentColor = MiuixTheme.colorScheme.primary
+            textColor = MiuixTheme.colorScheme.onTertiaryContainer
+        }
+
+        UiThemeEngine.Material -> {
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+            accentColor = MaterialTheme.colorScheme.primary
+            textColor = MaterialTheme.colorScheme.onTertiaryContainer
+        }
+    }
     Box(
-        modifier = modifier.background(MiuixTheme.colorScheme.tertiaryContainer),
+        modifier = modifier.background(containerColor),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -67,12 +86,12 @@ private fun PlaceholderCover(
                     .align(Alignment.TopEnd)
                     .padding(8.dp)
                     .fillMaxSize(0.18f)
-                    .background(MiuixTheme.colorScheme.primary.copy(alpha = 0.16f)),
+                    .background(accentColor.copy(alpha = 0.16f)),
         )
         Text(
             text = title.ifBlank { "EPUB" },
             modifier = Modifier.padding(10.dp),
-            color = MiuixTheme.colorScheme.onTertiaryContainer,
+            color = textColor,
             fontWeight = FontWeight.SemiBold,
             maxLines = 4,
             overflow = TextOverflow.Ellipsis,

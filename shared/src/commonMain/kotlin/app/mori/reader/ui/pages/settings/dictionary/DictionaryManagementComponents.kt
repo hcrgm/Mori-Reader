@@ -1,4 +1,4 @@
-package app.mori.reader.ui.pages.settings
+package app.mori.reader.ui.pages.settings.dictionary
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.runtime.Composable
@@ -17,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -65,7 +65,6 @@ import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.LinearProgressIndicator
-import top.yukonga.miuix.kmp.basic.ScrollBehavior
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.Switch
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
@@ -104,8 +103,7 @@ internal fun PageTabs(
 @Composable
 internal fun DictionaryManagementPage(
     paddingValues: PaddingValues,
-    scrollBehavior: ScrollBehavior,
-    listState: androidx.compose.foundation.lazy.LazyListState,
+    listState: LazyListState,
     errorMessage: UiText?,
     statusText: UiText?,
     isLoading: Boolean,
@@ -122,9 +120,8 @@ internal fun DictionaryManagementPage(
         modifier =
             Modifier
                 .fillMaxSize()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding =
+                .overScrollVertical(),
+            contentPadding =
             PaddingValues(
                 top = 14.dp,
                 bottom = paddingValues.calculateBottomPadding() + 96.dp,
@@ -205,16 +202,14 @@ internal fun DictionaryManagementPage(
 internal fun DictionaryLookupSettingsPage(
     settings: AppSettings,
     paddingValues: PaddingValues,
-    scrollBehavior: ScrollBehavior,
     onIntent: (SettingsIntent) -> Unit,
 ) {
     LazyColumn(
         modifier =
             Modifier
                 .fillMaxSize()
-                .overScrollVertical()
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
-        contentPadding =
+                .overScrollVertical(),
+            contentPadding =
             PaddingValues(
                 bottom = paddingValues.calculateBottomPadding() + 96.dp,
             ),

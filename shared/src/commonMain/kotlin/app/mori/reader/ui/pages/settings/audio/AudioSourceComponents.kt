@@ -1,4 +1,4 @@
-package app.mori.reader.ui.pages.settings
+package app.mori.reader.ui.pages.settings.audio
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -30,20 +31,10 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.audio_auto_play_summary
 import app.mori.reader.shared.generated.resources.audio_auto_play_title
 import app.mori.reader.shared.generated.resources.audio_background_title
-import app.mori.reader.shared.generated.resources.audio_delete_local_confirm
-import app.mori.reader.shared.generated.resources.audio_delete_local_summary
-import app.mori.reader.shared.generated.resources.audio_delete_local_title
-import app.mori.reader.shared.generated.resources.audio_delete_source_confirm
-import app.mori.reader.shared.generated.resources.audio_delete_source_summary
 import app.mori.reader.shared.generated.resources.audio_dialog_summary
 import app.mori.reader.shared.generated.resources.audio_edit_source_title
 import app.mori.reader.shared.generated.resources.audio_local_description
 import app.mori.reader.shared.generated.resources.audio_local_importing
-import app.mori.reader.shared.generated.resources.audio_local_not_imported
-import app.mori.reader.shared.generated.resources.audio_local_summary
-import app.mori.reader.shared.generated.resources.audio_mode_duck
-import app.mori.reader.shared.generated.resources.audio_mode_interrupt
-import app.mori.reader.shared.generated.resources.audio_mode_mix
 import app.mori.reader.shared.generated.resources.audio_name_label
 import app.mori.reader.shared.generated.resources.audio_url_label
 import app.mori.reader.shared.generated.resources.btn_add
@@ -55,6 +46,7 @@ import app.mori.reader.shared.generated.resources.cd_add_source
 import app.mori.reader.shared.generated.resources.cd_delete_source
 import app.mori.reader.shared.generated.resources.cd_drag_sort
 import app.mori.reader.ui.components.settings.MoriInfoCard
+import app.mori.reader.ui.components.settings.MoriSettingsHorizontalPadding
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.ReorderableLazyListState
@@ -75,16 +67,6 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.preference.WindowSpinnerPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
-
-internal enum class PendingAudioDeletionType {
-    Source,
-    LocalDatabase,
-}
-
-internal data class PendingAudioDeletion(
-    val type: PendingAudioDeletionType,
-    val source: AudioSource? = null,
-)
 
 @Composable
 internal fun PlaybackCard(
@@ -112,7 +94,7 @@ internal fun PlaybackCard(
     }
 }
 
-internal fun androidx.compose.foundation.lazy.LazyListScope.audioSourceItems(
+internal fun LazyListScope.audioSourceItems(
     sources: List<AudioSource>,
     localAudioImported: Boolean,
     reorderableState: ReorderableLazyListState,
@@ -154,7 +136,7 @@ private fun LazyItemScope.AudioSourceRow(
         Card(
             modifier =
                 Modifier
-                    .padding(horizontal = app.mori.reader.ui.components.settings.MoriSettingsHorizontalPadding)
+                    .padding(horizontal = MoriSettingsHorizontalPadding)
                     .fillMaxWidth()
                     .then(
                         with(this) {
@@ -231,6 +213,32 @@ private fun LazyItemScope.AudioSourceRow(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+internal fun AddAudioSourceCard(onClick: () -> Unit) {
+    Card(
+        modifier =
+            Modifier
+                .padding(horizontal = MoriSettingsHorizontalPadding)
+                .fillMaxWidth(),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = stringResource(Res.string.cd_add_source),
+                fontWeight = FontWeight.Medium,
+                color = MiuixTheme.colorScheme.primary,
+            )
         }
     }
 }
@@ -379,7 +387,7 @@ internal fun LocalAudioCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = "android.db")
                 Text(
-                    text = formatBytes(settings.audio.localAudioDatabaseSizeBytes),
+                    text = formatAudioDatabaseSize(settings.audio.localAudioDatabaseSizeBytes),
                     color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 )
             }
@@ -407,40 +415,18 @@ internal fun DeleteAudioDialog(
     onConfirm: (PendingAudioDeletion) -> Unit,
 ) {
     val current = pendingDeletion ?: return
-    val title =
-        when (current.type) {
-            PendingAudioDeletionType.Source -> stringResource(Res.string.cd_delete_source)
-            PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_title)
-        }
-    val summary =
-        when (current.type) {
-            PendingAudioDeletionType.Source -> stringResource(Res.string.audio_delete_source_summary)
-            PendingAudioDeletionType.LocalDatabase -> stringResource(Res.string.audio_delete_local_summary)
-        }
-    val message =
-        when (current.type) {
-            PendingAudioDeletionType.Source -> {
-                stringResource(
-                    Res.string.audio_delete_source_confirm,
-                    current.source?.name.orEmpty(),
-                )
-            }
-
-            PendingAudioDeletionType.LocalDatabase -> {
-                stringResource(Res.string.audio_delete_local_confirm)
-            }
-        }
+    val dialogText = audioDeletionDialogText(current)
 
     WindowDialog(
-        title = title,
-        summary = summary,
+        title = dialogText.title,
+        summary = dialogText.summary,
         show = true,
         onDismissRequest = onDismiss,
         onDismissFinished = onDismiss,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text = message,
+                text = dialogText.message,
                 modifier = Modifier.fillMaxWidth(),
                 color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
                 textAlign = TextAlign.Center,
@@ -462,43 +448,5 @@ internal fun DeleteAudioDialog(
                 )
             }
         }
-    }
-}
-
-private fun audioSourceTitle(source: AudioSource): String =
-    when {
-        source.isLocal -> "Local"
-        else -> source.name
-    }
-
-@Composable
-private fun AudioPlaybackMode.localizedLabel(): String =
-    when (this) {
-        AudioPlaybackMode.Interrupt -> stringResource(Res.string.audio_mode_interrupt)
-        AudioPlaybackMode.Duck -> stringResource(Res.string.audio_mode_duck)
-        AudioPlaybackMode.Mix -> stringResource(Res.string.audio_mode_mix)
-    }
-
-@Composable
-private fun audioSourceSummary(source: AudioSource): String =
-    when {
-        source.isLocal -> stringResource(Res.string.audio_local_summary)
-        else -> source.url
-    }
-
-@Composable
-private fun formatBytes(bytes: Long): String {
-    if (bytes <= 0L) return stringResource(Res.string.audio_local_not_imported)
-    val units = listOf("B", "KB", "MB", "GB")
-    var value = bytes.toDouble()
-    var unitIndex = 0
-    while (value >= 1024.0 && unitIndex < units.lastIndex) {
-        value /= 1024.0
-        unitIndex++
-    }
-    return if (unitIndex == 0) {
-        "$bytes B"
-    } else {
-        "${(value * 10).toInt() / 10.0} ${units[unitIndex]}"
     }
 }

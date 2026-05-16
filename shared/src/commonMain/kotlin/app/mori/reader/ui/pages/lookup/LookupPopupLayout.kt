@@ -1,16 +1,16 @@
-package app.mori.reader.ui.pages.reader
+package app.mori.reader.ui.pages.lookup
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-internal data class ReaderPopupLayout(
+internal data class LookupPopupLayout(
     val width: Dp,
     val height: Dp,
     val left: Dp,
     val top: Dp,
 )
 
-internal fun calculateReaderPopupLayout(
+internal fun calculateLookupPopupLayout(
     selectionLeft: Dp,
     selectionTop: Dp,
     selectionRight: Dp,
@@ -23,7 +23,7 @@ internal fun calculateReaderPopupLayout(
     isFullWidth: Boolean,
     topInset: Dp,
     bottomInset: Dp,
-): ReaderPopupLayout {
+): LookupPopupLayout {
     val popupPadding = 4.dp
     val screenBorderPadding = 6.dp
     val spaceLeft = selectionLeft - popupPadding
@@ -82,7 +82,7 @@ internal fun calculateReaderPopupLayout(
             )
     }
 
-    return ReaderPopupLayout(
+    return LookupPopupLayout(
         width = width,
         height = height,
         left = centerX - width / 2f,

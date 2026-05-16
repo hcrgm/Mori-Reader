@@ -11,8 +11,11 @@ import app.mori.reader.data.book.ReaderBookmark
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.SettingsRepository
 import app.mori.reader.features.dictionary.domain.DictionaryLookupUseCase
-import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
+import app.mori.reader.features.lookup.presentation.createLookupStackEntry
+import app.mori.reader.features.lookup.presentation.dismissLookupStack
+import app.mori.reader.features.lookup.presentation.withLookupError
+import app.mori.reader.features.lookup.presentation.withLookupResult
 import app.mori.reader.features.settings.domain.shouldRefreshReaderLayout
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.error_reader_load_failed
@@ -447,6 +450,12 @@ class ReaderViewModel(
     }
 
     private fun closeBook() {
+        _state.update {
+            it.copy(
+                lookupStack = emptyList(),
+                resumeSasayakiAfterLookup = false,
+            )
+        }
         viewModelScope.launch {
             runCatching { audiobookPlayerRepository.stop(bookId) }
         }
@@ -515,23 +524,17 @@ class ReaderViewModel(
         val sasayakiCueId = sasayakiCueIdAtNormalizedOffset(currentReader, rect?.normalizedOffset)
         val lookupId = ++readerLookupNextId
         _state.update {
-            val baseStack =
-                if (parentIndex == null) {
-                    emptyList()
-                } else {
-                    it.lookupStack.take(parentIndex + 1)
-                }
             it.copy(
                 lookupStack =
-                    baseStack +
-                        ReaderLookupState(
-                            id = lookupId,
-                            selectedText = trimmed,
-                            sentence = sentence.trim(),
-                            rect = rect,
-                            isSearching = true,
-                            sasayakiCueId = sasayakiCueId,
-                        ),
+                    createLookupStackEntry(
+                        stack = it.lookupStack,
+                        parentIndex = parentIndex,
+                        lookupId = lookupId,
+                        text = trimmed,
+                        sentence = sentence.trim(),
+                        rect = rect,
+                        sasayakiCueId = sasayakiCueId,
+                    ),
                 resumeSasayakiAfterLookup = it.resumeSasayakiAfterLookup || shouldPauseSasayaki,
             )
         }
@@ -539,35 +542,24 @@ class ReaderViewModel(
             runCatching { lookupText(trimmed, maxResults) }
                 .onSuccess { result ->
                     _state.update {
-                        val updatedStack =
-                            it.lookupStack.map { lookup ->
-                                if (lookup.id != lookupId) return@map lookup
-                                lookup.copy(
-                                    isSearching = false,
+                        it.copy(
+                            lookupStack =
+                                it.lookupStack.withLookupResult(
+                                    lookupId = lookupId,
                                     entries = result.entries,
                                     dictionaryStyles = result.styles,
-                                    highlightLength =
-                                        result.entries
-                                            .firstOrNull()
-                                            ?.matched
-                                            ?.codePointLength(),
-                                    errorMessage = null,
-                                )
-                            }
-                        it.copy(lookupStack = updatedStack)
+                                ),
+                        )
                     }
                 }.onFailure { throwable ->
                     _state.update {
-                        val updatedStack =
-                            it.lookupStack.map { lookup ->
-                                if (lookup.id != lookupId) return@map lookup
-                                lookup.copy(
-                                    isSearching = false,
-                                    highlightLength = null,
+                        it.copy(
+                            lookupStack =
+                                it.lookupStack.withLookupError(
+                                    lookupId = lookupId,
                                     errorMessage = throwable.uiTextOr(Res.string.error_search_failed),
-                                )
-                            }
-                        it.copy(lookupStack = updatedStack)
+                                ),
+                        )
                     }
                 }
         }
@@ -576,11 +568,7 @@ class ReaderViewModel(
     private fun dismissReaderLookup(index: Int?) {
         var shouldResume = false
         _state.update { state ->
-            val nextStack =
-                when (index) {
-                    null -> emptyList()
-                    else -> state.lookupStack.take(index)
-                }
+            val nextStack = dismissLookupStack(state.lookupStack, index)
             shouldResume = nextStack.isEmpty() && state.resumeSasayakiAfterLookup
             state.copy(
                 lookupStack = nextStack,
@@ -758,20 +746,4 @@ private fun String.percentDecode(): String {
     }
     flushBytes()
     return result.toString()
-}
-
-private fun String.codePointLength(): Int {
-    var count = 0
-    var index = 0
-    while (index < length) {
-        val char = this[index]
-        index +=
-            if (char.isHighSurrogate() && index + 1 < length && this[index + 1].isLowSurrogate()) {
-                2
-            } else {
-                1
-            }
-        count++
-    }
-    return count
 }

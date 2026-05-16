@@ -23,6 +23,7 @@ import app.mori.reader.data.book.BookCategory
 import app.mori.reader.data.book.BookInfo
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.BookshelfSortMode
+import app.mori.reader.data.settings.UiThemeEngine
 import app.mori.reader.features.audiobook.presentation.AudiobookIntent
 import app.mori.reader.features.audiobook.presentation.AudiobookUiState
 import app.mori.reader.features.bookshelf.presentation.BookshelfIntent
@@ -36,6 +37,7 @@ import app.mori.reader.shared.generated.resources.home_sort_title
 import app.mori.reader.shared.generated.resources.home_tab_all
 import app.mori.reader.shared.generated.resources.tab_bookshelf
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.theme.MoriTheme
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
@@ -45,14 +47,13 @@ import top.yukonga.miuix.kmp.basic.IconButton
 import top.yukonga.miuix.kmp.basic.ListPopupColumn
 import top.yukonga.miuix.kmp.basic.ListPopupDefaults
 import top.yukonga.miuix.kmp.basic.PopupPositionProvider
-import top.yukonga.miuix.kmp.basic.TabRow
 import top.yukonga.miuix.kmp.basic.TabRowDefaults
+import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.icon.MiuixIcons
 import top.yukonga.miuix.kmp.icon.extended.Add
 import top.yukonga.miuix.kmp.icon.extended.More
 import top.yukonga.miuix.kmp.icon.extended.Sort
 import top.yukonga.miuix.kmp.theme.LocalDismissState
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
 val HomeHorizontalPadding = 12.dp
@@ -113,138 +114,174 @@ fun HomePage(
             }
     }
 
-    MoriPageScaffold(
-        title = stringResource(Res.string.tab_bookshelf),
-        blurEnabled = settings.appearance.blurEnabled,
-        fixedPadding = fixedPadding,
-        navigationIcon = {
-            IconButton(
-                onClick = {
-                    showSortPopup.value = true
-                    sortPopupHoldDown.value = true
+    val title = stringResource(Res.string.tab_bookshelf)
+    val onSelectTab: (Int) -> Unit = { index ->
+        tabCoroutineScope.launch {
+            pagerState.animateScrollToPage(index)
+        }
+    }
+    val bookshelfContent:
+        @Composable (PaddingValues) -> Unit =
+        { paddingValues ->
+            BookshelfContent(
+                home = home,
+                settings = settings,
+                paddingValues = paddingValues,
+                pagerState = pagerState,
+                categoryIds = categoryIds,
+                contextMenuBookId = contextMenuBook?.id,
+                contextMenuPage = contextMenuPage,
+                onOpenContextMenu = { page, book ->
+                    contextMenuPage = page
+                    contextMenuBook = book
                 },
-                holdDownState = sortPopupHoldDown.value,
-            ) {
-                Icon(
-                    imageVector = MiuixIcons.Sort,
-                    contentDescription = stringResource(Res.string.cd_sort_by),
-                )
-            }
-            WindowListPopup(
-                show = showSortPopup.value,
-                popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
-                alignment = PopupPositionProvider.Align.TopStart,
-                onDismissRequest = {
-                    showSortPopup.value = false
+                onDismissContextMenu = {
+                    contextMenuBook = null
+                    contextMenuPage = null
                 },
-                onDismissFinished = {
-                    sortPopupHoldDown.value = false
+                onEditBookCategories = {
+                    categoryEditingBook = contextMenuBook
+                    contextMenuBook = null
+                    contextMenuPage = null
                 },
-            ) {
-                val dismiss = LocalDismissState.current
-                ListPopupColumn {
-                    BookshelfSortMode.entries.forEachIndexed { index, option ->
-                        key(option) {
-                            DropdownImpl(
-                                text =
-                                    when (option) {
-                                        BookshelfSortMode.Recent -> stringResource(Res.string.home_sort_recent)
-                                        BookshelfSortMode.Title -> stringResource(Res.string.home_sort_title)
-                                    },
-                                optionSize = BookshelfSortMode.entries.size,
-                                isSelected = settings.bookshelf.sortMode == option,
-                                index = index,
-                                onSelectedIndexChange = {
-                                    onBookshelfIntent(BookshelfIntent.SetBookshelfSortMode(option))
-                                    dismiss?.invoke()
-                                },
-                            )
+                onOpenAudiobook = {
+                    contextMenuBook?.let { book ->
+                        audiobookBook = book
+                        onAudiobookIntent(AudiobookIntent.OpenAudiobookManager(book.id))
+                    }
+                    contextMenuBook = null
+                    contextMenuPage = null
+                },
+                onDeleteBook = {
+                    deletingBook = contextMenuBook
+                    contextMenuBook = null
+                    contextMenuPage = null
+                },
+                onImportBooks = epubPicker,
+                onBookshelfIntent = onBookshelfIntent,
+                onOpenBook = onOpenBook,
+            )
+        }
+
+    when (MoriTheme.uiThemeEngine) {
+        UiThemeEngine.Miuix -> {
+            MoriPageScaffold(
+                title = title,
+                blurEnabled = settings.appearance.blurEnabled,
+                fixedPadding = fixedPadding,
+                navigationIcon = {
+                    IconButton(
+                        onClick = {
+                            showSortPopup.value = true
+                            sortPopupHoldDown.value = true
+                        },
+                        holdDownState = sortPopupHoldDown.value,
+                    ) {
+                        Icon(
+                            imageVector = MiuixIcons.Sort,
+                            contentDescription = stringResource(Res.string.cd_sort_by),
+                        )
+                    }
+                    WindowListPopup(
+                        show = showSortPopup.value,
+                        popupPositionProvider = ListPopupDefaults.ContextMenuPositionProvider,
+                        alignment = PopupPositionProvider.Align.TopStart,
+                        onDismissRequest = {
+                            showSortPopup.value = false
+                        },
+                        onDismissFinished = {
+                            sortPopupHoldDown.value = false
+                        },
+                    ) {
+                        val dismiss = LocalDismissState.current
+                        ListPopupColumn {
+                            BookshelfSortMode.entries.forEachIndexed { index, option ->
+                                key(option) {
+                                    DropdownImpl(
+                                        text =
+                                            when (option) {
+                                                BookshelfSortMode.Recent -> stringResource(Res.string.home_sort_recent)
+                                                BookshelfSortMode.Title -> stringResource(Res.string.home_sort_title)
+                                            },
+                                        optionSize = BookshelfSortMode.entries.size,
+                                        isSelected = settings.bookshelf.sortMode == option,
+                                        index = index,
+                                        onSelectedIndexChange = {
+                                            onBookshelfIntent(BookshelfIntent.SetBookshelfSortMode(option))
+                                            dismiss?.invoke()
+                                        },
+                                    )
+                                }
+                            }
                         }
                     }
-                }
+                },
+                actions = {
+                    IconButton(onClick = epubPicker) {
+                        Icon(
+                            imageVector = MiuixIcons.Add,
+                            contentDescription = stringResource(Res.string.cd_import_book),
+                        )
+                    }
+                    IconButton(onClick = { categoryManagerOpen = true }) {
+                        Icon(
+                            imageVector = MiuixIcons.More,
+                            contentDescription = stringResource(Res.string.cd_category_manage),
+                        )
+                    }
+                },
+                header = {
+                    if (home.isLoading) {
+                        Spacer(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(TabRowDefaults.TabRowWithContourHeight),
+                        )
+                    } else {
+                        TabRowWithContour(
+                            tabs = tabs,
+                            selectedTabIndex = pagerState.currentPage.coerceAtMost(tabs.lastIndex),
+                            onTabSelected = onSelectTab,
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = HomeHorizontalPadding, vertical = 4.dp),
+                            colors =
+                                TabRowDefaults.tabRowColors(
+                                    backgroundColor =
+                                        if (settings.appearance.blurEnabled) {
+                                            Color.Transparent
+                                        } else {
+                                            top.yukonga.miuix.kmp.theme.MiuixTheme.colorScheme.surface
+                                        },
+                                ),
+                        )
+                    }
+                },
+            ) { paddingValues ->
+                bookshelfContent(paddingValues)
             }
-        },
-        actions = {
-            IconButton(onClick = epubPicker) {
-                Icon(
-                    imageVector = MiuixIcons.Add,
-                    contentDescription = stringResource(Res.string.cd_import_book),
-                )
-            }
-            IconButton(onClick = { categoryManagerOpen = true }) {
-                Icon(
-                    imageVector = MiuixIcons.More,
-                    contentDescription = stringResource(Res.string.cd_category_manage),
-                )
-            }
-        },
-        header = {
-            if (home.isLoading) {
-                Spacer(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(TabRowDefaults.TabRowHeight),
-                )
-            } else {
-                TabRow(
-                    tabs = tabs,
-                    selectedTabIndex = pagerState.currentPage.coerceAtMost(tabs.lastIndex),
-                    onTabSelected = { index ->
-                        tabCoroutineScope.launch {
-                            pagerState.animateScrollToPage(index)
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = HomeHorizontalPadding),
-                    colors =
-                        TabRowDefaults.tabRowColors(
-                            backgroundColor = if (settings.appearance.blurEnabled) Color.Transparent else MiuixTheme.colorScheme.surface,
-                        ),
-                )
-            }
-        },
-    ) { paddingValues, scrollBehavior ->
-        BookshelfContent(
-            home = home,
-            settings = settings,
-            paddingValues = paddingValues,
-            scrollBehavior = scrollBehavior,
-            pagerState = pagerState,
-            categoryIds = categoryIds,
-            contextMenuBookId = contextMenuBook?.id,
-            contextMenuPage = contextMenuPage,
-            onOpenContextMenu = { page, book ->
-                contextMenuPage = page
-                contextMenuBook = book
-            },
-            onDismissContextMenu = {
-                contextMenuBook = null
-                contextMenuPage = null
-            },
-            onEditBookCategories = {
-                categoryEditingBook = contextMenuBook
-                contextMenuBook = null
-                contextMenuPage = null
-            },
-            onOpenAudiobook = {
-                contextMenuBook?.let { book ->
-                    audiobookBook = book
-                    onAudiobookIntent(AudiobookIntent.OpenAudiobookManager(book.id))
-                }
-                contextMenuBook = null
-                contextMenuPage = null
-            },
-            onDeleteBook = {
-                deletingBook = contextMenuBook
-                contextMenuBook = null
-                contextMenuPage = null
-            },
-            onBookshelfIntent = onBookshelfIntent,
-            onOpenBook = onOpenBook,
-        )
+        }
+
+        UiThemeEngine.Material -> {
+            MaterialHomePageScaffold(
+                title = title,
+                settings = settings,
+                fixedPadding = fixedPadding,
+                isLoading = home.isLoading,
+                tabs = tabs,
+                selectedTabIndex = pagerState.currentPage.coerceAtMost(tabs.lastIndex),
+                currentSortMode = settings.bookshelf.sortMode,
+                onTabSelected = onSelectTab,
+                onImportBook = epubPicker,
+                onManageCategories = { categoryManagerOpen = true },
+                onSetSortMode = { option ->
+                    onBookshelfIntent(BookshelfIntent.SetBookshelfSortMode(option))
+                },
+                content = bookshelfContent,
+            )
+        }
     }
 
     CategoryManagerSheet(

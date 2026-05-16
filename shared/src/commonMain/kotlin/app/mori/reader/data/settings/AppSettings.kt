@@ -10,6 +10,8 @@ data class BookshelfSettings(
 
 data class AppearanceSettings(
     val themeMode: ThemeMode = ThemeMode.System,
+    val uiThemeEngine: UiThemeEngine = UiThemeEngine.Miuix,
+    val uiScalePercent: Int = 100,
     val languageMode: LanguageMode = LanguageMode.System,
     val readerThemeMode: ReaderThemeMode = ReaderThemeMode.FollowApp,
     val monetEnabled: Boolean = false,
@@ -93,6 +95,11 @@ enum class ThemeMode {
     System,
     Light,
     Dark,
+}
+
+enum class UiThemeEngine {
+    Miuix,
+    Material,
 }
 
 enum class LanguageMode {

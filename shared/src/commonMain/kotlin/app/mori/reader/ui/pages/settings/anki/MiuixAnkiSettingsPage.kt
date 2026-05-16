@@ -1,4 +1,4 @@
-package app.mori.reader.ui.pages.settings
+package app.mori.reader.ui.pages.settings.anki
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -20,23 +20,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.mori.reader.core.platform.rememberAnkiDroidPermissionRequester
 import app.mori.reader.data.anki.AnkiConnectionMode
-import app.mori.reader.data.anki.AnkiDeck
 import app.mori.reader.data.anki.AnkiDuplicateScope
 import app.mori.reader.data.anki.AnkiField
 import app.mori.reader.data.anki.AnkiHandlebar
-import app.mori.reader.data.anki.AnkiNoteType
 import app.mori.reader.data.anki.ankiPlatformCapabilities
-import app.mori.reader.data.anki.defaultAnkiHandlebarTokens
-import app.mori.reader.data.anki.lapisFieldMappings
-import app.mori.reader.data.dictionary.DictionaryType
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.anki.presentation.AnkiIntent
 import app.mori.reader.features.anki.presentation.AnkiState
@@ -103,7 +96,7 @@ import top.yukonga.miuix.kmp.window.WindowDialog
 import top.yukonga.miuix.kmp.window.WindowListPopup
 
 @Composable
-fun AnkiSettingsPage(
+internal fun MiuixAnkiSettingsPage(
     settings: AppSettings,
     ankiState: AnkiState,
     dictionaryState: DictionaryManagementState,
@@ -136,13 +129,12 @@ fun AnkiSettingsPage(
                 Icon(MiuixIcons.Info, contentDescription = stringResource(Res.string.anki_handlebars_title))
             }
         },
-    ) { paddingValues, scrollBehavior ->
+    ) { paddingValues ->
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .overScrollVertical()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    .overScrollVertical(),
             contentPadding =
                 PaddingValues(
                     top = paddingValues.calculateTopPadding(),
@@ -350,20 +342,9 @@ private fun DeckAndModelSelectors(
     ankiState: AnkiState,
     onIntent: (AnkiIntent) -> Unit,
 ) {
-    val decks =
-        ankiState.decks.ifEmpty {
-            ankiState.settings.selectedDeck
-                ?.takeIf(String::isNotBlank)
-                ?.let { listOf(AnkiDeck(id = it, name = it)) }
-                .orEmpty()
-        }
-    val noteTypes =
-        ankiState.noteTypes.ifEmpty {
-            ankiState.settings.selectedNoteType
-                ?.takeIf(String::isNotBlank)
-                ?.let { listOf(AnkiNoteType(id = it, name = it)) }
-                .orEmpty()
-        }
+    val options = ankiState.deckAndNoteTypeOptions()
+    val decks = options.decks
+    val noteTypes = options.noteTypes
     WindowSpinnerPreference(
         items = decks.map { SpinnerEntry(title = it.name) },
         selectedIndex = decks.indexOfFirst { it.name == ankiState.settings.selectedDeck }.coerceAtLeast(0),
@@ -574,38 +555,6 @@ private fun HandlebarList(handles: List<AnkiHandlebar>) {
         }
     }
 }
-
-private fun AnkiState.selectedNoteType(): AnkiNoteType? = noteTypes.firstOrNull { it.name == settings.selectedNoteType }
-
-private fun AnkiState.editableFields(): List<AnkiField> {
-    if (settings.selectedDeck.isNullOrBlank() && settings.selectedNoteType.isNullOrBlank()) {
-        return lapisFieldMappings().keys.map(::AnkiField)
-    }
-
-    val fetchedFields = selectedNoteType()?.fields.orEmpty()
-    if (fetchedFields.isNotEmpty()) return fetchedFields
-
-    return emptyList()
-}
-
-private fun AnkiState.effectiveFieldMappings(): Map<String, String> {
-    val shouldUseLapisDefaults =
-        settings.selectedDeck.isNullOrBlank() && settings.selectedNoteType.isNullOrBlank()
-    val defaults = if (shouldUseLapisDefaults) lapisFieldMappings() else emptyMap()
-    return defaults + settings.fieldMappings
-}
-
-@Composable
-private fun rememberAnkiHandlebars(dictionaryState: DictionaryManagementState): List<AnkiHandlebar> =
-    remember(dictionaryState.termDictionaries) {
-        defaultAnkiHandlebars() +
-            dictionaryState
-                .dictionaries(DictionaryType.Term)
-                .filter { it.isEnabled }
-                .map { AnkiHandlebar(token = "{single-glossary-${it.index.title}}") }
-    }
-
-private fun defaultAnkiHandlebars(): List<AnkiHandlebar> = defaultAnkiHandlebarTokens().map(::AnkiHandlebar)
 
 @Composable
 private fun DuplicateScopeSelector(

@@ -47,7 +47,9 @@
     <string name="home_importing">Importing book</string>
     <string name="home_loading">Loading bookshelf</string>
     <string name="home_empty_bookshelf">Your bookshelf is empty</string>
+    <string name="home_empty_bookshelf_hint">Import a book to start building your library.</string>
     <string name="home_empty_category">This category has no books</string>
+    <string name="home_empty_category_hint">Try another category, or put some books here later.</string>
     <string name="home_adjust_category">Adjust category</string>
     <string name="home_audiobook">Audiobook</string>
     <string name="home_delete_book">Delete book</string>
@@ -86,17 +88,19 @@
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">Settings</string>
     <string name="settings_appearance_title">Appearance</string>
-    <string name="settings_appearance_summary">App theme, language, and blur effects</string>
     <string name="settings_reader_title">Reader</string>
-    <string name="settings_reader_summary">Reading layout, typography, and dictionary popup</string>
     <string name="settings_dictionary_title">Dictionaries</string>
-    <string name="settings_dictionary_summary">Import, enable, reorder, and manage local dictionaries</string>
     <string name="settings_audio_title">Audio</string>
-    <string name="settings_audio_summary">Configure term pronunciation, auto-play, and offline audio</string>
     <string name="settings_anki_title">Anki</string>
-    <string name="settings_anki_summary">Decks, note fields, duplicates, and mining options</string>
-    <string name="settings_anki_status_connected">connected</string>
-    <string name="settings_anki_status_disconnected">not connected</string>
+    <string name="settings_about_title">About</string>
+    <string name="about_title">About</string>
+    <string name="about_view_source">View source on GitHub</string>
+    <string name="about_check_updates">Check for updates</string>
+    <string name="about_open_source_licenses">Open source licenses</string>
+    <string name="about_version">Version %1$s (%2$d)</string>
+    <string name="about_update_summary">Open the latest GitHub releases</string>
+    <string name="licenses_title">Open source licenses</string>
+    <string name="licenses_project_site">Project site</string>
     <string name="reader_settings_display_title">Reading</string>
     <string name="reader_settings_typography_title">Typography</string>
     <string name="reader_settings_popup_title">Dictionary popup</string>
@@ -112,11 +116,15 @@
     <string name="language_follow_system">Follow system</string>
     <string name="language_english">English</string>
     <string name="language_chinese">中文</string>
-    <string name="appearance_theme_title">App theme</string>
-    <string name="appearance_theme_summary">Choose system, light, or dark theme</string>
+    <string name="appearance_ui_engine_title">UI engine</string>
+    <string name="appearance_ui_engine_summary">Choose Miuix or Material components</string>
+    <string name="appearance_theme_title">Theme mode</string>
     <string name="appearance_monet_title">Monet colors</string>
     <string name="appearance_monet_summary">Use dynamic colors from the system wallpaper</string>
     <string name="appearance_monet_key_color_title">Key color</string>
+    <string name="appearance_color_scheme_title">Color scheme</string>
+    <string name="appearance_ui_scale_title">Interface scale</string>
+    <string name="appearance_ui_scale_summary">Adjust the app interface display scale</string>
     <string name="monet_key_color_default">Default</string>
     <string name="appearance_blur_title">Global blur effect</string>
     <string name="appearance_blur_summary">Control blur effects for app components</string>
@@ -188,7 +196,6 @@
     <string name="anki_title">Anki</string>
     <string name="anki_connection_title">Connection</string>
     <string name="anki_connection_mode_title">Connection mode</string>
-    <string name="anki_ankidroid_guidance">Use AnkiDroid as the recommended local path. Install AnkiDroid, enable its API, and grant database permission when prompted.</string>
     <string name="anki_http_title">AnkiConnect HTTP</string>
     <string name="anki_http_url_label">Endpoint URL</string>
     <string name="anki_http_timeout_label">Timeout in milliseconds</string>
@@ -295,9 +302,9 @@
     <string name="dict_settings_title">Dictionaries</string>
     <string name="dict_settings_dictionaries">Dictionaries</string>
     <string name="dict_settings_options">Options</string>
-    <string name="dict_settings_term">Term dictionaries</string>
-    <string name="dict_settings_frequency">Frequency dictionaries</string>
-    <string name="dict_settings_pitch">Pitch dictionaries</string>
+    <string name="dict_settings_term">Term</string>
+    <string name="dict_settings_frequency">Frequency</string>
+    <string name="dict_settings_pitch">Pitch</string>
     <string name="dict_settings_loading">Loading dictionaries</string>
     <string name="dict_settings_empty">No dictionaries imported in this category.</string>
     <string name="dict_settings_query_display">Query display</string>
@@ -317,14 +324,16 @@
     <string name="dict_settings_delete_summary">You will need to re-import the dictionary to restore it.</string>
     <string name="dict_settings_delete_confirm">Delete "%s"?</string>
     <string name="dict_settings_revision_prefix">revision </string>
-    <string name="dict_settings_type_term">Term dictionaries</string>
-    <string name="dict_settings_type_frequency">Frequency dictionaries</string>
-    <string name="dict_settings_type_pitch">Pitch dictionaries</string>
+    <string name="dict_settings_type_term">Term</string>
+    <string name="dict_settings_type_frequency">Frequency</string>
+    <string name="dict_settings_type_pitch">Pitch</string>
 
     <!-- ===================== Theme Mode Labels ===================== -->
     <string name="theme_follow_system">Follow system</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="theme_engine_miuix">Miuix</string>
+    <string name="theme_engine_material">Material</string>
     <string name="reader_theme_follow_app">Follow app theme</string>
     <string name="color_red">Red</string>
     <string name="color_pink">Pink</string>
@@ -343,10 +352,6 @@
     <string name="color_sakura">Sakura</string>
 
     <!-- ===================== Toast / Effect Messages ===================== -->
-    <!-- Blur -->
-    <string name="toast_blur_enabled">Blur effect enabled</string>
-    <string name="toast_blur_disabled">Blur effect disabled</string>
-
     <!-- Book -->
     <string name="toast_book_imported">Book imported</string>
     <string name="toast_book_import_failed">Book import failed</string>

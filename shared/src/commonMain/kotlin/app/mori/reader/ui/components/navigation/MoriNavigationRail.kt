@@ -11,28 +11,34 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
+import androidx.compose.material3.NavigationRailItemDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLayoutDirection
 import app.mori.reader.ui.AppTab
-import app.mori.reader.ui.components.scaffold.BlurredBar
-import top.yukonga.miuix.kmp.basic.NavigationRail
+import app.mori.reader.ui.components.scaffold.moriPageBarBlur
+import app.mori.reader.ui.components.scaffold.moriPageBarColor
+import app.mori.reader.ui.theme.moriSurfaceColor
 import top.yukonga.miuix.kmp.basic.NavigationRailDisplayMode
-import top.yukonga.miuix.kmp.basic.NavigationRailItem
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
-import top.yukonga.miuix.kmp.theme.MiuixTheme
+import top.yukonga.miuix.kmp.basic.NavigationRail as MiuixNavigationRail
+import top.yukonga.miuix.kmp.basic.NavigationRailItem as MiuixNavigationRailItem
 
 @Composable
-internal fun MoriNavigationRail(
+internal fun MiuixMoriNavigationRail(
     selectedTab: AppTab,
     backdrop: LayerBackdrop?,
     blurEnabled: Boolean,
     modifier: Modifier = Modifier,
     onTabSelected: (AppTab) -> Unit,
 ) {
-    val blurActive = blurEnabled && backdrop != null
-    val barColor = if (blurActive) Color.Transparent else MiuixTheme.colorScheme.surface
+    val activeBackdrop = backdrop.takeIf { blurEnabled }
+    val barColor = activeBackdrop.moriPageBarColor(moriSurfaceColor())
     val layoutDirection = LocalLayoutDirection.current
     val startPadding =
         maxOf(
@@ -51,7 +57,9 @@ internal fun MoriNavigationRail(
             .asPaddingValues()
             .calculateTopPadding()
 
-    BlurredBar(backdrop, blurEnabled, modifier = modifier) {
+    Box(
+        modifier = modifier.moriPageBarBlur(activeBackdrop),
+    ) {
         Box(
             modifier =
                 Modifier
@@ -61,19 +69,63 @@ internal fun MoriNavigationRail(
                         top = statusBarPadding,
                     ),
         ) {
-            NavigationRail(
+            MiuixNavigationRail(
                 color = barColor,
                 defaultWindowInsetsPadding = false,
                 mode = NavigationRailDisplayMode.IconAndText,
             ) {
                 AppTab.entries.forEach { tab ->
-                    NavigationRailItem(
+                    MiuixNavigationRailItem(
                         selected = selectedTab == tab,
                         onClick = { onTabSelected(tab) },
-                        icon = tab.icon,
+                        icon = tab.miuixIcon(),
                         label = tab.localizedLabel(),
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun MaterialMoriNavigationRail(
+    selectedTab: AppTab,
+    backdrop: LayerBackdrop?,
+    blurEnabled: Boolean,
+    modifier: Modifier = Modifier,
+    onTabSelected: (AppTab) -> Unit,
+) {
+    val activeBackdrop = backdrop.takeIf { blurEnabled }
+    val barColor = activeBackdrop.moriPageBarColor(MaterialTheme.colorScheme.surfaceContainer)
+    val itemColors =
+        NavigationRailItemDefaults.colors(
+            selectedIconColor = MaterialTheme.colorScheme.primary,
+            selectedTextColor = MaterialTheme.colorScheme.primary,
+            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+        )
+
+    Box(
+        modifier = modifier.moriPageBarBlur(activeBackdrop),
+    ) {
+        NavigationRail(
+            containerColor = barColor,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ) {
+            AppTab.entries.forEach { tab ->
+                NavigationRailItem(
+                    selected = selectedTab == tab,
+                    onClick = { onTabSelected(tab) },
+                    colors = itemColors,
+                    icon = {
+                        Icon(
+                            imageVector = tab.materialIcon(),
+                            contentDescription = tab.localizedLabel(),
+                        )
+                    },
+                    label = { Text(text = tab.localizedLabel()) },
+                )
             }
         }
     }

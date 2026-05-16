@@ -18,8 +18,6 @@ import app.mori.reader.shared.generated.resources.toast_audio_local_import_faile
 import app.mori.reader.shared.generated.resources.toast_audio_local_imported
 import app.mori.reader.shared.generated.resources.toast_audio_url_exists
 import app.mori.reader.shared.generated.resources.toast_audio_url_requires_term_or_reading
-import app.mori.reader.shared.generated.resources.toast_blur_disabled
-import app.mori.reader.shared.generated.resources.toast_blur_enabled
 import app.mori.reader.shared.generated.resources.toast_dict_checking_updates
 import app.mori.reader.shared.generated.resources.toast_dict_import_failed
 import app.mori.reader.shared.generated.resources.toast_dict_imported
@@ -143,6 +141,15 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setThemeMode(intent.mode) }
             }
 
+            is SettingsIntent.SetUiThemeEngine -> {
+                viewModelScope.launch { settingsRepository.setUiThemeEngine(intent.engine) }
+            }
+
+            is SettingsIntent.SetUiScalePercent -> {
+                val value = normalizeUiScalePercent(intent.value)
+                viewModelScope.launch { settingsRepository.setUiScalePercent(value) }
+            }
+
             is SettingsIntent.SetLanguageMode -> {
                 viewModelScope.launch { settingsRepository.setLanguageMode(intent.mode) }
             }
@@ -153,11 +160,6 @@ class SettingsViewModel(
 
             is SettingsIntent.SetBlurEnabled -> {
                 viewModelScope.launch { settingsRepository.setBlurEnabled(intent.enabled) }
-                _effects.trySend(
-                    AppEffect.ShowMessage(
-                        if (intent.enabled) uiText(Res.string.toast_blur_enabled) else uiText(Res.string.toast_blur_disabled),
-                    ),
-                )
             }
 
             is SettingsIntent.SetMonetEnabled -> {
@@ -554,3 +556,5 @@ class SettingsViewModel(
         }
     }
 }
+
+private fun normalizeUiScalePercent(value: Int): Int = ((value.coerceIn(80, 150) + 5) / 10) * 10

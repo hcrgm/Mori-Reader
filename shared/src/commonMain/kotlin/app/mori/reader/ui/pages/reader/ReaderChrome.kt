@@ -40,6 +40,8 @@ import top.yukonga.miuix.kmp.icon.extended.Music
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.theme.ThemeController
+import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 
 @Composable
 internal fun ReaderStatus(
@@ -266,11 +268,12 @@ internal fun ReaderSheetTheme(
                         if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light
                     },
                 keyColor = monetKeyColor.takeIf { it != 0L }?.let(::Color),
+                colorSpec = ThemeColorSpec.Spec2025,
+                paletteStyle = ThemePaletteStyle.TonalSpot,
             )
         }
     MiuixTheme(
         controller = controller,
-        smoothRounding = true,
         content = content,
     )
 }

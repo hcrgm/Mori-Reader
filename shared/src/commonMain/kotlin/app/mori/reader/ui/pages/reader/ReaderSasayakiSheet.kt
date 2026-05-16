@@ -44,6 +44,7 @@ import app.mori.reader.shared.generated.resources.sasayaki_show_highlight
 import app.mori.reader.shared.generated.resources.sasayaki_speed
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Icon
 import top.yukonga.miuix.kmp.basic.Slider
 import top.yukonga.miuix.kmp.basic.Switch
@@ -264,6 +265,11 @@ private fun SasayakiSectionCard(content: @Composable () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         insideMargin = PaddingValues(16.dp),
+        colors =
+            CardDefaults.defaultColors(
+                color = MiuixTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MiuixTheme.colorScheme.onSurface,
+            ),
     ) {
         content()
     }

@@ -2,6 +2,7 @@ package app.mori.reader
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -32,19 +33,20 @@ import app.mori.reader.ui.AppState
 import app.mori.reader.ui.navigation.AppRoute
 import app.mori.reader.ui.navigation.MainTabsContent
 import app.mori.reader.ui.pages.reader.ReaderPage
-import app.mori.reader.ui.pages.settings.AnkiConnectionSettingsPage
-import app.mori.reader.ui.pages.settings.AnkiSettingsPage
-import app.mori.reader.ui.pages.settings.AppearanceSettingsPage
-import app.mori.reader.ui.pages.settings.AudioSettingsPage
-import app.mori.reader.ui.pages.settings.DictionarySettingsPage
-import app.mori.reader.ui.pages.settings.ReaderSettingsPage
+import app.mori.reader.ui.pages.settings.about.AboutPage
+import app.mori.reader.ui.pages.settings.about.OpenSourceLicensesPage
+import app.mori.reader.ui.pages.settings.anki.AnkiSettingsPage
+import app.mori.reader.ui.pages.settings.appearence.AppearanceSettingsPage
+import app.mori.reader.ui.pages.settings.audio.AudioSettingsPage
+import app.mori.reader.ui.pages.settings.dictionary.DictionarySettingsPage
+import app.mori.reader.ui.pages.settings.reader.ReaderSettingsPage
 import app.mori.reader.ui.text.resolveString
+import app.mori.reader.ui.theme.moriSurfaceColor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 import top.yukonga.miuix.kmp.basic.Surface
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 fun AppContent(
@@ -52,7 +54,7 @@ fun AppContent(
     bookshelfState: BookshelfState,
     dictionaryState: DictionaryState,
     audiobookUiState: AudiobookUiState,
-    settingsUi: SettingsUiState,
+    settingsUiState: SettingsUiState,
     ankiState: AnkiState,
     effects: Flow<AppEffect>,
     onIntent: (AppIntent) -> Unit,
@@ -109,6 +111,7 @@ fun AppContent(
                             onOpenDictionarySettings = { navigationState.pushRoot(AppRoute.DictionarySettings) },
                             onOpenAudioSettings = { navigationState.pushRoot(AppRoute.AudioSettings) },
                             onOpenAnkiSettings = { navigationState.pushRoot(AppRoute.AnkiSettings) },
+                            onOpenAbout = { navigationState.pushRoot(AppRoute.About) },
                         )
                     }
                     entry<AppRoute.Reader> { route ->
@@ -118,6 +121,11 @@ fun AppContent(
                                 parameters = { parametersOf(route.bookId) },
                             )
                         val readerState by readerViewModel.state.collectAsStateWithLifecycle()
+                        DisposableEffect(readerViewModel) {
+                            onDispose {
+                                readerViewModel.onIntent(ReaderIntent.CloseBook)
+                            }
+                        }
                         ReaderPage(
                             reader = readerState,
                             settings = state.settings,
@@ -127,7 +135,6 @@ fun AppContent(
                             onSettingsIntent = onSettingsIntent,
                             onAnkiIntent = onAnkiIntent,
                             onBack = {
-                                readerViewModel.onIntent(ReaderIntent.CloseBook)
                                 navigationState.popRoot()
                             },
                         )
@@ -135,7 +142,7 @@ fun AppContent(
                     entry<AppRoute.DictionarySettings> {
                         DictionarySettingsPage(
                             settings = state.settings,
-                            dictionaryState = settingsUi.dictionaryManagement,
+                            dictionaryState = settingsUiState.dictionaryManagement,
                             onIntent = onSettingsIntent,
                             onBack = navigationState::popRoot,
                         )
@@ -157,7 +164,7 @@ fun AppContent(
                     entry<AppRoute.AudioSettings> {
                         AudioSettingsPage(
                             settings = state.settings,
-                            settingsUi = settingsUi,
+                            settingsUiState = settingsUiState,
                             onIntent = onSettingsIntent,
                             onBack = navigationState::popRoot,
                         )
@@ -166,16 +173,21 @@ fun AppContent(
                         AnkiSettingsPage(
                             settings = state.settings,
                             ankiState = ankiState,
-                            dictionaryState = settingsUi.dictionaryManagement,
+                            dictionaryState = settingsUiState.dictionaryManagement,
                             onIntent = onAnkiIntent,
                             onBack = navigationState::popRoot,
                         )
                     }
-                    entry<AppRoute.AnkiConnectionSettings> {
-                        AnkiConnectionSettingsPage(
+                    entry<AppRoute.About> {
+                        AboutPage(
                             settings = state.settings,
-                            ankiState = ankiState,
-                            onIntent = onAnkiIntent,
+                            onOpenLicenses = { navigationState.pushRoot(AppRoute.OpenSourceLicenses) },
+                            onBack = navigationState::popRoot,
+                        )
+                    }
+                    entry<AppRoute.OpenSourceLicenses> {
+                        OpenSourceLicensesPage(
+                            settings = state.settings,
                             onBack = navigationState::popRoot,
                         )
                     }
@@ -184,7 +196,7 @@ fun AppContent(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MiuixTheme.colorScheme.surface,
+        color = moriSurfaceColor(),
     ) {
         NavDisplay(
             entries = rootEntries,

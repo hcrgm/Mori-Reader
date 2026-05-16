@@ -1,4 +1,4 @@
-package app.mori.reader.ui.pages.settings
+package app.mori.reader.ui.pages.settings.reader
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,7 +29,7 @@ import top.yukonga.miuix.kmp.icon.extended.Back
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 
 @Composable
-fun ReaderSettingsPage(
+internal fun MiuixReaderSettingsPage(
     settings: AppSettings,
     onSettingsIntent: (SettingsIntent) -> Unit,
     onBack: () -> Unit,
@@ -42,13 +42,12 @@ fun ReaderSettingsPage(
                 Icon(MiuixIcons.Back, contentDescription = stringResource(Res.string.cd_back))
             }
         },
-    ) { paddingValues, scrollBehavior ->
+    ) { paddingValues ->
         LazyColumn(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .overScrollVertical()
-                    .nestedScroll(scrollBehavior.nestedScrollConnection),
+                    .overScrollVertical(),
             contentPadding =
                 PaddingValues(
                     top = paddingValues.calculateTopPadding(),

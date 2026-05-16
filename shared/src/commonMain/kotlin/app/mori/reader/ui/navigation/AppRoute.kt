@@ -29,5 +29,8 @@ sealed interface AppRoute : NavKey {
     data object AnkiSettings : AppRoute
 
     @Serializable
-    data object AnkiConnectionSettings : AppRoute
+    data object About : AppRoute
+
+    @Serializable
+    data object OpenSourceLicenses : AppRoute
 }

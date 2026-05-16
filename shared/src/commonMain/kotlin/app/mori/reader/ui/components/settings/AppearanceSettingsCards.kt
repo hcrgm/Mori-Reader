@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import app.mori.reader.data.settings.LanguageMode
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.data.settings.UiThemeEngine
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_off
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_on
@@ -40,6 +41,8 @@ import app.mori.reader.shared.generated.resources.appearance_line_height
 import app.mori.reader.shared.generated.resources.appearance_monet_key_color_title
 import app.mori.reader.shared.generated.resources.appearance_monet_summary
 import app.mori.reader.shared.generated.resources.appearance_monet_title
+import app.mori.reader.shared.generated.resources.appearance_ui_scale_summary
+import app.mori.reader.shared.generated.resources.appearance_ui_scale_title
 import app.mori.reader.shared.generated.resources.appearance_page_mode_summary
 import app.mori.reader.shared.generated.resources.appearance_page_mode_title
 import app.mori.reader.shared.generated.resources.appearance_popup_full_width_off
@@ -55,9 +58,10 @@ import app.mori.reader.shared.generated.resources.appearance_popup_width
 import app.mori.reader.shared.generated.resources.appearance_reader_theme_title
 import app.mori.reader.shared.generated.resources.appearance_reading_continuous
 import app.mori.reader.shared.generated.resources.appearance_reading_pagination
-import app.mori.reader.shared.generated.resources.appearance_theme_summary
 import app.mori.reader.shared.generated.resources.appearance_theme_title
 import app.mori.reader.shared.generated.resources.appearance_typography
+import app.mori.reader.shared.generated.resources.appearance_ui_engine_summary
+import app.mori.reader.shared.generated.resources.appearance_ui_engine_title
 import app.mori.reader.shared.generated.resources.appearance_vertical_margin
 import app.mori.reader.shared.generated.resources.appearance_writing_direction_summary
 import app.mori.reader.shared.generated.resources.appearance_writing_direction_title
@@ -84,6 +88,8 @@ import app.mori.reader.shared.generated.resources.language_follow_system
 import app.mori.reader.shared.generated.resources.monet_key_color_default
 import app.mori.reader.shared.generated.resources.reader_theme_follow_app
 import app.mori.reader.shared.generated.resources.theme_dark
+import app.mori.reader.shared.generated.resources.theme_engine_material
+import app.mori.reader.shared.generated.resources.theme_engine_miuix
 import app.mori.reader.shared.generated.resources.theme_follow_system
 import app.mori.reader.shared.generated.resources.theme_light
 import org.jetbrains.compose.resources.stringResource
@@ -101,50 +107,26 @@ import top.yukonga.miuix.kmp.theme.MiuixTheme
 import kotlin.math.roundToInt
 
 @Composable
-fun AppThemeSettingsCard(
-    themeMode: ThemeMode,
-    languageMode: LanguageMode,
-    monetEnabled: Boolean,
-    monetKeyColor: Long,
-    blurEnabled: Boolean,
-    modifier: Modifier = Modifier,
-    onThemeModeSelected: (ThemeMode) -> Unit,
-    onLanguageModeSelected: (LanguageMode) -> Unit,
-    onMonetEnabledChanged: (Boolean) -> Unit,
-    onMonetKeyColorSelected: (Long) -> Unit,
-    onBlurEnabledChanged: (Boolean) -> Unit,
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        AppThemeSettingsGroup(
-            themeMode = themeMode,
-            languageMode = languageMode,
-            monetEnabled = monetEnabled,
-            monetKeyColor = monetKeyColor,
-            blurEnabled = blurEnabled,
-            onThemeModeSelected = onThemeModeSelected,
-            onLanguageModeSelected = onLanguageModeSelected,
-            onMonetEnabledChanged = onMonetEnabledChanged,
-            onMonetKeyColorSelected = onMonetKeyColorSelected,
-            onBlurEnabledChanged = onBlurEnabledChanged,
-        )
-    }
-}
-
-@Composable
 internal fun AppThemeSettingsGroup(
     themeMode: ThemeMode,
+    uiThemeEngine: UiThemeEngine,
     languageMode: LanguageMode,
+    uiScalePercent: Int,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     blurEnabled: Boolean,
     onThemeModeSelected: (ThemeMode) -> Unit,
+    onUiThemeEngineSelected: (UiThemeEngine) -> Unit,
     onLanguageModeSelected: (LanguageMode) -> Unit,
+    onUiScalePercentChanged: (Int) -> Unit,
     onMonetEnabledChanged: (Boolean) -> Unit,
     onMonetKeyColorSelected: (Long) -> Unit,
     onBlurEnabledChanged: (Boolean) -> Unit,
 ) {
     val themeModes = remember { ThemeMode.entries.toList() }
     val themeModeItems = themeModes.map { SpinnerEntry(title = it.localizedLabel()) }
+    val uiThemeEngines = remember { UiThemeEngine.entries.toList() }
+    val uiThemeEngineItems = uiThemeEngines.map { SpinnerEntry(title = it.localizedLabel()) }
     val languageModes = remember { LanguageMode.entries.toList() }
     val keyColorValues = remember { listOf(0L) + monetKeyColorOptions }
     val followSystemLabel = stringResource(Res.string.language_follow_system)
@@ -165,10 +147,19 @@ internal fun AppThemeSettingsGroup(
         }
 
     WindowSpinnerPreference(
+        items = uiThemeEngineItems,
+        selectedIndex = uiThemeEngines.indexOf(uiThemeEngine).coerceAtLeast(0),
+        title = stringResource(Res.string.appearance_ui_engine_title),
+        summary = stringResource(Res.string.appearance_ui_engine_summary),
+        onSelectedIndexChange = { index ->
+            onUiThemeEngineSelected(uiThemeEngines[index])
+        },
+    )
+    WindowSpinnerPreference(
         items = themeModeItems,
         selectedIndex = themeModes.indexOf(themeMode).coerceAtLeast(0),
         title = stringResource(Res.string.appearance_theme_title),
-        summary = stringResource(Res.string.appearance_theme_summary),
+        summary = null,
         onSelectedIndexChange = { index ->
             onThemeModeSelected(themeModes[index])
         },
@@ -182,6 +173,23 @@ internal fun AppThemeSettingsGroup(
             onLanguageModeSelected(languageModes[index])
         },
     )
+    Column(
+        modifier = Modifier.padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        SettingSlider(
+            label = stringResource(Res.string.appearance_ui_scale_title),
+            value = uiScalePercent.toFloat(),
+            range = 80f..150f,
+            steps = 6,
+            valueText = { "${((it / 10f).roundToInt() * 10)}%" },
+            onCommit = { onUiScalePercentChanged((it / 10f).roundToInt() * 10) },
+        )
+        Text(
+            text = stringResource(Res.string.appearance_ui_scale_summary),
+            color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
+        )
+    }
     SwitchPreference(
         checked = monetEnabled,
         onCheckedChange = onMonetEnabledChanged,
@@ -689,6 +697,13 @@ private fun ThemeMode.localizedLabel(): String =
         ThemeMode.System -> stringResource(Res.string.theme_follow_system)
         ThemeMode.Light -> stringResource(Res.string.theme_light)
         ThemeMode.Dark -> stringResource(Res.string.theme_dark)
+    }
+
+@Composable
+private fun UiThemeEngine.localizedLabel(): String =
+    when (this) {
+        UiThemeEngine.Miuix -> stringResource(Res.string.theme_engine_miuix)
+        UiThemeEngine.Material -> stringResource(Res.string.theme_engine_material)
     }
 
 @Composable

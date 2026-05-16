@@ -42,6 +42,7 @@ import app.mori.reader.ui.components.settings.MoriInfoCard
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.basic.CardDefaults
 import top.yukonga.miuix.kmp.basic.Text
 import top.yukonga.miuix.kmp.basic.TextButton
 import top.yukonga.miuix.kmp.basic.TextField
@@ -185,6 +186,11 @@ private fun ReaderChapterHeader(
     Card(
         modifier = Modifier.fillMaxWidth(),
         insideMargin = PaddingValues(16.dp),
+        colors =
+            CardDefaults.defaultColors(
+                color = MiuixTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MiuixTheme.colorScheme.onSurface,
+            ),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(

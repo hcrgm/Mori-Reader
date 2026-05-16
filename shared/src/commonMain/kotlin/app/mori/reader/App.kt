@@ -12,6 +12,7 @@ import app.mori.reader.features.settings.presentation.SettingsViewModel
 import app.mori.reader.ui.AppEffect
 import app.mori.reader.ui.RootViewModel
 import app.mori.reader.ui.theme.AppTheme
+import app.mori.reader.ui.theme.toMoriThemeState
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import org.koin.compose.viewmodel.koinViewModel
@@ -25,7 +26,7 @@ fun App(initialSettings: AppSettings? = null) {
     val ankiViewModel = koinViewModel<AnkiViewModel>()
     val state by viewModel.state.collectAsStateWithLifecycle()
     val dictionaryState by dictionaryViewModel.state.collectAsStateWithLifecycle()
-    val settingsUi by settingsViewModel.state.collectAsStateWithLifecycle()
+    val settingsUiState by settingsViewModel.state.collectAsStateWithLifecycle()
     val ankiState by ankiViewModel.state.collectAsStateWithLifecycle()
 
     if (!state.settingsLoaded) {
@@ -43,16 +44,14 @@ fun App(initialSettings: AppSettings? = null) {
     AppLocaleEnvironment(mode = state.settings.appearance.languageMode) {
         ApplyLanguageModeEffect(state.settings.appearance.languageMode)
         AppTheme(
-            themeMode = state.settings.appearance.themeMode,
-            monetEnabled = state.settings.appearance.monetEnabled,
-            monetKeyColor = state.settings.appearance.monetKeyColor,
+            themeState = state.settings.appearance.toMoriThemeState(),
         ) {
             AppContent(
                 state = state,
                 bookshelfState = homeState,
                 dictionaryState = dictionaryState,
                 audiobookUiState = audiobookState,
-                settingsUi = settingsUi,
+                settingsUiState = settingsUiState,
                 ankiState = ankiState,
                 effects =
                     merge(

@@ -47,7 +47,9 @@
     <string name="home_importing">正在导入图书</string>
     <string name="home_loading">正在加载书架</string>
     <string name="home_empty_bookshelf">书架里还没有图书</string>
+    <string name="home_empty_bookshelf_hint">先导入一本书，把书架慢慢填满吧。</string>
     <string name="home_empty_category">这个分类还没有图书</string>
+    <string name="home_empty_category_hint">换个分类看看，或者之后再把图书归到这里。</string>
     <string name="home_adjust_category">调整分类</string>
     <string name="home_audiobook">有声书</string>
     <string name="home_delete_book">删除图书</string>
@@ -86,17 +88,19 @@
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">设置</string>
     <string name="settings_appearance_title">外观</string>
-    <string name="settings_appearance_summary">应用主题、语言和模糊效果</string>
     <string name="settings_reader_title">阅读器</string>
-    <string name="settings_reader_summary">阅读版式、排版和词典弹窗</string>
     <string name="settings_dictionary_title">词典</string>
-    <string name="settings_dictionary_summary">导入、启用、排序和维护本地词典</string>
     <string name="settings_audio_title">音频</string>
-    <string name="settings_audio_summary">配置词条发音、自动播放和离线音频</string>
     <string name="settings_anki_title">Anki</string>
-    <string name="settings_anki_summary">牌组、笔记字段、重复项和制卡选项</string>
-    <string name="settings_anki_status_connected">已连接</string>
-    <string name="settings_anki_status_disconnected">未连接</string>
+    <string name="settings_about_title">关于</string>
+    <string name="about_title">关于</string>
+    <string name="about_view_source">在 GitHub 查看源码</string>
+    <string name="about_check_updates">检查更新</string>
+    <string name="about_open_source_licenses">开源许可</string>
+    <string name="about_version">版本 %1$s（%2$d）</string>
+    <string name="about_update_summary">打开 GitHub 最新 Releases</string>
+    <string name="licenses_title">开源许可</string>
+    <string name="licenses_project_site">项目主页</string>
     <string name="reader_settings_display_title">阅读模式</string>
     <string name="reader_settings_typography_title">排版</string>
     <string name="reader_settings_popup_title">词典弹窗</string>
@@ -112,11 +116,15 @@
     <string name="language_follow_system">跟随系统</string>
     <string name="language_english">英语</string>
     <string name="language_chinese">中文</string>
-    <string name="appearance_theme_title">应用主题</string>
-    <string name="appearance_theme_summary">选择跟随系统、浅色或深色</string>
+    <string name="appearance_ui_engine_title">UI 引擎</string>
+    <string name="appearance_ui_engine_summary">选择 Miuix 或 Material 组件体系</string>
+    <string name="appearance_theme_title">主题模式</string>
     <string name="appearance_monet_title">Monet 颜色</string>
     <string name="appearance_monet_summary">使用系统壁纸生成的动态颜色</string>
     <string name="appearance_monet_key_color_title">强调色</string>
+    <string name="appearance_color_scheme_title">色彩搭配</string>
+    <string name="appearance_ui_scale_title">界面缩放</string>
+    <string name="appearance_ui_scale_summary">调整应用界面显示比例</string>
     <string name="monet_key_color_default">默认</string>
     <string name="appearance_blur_title">全局模糊效果</string>
     <string name="appearance_blur_summary">控制应用部分控件的模糊效果</string>
@@ -188,7 +196,6 @@
     <string name="anki_title">Anki</string>
     <string name="anki_connection_title">连接</string>
     <string name="anki_connection_mode_title">连接方式</string>
-    <string name="anki_ankidroid_guidance">推荐使用 AnkiDroid 本地路径。请安装 AnkiDroid，启用 API，并在提示时授予数据库权限。</string>
     <string name="anki_http_title">AnkiConnect HTTP</string>
     <string name="anki_http_url_label">端点 URL</string>
     <string name="anki_http_timeout_label">超时时间（毫秒）</string>
@@ -325,6 +332,8 @@
     <string name="theme_follow_system">跟随系统</string>
     <string name="theme_light">浅色模式</string>
     <string name="theme_dark">深色模式</string>
+    <string name="theme_engine_miuix">Miuix</string>
+    <string name="theme_engine_material">Material</string>
     <string name="reader_theme_follow_app">跟随应用主题</string>
     <string name="color_red">红色</string>
     <string name="color_pink">粉色</string>
@@ -343,10 +352,6 @@
     <string name="color_sakura">樱花</string>
 
     <!-- ===================== Toast / Effect Messages ===================== -->
-    <!-- Blur -->
-    <string name="toast_blur_enabled">模糊效果已开启</string>
-    <string name="toast_blur_disabled">模糊效果已关闭</string>
-
     <!-- Book -->
     <string name="toast_book_imported">图书已导入</string>
     <string name="toast_book_import_failed">图书导入失败</string>
