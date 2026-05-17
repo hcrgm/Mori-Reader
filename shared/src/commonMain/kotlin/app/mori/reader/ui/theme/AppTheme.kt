@@ -38,20 +38,21 @@ fun AppTheme(
                 fontScale = baseDensity.fontScale,
             )
         }
-    val controller =
-        remember(themeState.themeMode, themeState.monetEnabled, themeState.monetKeyColor, darkTheme) {
-            ThemeController(
-                colorSchemeMode = themeState.themeMode.toColorSchemeMode(themeState.monetEnabled),
-                keyColor = themeState.monetKeyColor.takeIf { it != 0L }?.let(::Color),
-                colorSpec = ThemeColorSpec.Spec2025,
-                paletteStyle = ThemePaletteStyle.TonalSpot,
-                isDark = darkTheme,
-            )
-        }
 
     CompositionLocalProvider(LocalDensity provides scaledDensity) {
         when (themeState.uiThemeEngine) {
             UiThemeEngine.Miuix -> {
+                val controller =
+                    remember(themeState.themeMode, themeState.monetEnabled, themeState.monetKeyColor, darkTheme) {
+                        ThemeController(
+                            colorSchemeMode = themeState.themeMode.toColorSchemeMode(themeState.monetEnabled),
+                            keyColor = themeState.monetKeyColor.takeIf { it != 0L }?.let(::Color),
+                            colorSpec = ThemeColorSpec.Spec2025,
+                            paletteStyle = ThemePaletteStyle.TonalSpot,
+                            isDark = darkTheme,
+                        )
+                    }
+
                 MiuixTheme(
                     controller = controller,
                 ) {
