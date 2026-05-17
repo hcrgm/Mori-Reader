@@ -1,25 +1,30 @@
 package app.mori.reader.ui.theme
 
 import android.os.Build
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import com.materialkolor.PaletteStyle
-import com.materialkolor.dynamiccolor.ColorSpec
-import com.materialkolor.rememberDynamicColorScheme
 
 @Composable
-internal actual fun rememberMaterialColorScheme(
+internal actual fun rememberMaterialThemeConfig(
     darkTheme: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
-): ColorScheme {
+): MaterialThemeConfig {
     val context = LocalContext.current
     if (monetEnabled && monetKeyColor == 0L && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        return if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        val systemColorScheme =
+            if (darkTheme) {
+                dynamicDarkColorScheme(context)
+            } else {
+                dynamicLightColorScheme(context)
+            }
+        return MaterialThemeConfig(
+            seedColor = systemColorScheme.primary,
+            colorSchemeOverride = systemColorScheme,
+        )
     }
 
     val seedColor =
@@ -28,10 +33,7 @@ internal actual fun rememberMaterialColorScheme(
             else -> Color(0xFF6750A4)
         }
 
-    return rememberDynamicColorScheme(
+    return MaterialThemeConfig(
         seedColor = seedColor,
-        isDark = darkTheme,
-        style = PaletteStyle.TonalSpot,
-        specVersion = ColorSpec.SpecVersion.SPEC_2025,
     )
 }

@@ -3,19 +3,23 @@ package app.mori.reader.ui.theme
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
-import androidx.compose.ui.unit.Density
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import app.mori.reader.data.settings.ThemeMode
 import app.mori.reader.data.settings.UiThemeEngine
+import com.materialkolor.DynamicMaterialExpressiveTheme
+import com.materialkolor.PaletteStyle
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.rememberDynamicMaterialThemeState
 import top.yukonga.miuix.kmp.theme.ColorSchemeMode
 import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.theme.ThemeController
 import top.yukonga.miuix.kmp.theme.ThemeColorSpec
+import top.yukonga.miuix.kmp.theme.ThemeController
 import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -63,18 +67,38 @@ fun AppTheme(
             }
 
             UiThemeEngine.Material -> {
-                val colorScheme =
+                val materialThemeConfig =
                     if (themeState.materialEInkMode) {
-                        remember(darkTheme) { materialEInkColorScheme(darkTheme) }
+                        val colorScheme = remember(darkTheme) { materialEInkColorScheme(darkTheme) }
+                        remember(colorScheme) {
+                            MaterialThemeConfig(
+                                seedColor = colorScheme.primary,
+                                colorSchemeOverride = colorScheme,
+                            )
+                        }
                     } else {
-                        rememberMaterialColorScheme(
+                        rememberMaterialThemeConfig(
                             darkTheme = darkTheme,
                             monetEnabled = themeState.monetEnabled,
                             monetKeyColor = themeState.monetKeyColor,
                         )
                     }
-                MaterialExpressiveTheme(
-                    colorScheme = colorScheme,
+                val dynamicThemeState =
+                    rememberDynamicMaterialThemeState(
+                        isDark = darkTheme,
+                        style = PaletteStyle.TonalSpot,
+                        contrastLevel = -1.0,
+                        specVersion = ColorSpec.SpecVersion.SPEC_2025,
+                        seedColor = materialThemeConfig.seedColor,
+                        modifyColorScheme =
+                            materialThemeConfig.colorSchemeOverride?.let { colorSchemeOverride ->
+                                { colorSchemeOverride }
+                            },
+                    )
+                DynamicMaterialExpressiveTheme(
+                    state = dynamicThemeState,
+                    motionScheme = MotionScheme.expressive(),
+                    animate = !themeState.materialEInkMode,
                 ) {
                     CompositionLocalProvider(
                         LocalOverscrollFactory provides
