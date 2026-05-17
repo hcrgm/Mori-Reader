@@ -21,6 +21,7 @@ import top.yukonga.miuix.kmp.window.WindowBottomSheet
 internal fun ReaderAppearanceSheet(
     show: Boolean,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     readerThemeMode: ReaderThemeMode,
@@ -61,6 +62,7 @@ internal fun ReaderAppearanceSheet(
 ) {
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {

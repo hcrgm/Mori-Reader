@@ -45,6 +45,7 @@ internal fun DictionarySearchField(
     query: String,
     backdrop: LayerBackdrop?,
     blurEnabled: Boolean,
+    materialEInkMode: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onClear: () -> Unit,
@@ -79,7 +80,13 @@ internal fun DictionarySearchField(
                     } else {
                         Modifier
                             .clip(RoundedCornerShape(percent = 50))
-                            .background(MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f))
+                            .background(
+                                if (materialEInkMode) {
+                                    MiuixTheme.colorScheme.surfaceContainer
+                                } else {
+                                    MiuixTheme.colorScheme.surfaceContainer.copy(alpha = 0.92f)
+                                },
+                            )
                     },
                 ).padding(start = 4.dp, end = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

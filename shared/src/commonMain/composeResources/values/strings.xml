@@ -122,6 +122,10 @@
     <string name="appearance_monet_title">Monet colors</string>
     <string name="appearance_monet_summary">Use dynamic colors from the system wallpaper</string>
     <string name="appearance_monet_key_color_title">Key color</string>
+    <string name="appearance_material_eink_mode_title">E-ink mode</string>
+    <string name="appearance_material_eink_mode_summary">Reduce Material UI saturation, blur, shadows, and motion while leaving image content unchanged.</string>
+    <string name="appearance_miuix_eink_dialog_title">Miuix does not support E-ink mode</string>
+    <string name="appearance_miuix_eink_dialog_message">E-ink mode is currently enabled. Turn off E-ink mode before switching to Miuix. Because the Miuix engine is not optimized for E-ink devices, display and touch interactions may feel degraded on that kind of hardware.</string>
     <string name="appearance_color_scheme_title">Color scheme</string>
     <string name="appearance_ui_scale_title">Interface scale</string>
     <string name="appearance_ui_scale_summary">Adjust the app interface display scale</string>
@@ -332,6 +336,9 @@
     <string name="theme_follow_system">Follow system</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="theme_follow_system_short">System</string>
+    <string name="theme_light_short">Light</string>
+    <string name="theme_dark_short">Dark</string>
     <string name="theme_engine_miuix">Miuix</string>
     <string name="theme_engine_material">Material</string>
     <string name="reader_theme_follow_app">Follow app theme</string>

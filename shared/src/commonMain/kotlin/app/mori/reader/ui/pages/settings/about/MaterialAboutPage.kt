@@ -24,9 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,7 +50,10 @@ import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.mori_app_icon
 import app.mori.reader.ui.components.material.MaterialBackButton
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
+import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import app.mori.reader.ui.components.settings.materialSettingsSegmentedItemShape
+import app.mori.reader.ui.theme.MoriTheme
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -135,6 +136,12 @@ private fun MaterialAppIdentityHeader(
     appName: String,
     versionText: String,
 ) {
+    val iconBackgroundColor =
+        if (MoriTheme.materialEInkMode) {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        } else {
+            Color(0xFF3DDC84)
+        }
     Column(
         modifier =
             Modifier
@@ -147,7 +154,7 @@ private fun MaterialAppIdentityHeader(
                 Modifier
                     .size(96.dp)
                     .clip(RoundedCornerShape(26.dp))
-                    .background(Color(0xFF3DDC84)),
+                    .background(iconBackgroundColor),
             contentAlignment = Alignment.Center,
         ) {
             Image(
@@ -179,14 +186,12 @@ private fun MaterialAboutActionCard(
     actions: List<AboutAction>,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
+    MaterialSettingsGroup(modifier = modifier) {
         actions.forEachIndexed { index, action ->
             MaterialAboutActionRow(
                 action = action,
                 shape = materialSettingsSegmentedItemShape(index = index, count = actions.size),
+                showDivider = index > 0,
             )
         }
     }
@@ -196,11 +201,12 @@ private fun MaterialAboutActionCard(
 private fun MaterialAboutActionRow(
     action: AboutAction,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         modifier =
             Modifier
                 .fillMaxWidth()

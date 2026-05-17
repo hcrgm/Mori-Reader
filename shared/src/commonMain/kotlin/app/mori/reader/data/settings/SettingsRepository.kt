@@ -80,6 +80,7 @@ class SettingsRepository(
                                     ?: ReaderThemeMode.FollowApp,
                             monetEnabled = preferences[Keys.MonetEnabled] ?: false,
                             monetKeyColor = preferences[Keys.MonetKeyColor] ?: 0L,
+                            materialEInkMode = preferences[Keys.MaterialEInkMode] ?: false,
                             blurEnabled = preferences[Keys.BlurEnabled] ?: true,
                             readerFullscreen = preferences[Keys.ReaderFullscreen] ?: false,
                         ),
@@ -199,6 +200,10 @@ class SettingsRepository(
 
     suspend fun setMonetKeyColor(value: Long) {
         dataStore.edit { it[Keys.MonetKeyColor] = value.coerceAtLeast(0L) }
+    }
+
+    suspend fun setMaterialEInkMode(enabled: Boolean) {
+        dataStore.edit { it[Keys.MaterialEInkMode] = enabled }
     }
 
     suspend fun setMaxResults(value: Int) {
@@ -460,6 +465,7 @@ private object Keys {
     val ReaderThemeMode = stringPreferencesKey("reader_theme_mode")
     val MonetEnabled = booleanPreferencesKey("monet_enabled")
     val MonetKeyColor = longPreferencesKey("monet_key_color")
+    val MaterialEInkMode = booleanPreferencesKey("material_eink_mode")
     val BlurEnabled = booleanPreferencesKey("blur_enabled")
     val MaxResults = intPreferencesKey("dictionary_max_results")
     val ScanLength = intPreferencesKey("dictionary_scan_length")

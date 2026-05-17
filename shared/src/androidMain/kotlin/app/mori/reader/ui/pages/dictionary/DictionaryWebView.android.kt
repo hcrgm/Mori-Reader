@@ -62,6 +62,7 @@ actual fun DictionaryWebView(
     val harmonicFrequency = config.harmonicFrequency
     val deduplicatePitchAccents = config.deduplicatePitchAccents
     val isDark = config.isDark
+    val eInkMode = config.eInkMode
     val audioSources = config.audioSources
     val audioEnableAutoplay = config.audioEnableAutoplay
     val audioPlaybackMode = config.audioPlaybackMode
@@ -69,6 +70,7 @@ actual fun DictionaryWebView(
     val contentBottomPadding = config.contentBottomPadding
     val edgeToEdgeContent = config.edgeToEdgeContent
     val transparentBackground = config.transparentBackground
+    val eInkEntryBorderEnabled = config.eInkEntryBorderEnabled
     val enableInternalPopup = config.enableInternalPopup
     val swipeDismissThreshold = config.swipeDismissThreshold
     val ankiNeedsAudio = config.ankiNeedsAudio
@@ -114,12 +116,14 @@ actual fun DictionaryWebView(
             harmonicFrequency,
             deduplicatePitchAccents,
             isDark,
+            eInkMode,
             audioSources,
             audioEnableAutoplay,
             audioPlaybackMode,
             contentBottomPadding,
             edgeToEdgeContent,
             transparentBackground,
+            eInkEntryBorderEnabled,
             enableInternalPopup,
             swipeDismissThreshold,
             ankiNeedsAudio,
@@ -149,12 +153,14 @@ actual fun DictionaryWebView(
                 harmonicFrequency = harmonicFrequency,
                 deduplicatePitchAccents = deduplicatePitchAccents,
                 isDark = isDark,
+                eInkMode = eInkMode,
                 audioSources = audioSources.filter { it.isEnabled }.map { it.url },
                 audioEnableAutoplay = audioEnableAutoplay,
                 audioPlaybackMode = audioPlaybackMode.wireName,
                 bottomPadding = if (edgeToEdgeContent) contentBottomPadding.value else contentBottomPadding.value + 18f,
                 edgeToEdgeContent = edgeToEdgeContent,
                 transparentBackground = transparentBackground,
+                eInkEntryBorderEnabled = eInkEntryBorderEnabled,
                 enableInternalPopup = enableInternalPopup,
                 swipeDismissThreshold = swipeDismissThreshold,
                 ankiNeedsAudio = ankiNeedsAudio,

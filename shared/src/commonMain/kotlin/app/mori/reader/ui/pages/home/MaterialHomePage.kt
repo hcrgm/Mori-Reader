@@ -3,7 +3,6 @@ package app.mori.reader.ui.pages.home
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -11,15 +10,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Sort
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.MoreVert
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +33,10 @@ import app.mori.reader.shared.generated.resources.cd_import_book
 import app.mori.reader.shared.generated.resources.cd_sort_by
 import app.mori.reader.shared.generated.resources.home_sort_recent
 import app.mori.reader.shared.generated.resources.home_sort_title
+import app.mori.reader.ui.components.material.MaterialDropdownMenu
+import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.theme.MoriTheme
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -56,10 +55,11 @@ internal fun MaterialHomePageScaffold(
     content: @Composable (PaddingValues) -> Unit,
 ) {
     var sortMenuExpanded by remember { mutableStateOf(false) }
+    val blurEnabled = settings.appearance.blurEnabled && !MoriTheme.materialEInkMode
 
     MoriPageScaffold(
         title = title,
-        blurEnabled = settings.appearance.blurEnabled,
+        blurEnabled = blurEnabled,
         fixedPadding = fixedPadding,
         navigationIcon = {
             Box {
@@ -69,36 +69,18 @@ internal fun MaterialHomePageScaffold(
                         contentDescription = stringResource(Res.string.cd_sort_by),
                     )
                 }
-                DropdownMenu(
+                MaterialDropdownMenu(
                     expanded = sortMenuExpanded,
                     onDismissRequest = { sortMenuExpanded = false },
-                ) {
-                    BookshelfSortMode.entries.forEach { option ->
-                        DropdownMenuItem(
-                            text = {
-                                Text(
-                                    text =
-                                        when (option) {
-                                            BookshelfSortMode.Recent -> stringResource(Res.string.home_sort_recent)
-                                            BookshelfSortMode.Title -> stringResource(Res.string.home_sort_title)
-                                        },
-                                )
-                            },
-                            onClick = {
-                                onSetSortMode(option)
-                                sortMenuExpanded = false
-                            },
-                            leadingIcon = {
-                                if (currentSortMode == option) {
-                                    VerticalDivider(
-                                        modifier = Modifier.height(24.dp),
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            },
-                        )
-                    }
-                }
+                    options =
+                        BookshelfSortMode.entries.map { option ->
+                            MaterialDropdownMenuOption(
+                                label = option.label(),
+                                selected = currentSortMode == option,
+                                onSelected = { onSetSortMode(option) },
+                            )
+                        },
+                )
             }
         },
         actions = {
@@ -134,7 +116,7 @@ internal fun MaterialHomePageScaffold(
                             .fillMaxWidth()
                             .padding(horizontal = HomeHorizontalPadding),
                     containerColor =
-                        if (settings.appearance.blurEnabled) {
+                        if (blurEnabled) {
                             Color.Transparent
                         } else {
                             MaterialTheme.colorScheme.surface
@@ -163,3 +145,10 @@ internal fun MaterialHomePageScaffold(
         content(paddingValues)
     }
 }
+
+@Composable
+private fun BookshelfSortMode.label(): String =
+    when (this) {
+        BookshelfSortMode.Recent -> stringResource(Res.string.home_sort_recent)
+        BookshelfSortMode.Title -> stringResource(Res.string.home_sort_title)
+    }

@@ -13,15 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -43,8 +38,12 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.settings_reader_title
 import app.mori.reader.ui.components.material.MaterialBackButton
+import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
+import app.mori.reader.ui.components.material.MaterialDropdownSelectorRow
 import app.mori.reader.ui.components.material.MaterialExpressiveSwitch
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
+import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -102,11 +101,12 @@ private fun MaterialReaderSection(
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelLarge,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        MaterialSettingsGroup {
             items.forEachIndexed { index, item ->
                 MaterialReaderRow(
                     item = item,
                     shape = materialReaderSegmentedItemShape(index = index, count = items.size),
+                    showDivider = index > 0,
                 )
             }
         }
@@ -117,11 +117,12 @@ private fun MaterialReaderSection(
 private fun MaterialReaderRow(
     item: MaterialReaderItem,
     shape: Shape,
+    showDivider: Boolean,
 ) {
     when (item) {
-        is MaterialReaderItem.Choice -> MaterialReaderChoiceRow(item = item, shape = shape)
-        is MaterialReaderItem.Slider -> MaterialReaderSliderRow(item = item, shape = shape)
-        is MaterialReaderItem.Switch -> MaterialReaderSwitchRow(item = item, shape = shape)
+        is MaterialReaderItem.Choice -> MaterialReaderChoiceRow(item = item, shape = shape, showDivider = showDivider)
+        is MaterialReaderItem.Slider -> MaterialReaderSliderRow(item = item, shape = shape, showDivider = showDivider)
+        is MaterialReaderItem.Switch -> MaterialReaderSwitchRow(item = item, shape = shape, showDivider = showDivider)
     }
 }
 
@@ -129,68 +130,40 @@ private fun MaterialReaderRow(
 private fun MaterialReaderChoiceRow(
     item: MaterialReaderItem.Choice,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box {
-        Surface(
-            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            shape = shape,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(shape)
-                    .clickable { expanded = true },
-        ) {
-            ListItem(
-                headlineContent = { Text(text = item.title) },
-                supportingContent = { item.summary?.let { Text(text = it) } },
-                trailingContent = {
-                    Box {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = item.selectedLabel,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                        ) {
-                            item.options.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(text = option.label) },
-                                    onClick = {
-                                        option.onSelected()
-                                        expanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-        }
-    }
+    MaterialDropdownSelectorRow(
+        title = item.title,
+        summary = item.summary,
+        selectedLabel = item.selectedLabel,
+        options =
+            item.options.map { option ->
+                MaterialDropdownMenuOption(
+                    label = option.label,
+                    selected = option.selected,
+                    onSelected = option.onSelected,
+                )
+            },
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(shape),
+    )
 }
 
 @Composable
 private fun MaterialReaderSwitchRow(
     item: MaterialReaderItem.Switch,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -215,13 +188,14 @@ private fun MaterialReaderSwitchRow(
 private fun MaterialReaderSliderRow(
     item: MaterialReaderItem.Slider,
     shape: Shape,
+    showDivider: Boolean,
 ) {
     var sliderValue by remember(item.value) { mutableFloatStateOf(item.value) }
 
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         modifier = Modifier.fillMaxWidth(),
     ) {
         Column(

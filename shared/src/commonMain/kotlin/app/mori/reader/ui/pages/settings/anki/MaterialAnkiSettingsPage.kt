@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Edit
@@ -35,10 +34,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -96,7 +93,13 @@ import app.mori.reader.shared.generated.resources.btn_close
 import app.mori.reader.shared.generated.resources.btn_refresh
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.value_none
+import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
+import app.mori.reader.ui.components.material.MaterialDropdownSelectorRow
+import app.mori.reader.ui.components.material.materialCardBorder
+import app.mori.reader.ui.components.material.materialCardContainerColor
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
+import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import app.mori.reader.ui.text.asString
 import org.jetbrains.compose.resources.stringResource
 
@@ -172,26 +175,30 @@ internal fun MaterialAnkiSettingsPage(
                     MaterialAnkiPickerRow(
                         title = stringResource(Res.string.anki_connection_mode_title),
                         summary = ankiState.settings.connectionMode.label(),
-                        items = capabilities.availableModes,
-                        itemLabel = { it.label() },
-                        onItemSelected = { onIntent(AnkiIntent.SetConnectionMode(it)) },
+                        options =
+                            capabilities.availableModes.map { mode ->
+                                MaterialDropdownMenuOption(
+                                    label = mode.label(),
+                                    selected = mode == ankiState.settings.connectionMode,
+                                    onSelected = { onIntent(AnkiIntent.SetConnectionMode(mode)) },
+                                )
+                            },
                         shape =
                             if (ankiState.settings.connectionMode == AnkiConnectionMode.AnkiConnect) {
                                 materialAnkiSegmentedItemShape(index = 0, count = 3)
                             } else {
                                 materialAnkiSegmentedItemShape(index = 0, count = 2)
                             },
+                        showDivider = false,
                     )
                     AnimatedVisibility(
                         visible = ankiState.settings.connectionMode == AnkiConnectionMode.AnkiConnect,
                         enter = expandVertically() + fadeIn(),
                         exit = shrinkVertically() + fadeOut(),
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        MaterialAnkiRowSurface(
                             shape = materialAnkiSegmentedItemShape(index = 1, count = 3),
-                            modifier = Modifier.fillMaxWidth(),
+                            showDivider = true,
                         ) {
                             Column(
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -220,16 +227,14 @@ internal fun MaterialAnkiSettingsPage(
                             }
                         }
                     }
-                    Surface(
-                        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-                        contentColor = MaterialTheme.colorScheme.onSurface,
+                    MaterialAnkiRowSurface(
                         shape =
                             if (ankiState.settings.connectionMode == AnkiConnectionMode.AnkiConnect) {
                                 materialAnkiSegmentedItemShape(index = 2, count = 3)
                             } else {
                                 materialAnkiSegmentedItemShape(index = 1, count = 2)
                             },
-                        modifier = Modifier.fillMaxWidth(),
+                        showDivider = true,
                     ) {
                         FilledTonalButton(
                             enabled = !ankiState.isFetching,
@@ -276,6 +281,7 @@ internal fun MaterialAnkiSettingsPage(
                                 onIntent(AnkiIntent.SetTags(value.split(Regex("\\s+"))))
                             },
                             shape = materialAnkiSegmentedItemShape(index = 2, count = fieldMappingRows),
+                            showDivider = true,
                         )
                         MaterialFieldMappingEditor(
                             fields = ankiState.editableFields(),
@@ -299,6 +305,7 @@ internal fun MaterialAnkiSettingsPage(
                         checked = ankiState.settings.allowDuplicates,
                         onCheckedChange = { onIntent(AnkiIntent.SetAllowDuplicates(it)) },
                         shape = materialAnkiSegmentedItemShape(index = 0, count = 6),
+                        showDivider = false,
                     )
                     MaterialSwitchRow(
                         title = stringResource(Res.string.anki_embed_media_title),
@@ -306,6 +313,7 @@ internal fun MaterialAnkiSettingsPage(
                         checked = ankiState.settings.embedMedia,
                         onCheckedChange = { onIntent(AnkiIntent.SetEmbedMedia(it)) },
                         shape = materialAnkiSegmentedItemShape(index = 1, count = 6),
+                        showDivider = true,
                     )
                     MaterialSwitchRow(
                         title = stringResource(Res.string.anki_compact_glossaries_title),
@@ -313,14 +321,23 @@ internal fun MaterialAnkiSettingsPage(
                         checked = ankiState.settings.compactGlossaries,
                         onCheckedChange = { onIntent(AnkiIntent.SetCompactGlossaries(it)) },
                         shape = materialAnkiSegmentedItemShape(index = 2, count = 6),
+                        showDivider = true,
                     )
                     MaterialAnkiPickerRow(
                         title = stringResource(Res.string.anki_duplicate_scope_title),
                         summary = ankiState.settings.duplicateScope.label(),
-                        items = remember { AnkiDuplicateScope.entries.toList() },
-                        itemLabel = { it.label() },
-                        onItemSelected = { onIntent(AnkiIntent.SetDuplicateScope(it)) },
+                        options =
+                            remember {
+                                AnkiDuplicateScope.entries.toList()
+                            }.map { scope ->
+                                MaterialDropdownMenuOption(
+                                    label = scope.label(),
+                                    selected = scope == ankiState.settings.duplicateScope,
+                                    onSelected = { onIntent(AnkiIntent.SetDuplicateScope(scope)) },
+                                )
+                            },
                         shape = materialAnkiSegmentedItemShape(index = 3, count = 6),
+                        showDivider = true,
                     )
                     MaterialSwitchRow(
                         title = stringResource(Res.string.anki_check_all_models_title),
@@ -328,6 +345,7 @@ internal fun MaterialAnkiSettingsPage(
                         checked = ankiState.settings.checkAllModels,
                         onCheckedChange = { onIntent(AnkiIntent.SetCheckAllModels(it)) },
                         shape = materialAnkiSegmentedItemShape(index = 4, count = 6),
+                        showDivider = true,
                     )
                     MaterialSwitchRow(
                         title = stringResource(Res.string.anki_force_sync_title),
@@ -335,6 +353,7 @@ internal fun MaterialAnkiSettingsPage(
                         checked = ankiState.settings.forceSync,
                         onCheckedChange = { onIntent(AnkiIntent.SetForceSync(it)) },
                         shape = materialAnkiSegmentedItemShape(index = 5, count = 6),
+                        showDivider = true,
                     )
                 }
             }
@@ -361,20 +380,32 @@ private fun MaterialDeckAndModelSelectors(
     MaterialAnkiPickerRow(
         title = stringResource(Res.string.anki_deck_title),
         summary = ankiState.settings.selectedDeck ?: stringResource(Res.string.anki_no_decks),
-        items = decks,
-        itemLabel = { it.name },
+        options =
+            decks.map { deck ->
+                MaterialDropdownMenuOption(
+                    label = deck.name,
+                    selected = deck.name == ankiState.settings.selectedDeck,
+                    onSelected = { onIntent(AnkiIntent.SelectDeck(deck.name)) },
+                )
+            },
         enabled = decks.isNotEmpty(),
-        onItemSelected = { onIntent(AnkiIntent.SelectDeck(it.name)) },
         shape = materialAnkiSegmentedItemShape(index = 0, count = totalRows),
+        showDivider = false,
     )
     MaterialAnkiPickerRow(
         title = stringResource(Res.string.anki_model_title),
         summary = ankiState.settings.selectedNoteType ?: stringResource(Res.string.anki_no_models),
-        items = noteTypes,
-        itemLabel = { it.name },
+        options =
+            noteTypes.map { noteType ->
+                MaterialDropdownMenuOption(
+                    label = noteType.name,
+                    selected = noteType.name == ankiState.settings.selectedNoteType,
+                    onSelected = { onIntent(AnkiIntent.SelectNoteType(noteType.name)) },
+                )
+            },
         enabled = noteTypes.isNotEmpty(),
-        onItemSelected = { onIntent(AnkiIntent.SelectNoteType(it.name)) },
         shape = materialAnkiSegmentedItemShape(index = 1, count = totalRows),
+        showDivider = true,
     )
 }
 
@@ -391,6 +422,7 @@ private fun MaterialFieldMappingEditor(
     if (fields.isEmpty()) {
         MaterialAnkiRowSurface(
             shape = materialAnkiSegmentedItemShape(index = rowStartIndex, count = totalRows),
+            showDivider = rowStartIndex > 0,
         ) {
             Text(
                 text = stringResource(Res.string.anki_no_fields),
@@ -403,6 +435,7 @@ private fun MaterialFieldMappingEditor(
         fields.forEachIndexed { index, field ->
             MaterialAnkiRowSurface(
                 shape = materialAnkiSegmentedItemShape(index = rowStartIndex + index, count = totalRows),
+                showDivider = rowStartIndex + index > 0,
                 onClick = { editingField = field },
             ) {
                 ListItem(
@@ -450,10 +483,12 @@ private fun MaterialTagRow(
     tags: List<String>,
     onValueChange: (String) -> Unit,
     shape: Shape = MaterialTheme.shapes.large,
+    showDivider: Boolean = false,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     MaterialAnkiRowSurface(
         shape = shape,
+        showDivider = showDivider,
         onClick = { showDialog = true },
     ) {
         ListItem(
@@ -576,57 +611,24 @@ private fun MaterialFieldMappingDialog(
 }
 
 @Composable
-private fun <T> MaterialAnkiPickerRow(
+private fun MaterialAnkiPickerRow(
     title: String,
     summary: String,
-    items: List<T>,
-    itemLabel: @Composable (T) -> String,
-    onItemSelected: (T) -> Unit,
+    options: List<MaterialDropdownMenuOption>,
     enabled: Boolean = true,
     shape: Shape = MaterialTheme.shapes.large,
+    showDivider: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    Box {
-        MaterialAnkiRowSurface(
-            shape = shape,
-            onClick = if (enabled && items.isNotEmpty()) ({ expanded = true }) else null,
-        ) {
-            ListItem(
-                headlineContent = { Text(text = title) },
-                supportingContent = {
-                    Text(
-                        text = summary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                trailingContent = {
-                    Box {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                        ) {
-                            items.forEach { item ->
-                                DropdownMenuItem(
-                                    text = { Text(text = itemLabel(item)) },
-                                    onClick = {
-                                        onItemSelected(item)
-                                        expanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-        }
-    }
+    MaterialDropdownSelectorRow(
+        title = title,
+        summary = summary,
+        selectedLabel = summary,
+        options = options,
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+        enabled = enabled,
+    )
 }
 
 @Composable
@@ -636,9 +638,11 @@ private fun MaterialSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     shape: Shape = MaterialTheme.shapes.large,
+    showDivider: Boolean = false,
 ) {
     MaterialAnkiRowSurface(
         shape = shape,
+        showDivider = showDivider,
         onClick = { onCheckedChange(!checked) },
     ) {
         ListItem(
@@ -665,6 +669,7 @@ private fun MaterialAnkiInfoCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
+        border = materialCardBorder(),
         colors =
             CardDefaults.cardColors(
                 containerColor =
@@ -759,29 +764,22 @@ private fun MaterialAnkiSection(
 
 @Composable
 private fun MaterialAnkiSegmentedColumn(content: @Composable ColumnScope.() -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp), content = content)
+    MaterialSettingsGroup(content = content)
 }
 
 @Composable
 private fun MaterialAnkiRowSurface(
     shape: Shape = MaterialTheme.shapes.large,
+    showDivider: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (onClick != null) {
-                        Modifier.clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    },
-                ),
+        groupedInSection = true,
+        showDivider = showDivider,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
     ) {
         content()
     }
@@ -812,13 +810,13 @@ private fun materialAnkiSegmentedItemShape(
         }
 
         else -> {
-            RoundedCornerShape(4.dp)
+            MaterialTheme.shapes.extraSmall
         }
     }
 
 @Composable
 private fun materialInfoCardContainerColor(): Color =
-    MaterialTheme.colorScheme.secondaryContainer
+    materialCardContainerColor(defaultColor = MaterialTheme.colorScheme.secondaryContainer)
 
 @Composable
 private fun AnkiDuplicateScope.label(): String =

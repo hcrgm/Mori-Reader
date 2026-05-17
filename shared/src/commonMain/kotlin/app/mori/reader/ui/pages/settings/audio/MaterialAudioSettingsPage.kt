@@ -2,7 +2,6 @@ package app.mori.reader.ui.pages.settings.audio
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,15 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -77,8 +73,13 @@ import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.cd_delete_source
 import app.mori.reader.shared.generated.resources.cd_drag_sort
 import app.mori.reader.ui.components.material.MaterialBackButton
+import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
+import app.mori.reader.ui.components.material.MaterialDropdownSelectorRow
 import app.mori.reader.ui.components.material.MaterialExpressiveSwitch
+import app.mori.reader.ui.components.material.materialCardBorder
+import app.mori.reader.ui.components.material.materialCardContainerColor
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
 import app.mori.reader.ui.components.settings.MaterialSettingsSection
 import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import app.mori.reader.ui.components.settings.materialSettingsSegmentedItemShape
@@ -189,56 +190,32 @@ private fun MaterialPlaybackCard(
     onIntent: (SettingsIntent) -> Unit,
 ) {
     val modes = remember { AudioPlaybackMode.entries.toList() }
-    var menuExpanded by remember { mutableStateOf(false) }
 
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    MaterialSettingsGroup {
         MaterialSwitchRow(
             title = stringResource(Res.string.audio_auto_play_title),
             summary = stringResource(Res.string.audio_auto_play_summary),
             checked = settings.audio.enableAutoplay,
             shape = materialSettingsSegmentedItemShape(index = 0, count = 2),
+            showDivider = false,
             onCheckedChange = { onIntent(SettingsIntent.SetAudioEnableAutoplay(it)) },
         )
-        MaterialSettingsSurface(
-            shape = materialSettingsSegmentedItemShape(index = 1, count = 2),
-            onClick = { menuExpanded = true },
-        ) {
-            ListItem(
-                headlineContent = { Text(text = stringResource(Res.string.audio_background_title)) },
-                supportingContent = { Text(text = settings.audio.playbackMode.localizedLabel()) },
-                trailingContent = {
-                    Box {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = settings.audio.playbackMode.localizedLabel(),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                        ) {
-                            modes.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(text = mode.localizedLabel()) },
-                                    onClick = {
-                                        onIntent(SettingsIntent.SetAudioPlaybackMode(mode))
-                                        menuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
+        MaterialDropdownSelectorRow(
+            title = stringResource(Res.string.audio_background_title),
+            summary = settings.audio.playbackMode.localizedLabel(),
+            selectedLabel = settings.audio.playbackMode.localizedLabel(),
+            options =
+                modes.map { mode ->
+                    MaterialDropdownMenuOption(
+                        label = mode.localizedLabel(),
+                        selected = mode == settings.audio.playbackMode,
+                        onSelected = { onIntent(SettingsIntent.SetAudioPlaybackMode(mode)) },
+                    )
                 },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-        }
+            shape = materialSettingsSegmentedItemShape(index = 1, count = 2),
+            groupedInSection = true,
+            showDivider = true,
+        )
     }
 }
 
@@ -375,6 +352,7 @@ private fun MaterialLocalAudioDescriptionCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
+        border = materialCardBorder(),
         colors =
             CardDefaults.cardColors(
                 containerColor = materialInfoCardContainerColor(),
@@ -449,10 +427,13 @@ private fun MaterialSwitchRow(
     summary: String,
     checked: Boolean,
     shape: Shape,
+    showDivider: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         onClick = { onCheckedChange(!checked) },
     ) {
         ListItem(
@@ -571,4 +552,4 @@ private fun MaterialAudioSectionTitle(text: String) {
 
 @Composable
 private fun materialInfoCardContainerColor(): Color =
-    MaterialTheme.colorScheme.secondaryContainer
+    materialCardContainerColor(defaultColor = MaterialTheme.colorScheme.secondaryContainer)

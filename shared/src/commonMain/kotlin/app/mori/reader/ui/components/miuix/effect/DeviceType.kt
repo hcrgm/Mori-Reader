@@ -1,7 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
-// SPDX-License-Identifier: Apache-2.0
-
-package component.effect
+package app.mori.reader.ui.components.miuix.effect
 
 enum class DeviceType {
     PHONE,

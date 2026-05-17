@@ -50,9 +50,9 @@ import app.mori.reader.shared.generated.resources.about_version
 import app.mori.reader.shared.generated.resources.about_view_source
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.mori_app_icon
+import app.mori.reader.ui.components.miuix.effect.BgEffectBackground
+import app.mori.reader.ui.components.miuix.effect.ColorBlendToken
 import app.mori.reader.ui.theme.isMoriDarkTheme
-import component.blend.ColorBlendToken
-import component.effect.BgEffectBackground
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -224,7 +224,6 @@ private fun AboutContent(
     ) {
         BgEffectBackground(
             dynamicBackground = dynamicBackground,
-            isOs3Effect = true,
             isFullSize = true,
             modifier = Modifier.fillMaxSize(),
             bgModifier = if (backdrop != null) Modifier.layerBackdrop(backdrop) else Modifier,
@@ -331,8 +330,7 @@ private fun MiuixAboutLogoHeader(
                         alpha = 1 - iconProgress
                         scaleX = 1 - (iconProgress * 0.05f)
                         scaleY = 1 - (iconProgress * 0.05f)
-                    }
-                    .background(Color(0xFF3DDC84)),
+                    }.background(Color(0xFF3DDC84)),
         ) {
             Image(
                 modifier = Modifier.size(74.dp),

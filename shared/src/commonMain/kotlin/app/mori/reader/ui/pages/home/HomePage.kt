@@ -115,9 +115,16 @@ fun HomePage(
     }
 
     val title = stringResource(Res.string.tab_bookshelf)
+    val reduceMotion =
+        MoriTheme.uiThemeEngine == UiThemeEngine.Material &&
+            MoriTheme.materialEInkMode
     val onSelectTab: (Int) -> Unit = { index ->
         tabCoroutineScope.launch {
-            pagerState.animateScrollToPage(index)
+            if (reduceMotion) {
+                pagerState.scrollToPage(index)
+            } else {
+                pagerState.animateScrollToPage(index)
+            }
         }
     }
     val bookshelfContent:

@@ -1,7 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
-// SPDX-License-Identifier: Apache-2.0
-
-package component.effect
+package app.mori.reader.ui.components.miuix.effect
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
@@ -28,7 +25,6 @@ fun BgEffectBackground(
     bgModifier: Modifier = Modifier,
     isFullSize: Boolean = false,
     effectBackground: Boolean = true,
-    isOs3Effect: Boolean = true,
     alpha: () -> Float = { 1f },
     content: @Composable (BoxScope.() -> Unit),
 ) {
@@ -43,18 +39,19 @@ fun BgEffectBackground(
         val surface = MiuixTheme.colorScheme.surface
         val deviceType = if (shouldShowWideLayout()) DeviceType.PAD else DeviceType.PHONE
         val isDarkTheme = isMoriDarkTheme()
-        val painter = remember(isOs3Effect) { BgEffectPainter(isOs3Effect) }
+        val painter = BgEffectPainter()
 
         val preset =
-            remember(deviceType, isDarkTheme, isOs3Effect) {
-                BgEffectConfig.get(deviceType, isDarkTheme, isOs3Effect)
+            remember(deviceType, isDarkTheme) {
+                BgEffectConfig.get(deviceType, isDarkTheme)
             }
 
         val colorStage = remember { Animatable(0f) }
 
         LaunchedEffect(dynamicBackground, preset) {
             if (!dynamicBackground) return@LaunchedEffect
-            val animatesColors = preset.colors1 !== preset.colors2 || preset.colors2 !== preset.colors3
+            val animatesColors =
+                preset.colors1 !== preset.colors2 || preset.colors2 !== preset.colors3
             if (!animatesColors) return@LaunchedEffect
 
             var targetStage = floor(colorStage.value) + 1f

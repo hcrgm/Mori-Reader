@@ -16,6 +16,7 @@ data class AppearanceSettings(
     val readerThemeMode: ReaderThemeMode = ReaderThemeMode.FollowApp,
     val monetEnabled: Boolean = false,
     val monetKeyColor: Long = 0L,
+    val materialEInkMode: Boolean = false,
     val blurEnabled: Boolean = true,
     val readerFullscreen: Boolean = false,
 )

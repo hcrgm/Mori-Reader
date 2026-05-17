@@ -47,6 +47,10 @@ sealed interface SettingsIntent {
         val color: Long,
     ) : SettingsIntent
 
+    data class SetMaterialEInkMode(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
     data class SetReaderFullscreen(
         val enabled: Boolean,
     ) : SettingsIntent

@@ -33,6 +33,8 @@ import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
+import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
@@ -103,14 +105,12 @@ private fun MaterialSegmentedColumn(
     entries: List<SettingsEntry>,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-    ) {
+    MaterialSettingsGroup(modifier = modifier) {
         entries.forEachIndexed { index, entry ->
             MaterialSettingsEntry(
                 entry = entry,
                 shape = segmentedItemShape(index = index, count = entries.size),
+                showDivider = index > 0,
             )
         }
     }
@@ -120,11 +120,12 @@ private fun MaterialSegmentedColumn(
 private fun MaterialSettingsEntry(
     entry: SettingsEntry,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         modifier =
             Modifier
                 .fillMaxWidth()

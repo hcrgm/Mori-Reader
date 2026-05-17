@@ -1,5 +1,6 @@
 package app.mori.reader.ui.pages.home
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -15,11 +16,14 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +43,10 @@ import app.mori.reader.shared.generated.resources.home_empty_category
 import app.mori.reader.shared.generated.resources.home_empty_category_hint
 import app.mori.reader.shared.generated.resources.home_importing
 import app.mori.reader.shared.generated.resources.home_loading
+import app.mori.reader.ui.components.navigation.eInkPagerSwipeModifier
 import app.mori.reader.ui.text.asString
 import app.mori.reader.ui.theme.MoriTheme
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
 import top.yukonga.miuix.kmp.basic.CardDefaults
@@ -71,15 +77,39 @@ fun BookshelfContent(
     onBookshelfIntent: (BookshelfIntent) -> Unit,
     onOpenBook: (String) -> Unit,
 ) {
+    val reduceMotion =
+        MoriTheme.uiThemeEngine == UiThemeEngine.Material &&
+            MoriTheme.materialEInkMode
+    val defaultOverscrollEffect = rememberOverscrollEffect()
+    val defaultFlingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+    val pagerCoroutineScope = rememberCoroutineScope()
+    val instantFlingBehavior =
+        PagerDefaults.flingBehavior(
+            state = pagerState,
+            snapAnimationSpec = tween(durationMillis = 0),
+        )
+    val flingBehavior = if (reduceMotion) instantFlingBehavior else defaultFlingBehavior
     HorizontalPager(
         state = pagerState,
         modifier =
             Modifier
                 .fillMaxSize()
-                .padding(horizontal = HomeHorizontalPadding + HomeTabInnerPadding),
+                .padding(horizontal = HomeHorizontalPadding + HomeTabInnerPadding)
+                .eInkPagerSwipeModifier(
+                    enabled = reduceMotion,
+                    currentPage = pagerState.currentPage,
+                    pageCount = categoryIds.size,
+                    onPageChange = { page ->
+                        pagerCoroutineScope.launch {
+                            pagerState.scrollToPage(page)
+                        }
+                    },
+                ),
         beyondViewportPageCount = 1,
         pageSpacing = HomePageSpacing,
-        userScrollEnabled = true,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = !reduceMotion,
+        overscrollEffect = if (reduceMotion) null else defaultOverscrollEffect,
         key = { page -> categoryIds.getOrNull(page) ?: "all" },
     ) { page ->
         val gridState = rememberLazyGridState()

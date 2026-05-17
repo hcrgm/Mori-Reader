@@ -60,6 +60,7 @@ import top.yukonga.miuix.kmp.window.WindowBottomSheet
 internal fun ReaderSasayakiSheet(
     show: Boolean,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     player: SasayakiPlayerSnapshot,
@@ -103,6 +104,7 @@ internal fun ReaderSasayakiSheet(
     }
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
@@ -170,6 +172,7 @@ internal fun ReaderSasayakiSheet(
                             Spacer(Modifier.width(14.dp))
                             FloatingReaderButton(
                                 isDark = isDark,
+                                materialEInkMode = materialEInkMode,
                                 onClick = onPlayPause,
                                 enabled = playerEnabled,
                             ) {

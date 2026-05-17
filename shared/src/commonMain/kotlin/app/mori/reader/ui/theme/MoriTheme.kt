@@ -19,17 +19,24 @@ object MoriTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalMoriThemeMode.current
+
+    val materialEInkMode: Boolean
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalMoriMaterialEInkMode.current
 }
 
 @Composable
 internal fun ProvideMoriTheme(
     themeMode: ThemeMode,
     uiThemeEngine: UiThemeEngine,
+    materialEInkMode: Boolean,
     content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         LocalMoriThemeMode provides themeMode,
         LocalMoriUiThemeEngine provides uiThemeEngine,
+        LocalMoriMaterialEInkMode provides materialEInkMode,
         content = content,
     )
 }
@@ -49,4 +56,9 @@ private val LocalMoriUiThemeEngine =
 private val LocalMoriThemeMode =
     staticCompositionLocalOf {
         ThemeMode.System
+    }
+
+private val LocalMoriMaterialEInkMode =
+    staticCompositionLocalOf {
+        false
     }

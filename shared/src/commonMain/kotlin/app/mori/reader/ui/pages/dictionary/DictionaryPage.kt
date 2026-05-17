@@ -17,11 +17,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.anki.AnkiConnectionMode
 import app.mori.reader.data.anki.AnkiMiningContext
 import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.ThemeMode
+import app.mori.reader.data.settings.UiThemeEngine
 import app.mori.reader.features.anki.presentation.AnkiIntent
 import app.mori.reader.features.anki.presentation.AnkiState
 import app.mori.reader.features.dictionary.presentation.DictionaryIntent
@@ -64,12 +66,22 @@ fun DictionaryPage(
     val blurEnabled = settings.appearance.blurEnabled
     val ankiSettings = settings.anki
     val ankiNeedsAudio = ankiSettings.fieldMappings.values.any { it.contains("{audio}") }
-    val contentBackdrop = rememberDictionaryContentBackdrop(blurEnabled)
     val isDark =
         when (settings.appearance.themeMode) {
             ThemeMode.System -> isSystemInDarkTheme()
             ThemeMode.Light -> false
             ThemeMode.Dark -> true
+        }
+    val materialEInkMode =
+        settings.appearance.uiThemeEngine == UiThemeEngine.Material &&
+            settings.appearance.materialEInkMode
+    val effectiveBlurEnabled = blurEnabled && !materialEInkMode
+    val contentBackdrop = rememberDictionaryContentBackdrop(effectiveBlurEnabled)
+    val pageBackground =
+        when {
+            !materialEInkMode -> MiuixTheme.colorScheme.surface
+            isDark -> Color(0xFF000000)
+            else -> Color(0xFFFFFFFF)
         }
 
     LaunchedEffect(shouldComposeWebView) {
@@ -82,7 +94,7 @@ fun DictionaryPage(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(MiuixTheme.colorScheme.surface),
+                .background(pageBackground),
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -122,6 +134,7 @@ fun DictionaryPage(
                                 harmonicFrequency = settings.dictionary.harmonicFrequency,
                                 deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
                                 isDark = isDark,
+                                eInkMode = materialEInkMode,
                                 audioSources = settings.audio.sources,
                                 audioEnableAutoplay = settings.audio.enableAutoplay,
                                 audioPlaybackMode = settings.audio.playbackMode,
@@ -198,7 +211,8 @@ fun DictionaryPage(
             DictionarySearchField(
                 query = query,
                 backdrop = contentBackdrop,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
+                materialEInkMode = materialEInkMode,
                 onQueryChange = { onDictionaryIntent(DictionaryIntent.UpdateQuery(it)) },
                 onSearch = { onDictionaryIntent(DictionaryIntent.ExecuteSearch) },
                 onClear = { onDictionaryIntent(DictionaryIntent.ClearQuery) },
@@ -221,6 +235,7 @@ fun DictionaryPage(
                 settings = settings,
                 ankiDuplicateExpression = ankiState.duplicateExpression,
                 isDark = isDark,
+                materialEInkMode = materialEInkMode,
                 viewportWidth = maxWidth,
                 viewportHeight = maxHeight,
                 topInset =
@@ -228,7 +243,7 @@ fun DictionaryPage(
                         DictionarySearchFieldHeight +
                         DictionarySearchFieldContentGap,
                 bottomInset = bottomPadding + 8.dp,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 backdrop = contentBackdrop,
                 onDictionaryIntent = onDictionaryIntent,
                 onAnkiIntent = onAnkiIntent,

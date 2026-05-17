@@ -57,12 +57,15 @@ internal fun MoriPageScaffold(
     floatingActionButton: @Composable () -> Unit = {},
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ) {
+    val effectiveBlurEnabled =
+        blurEnabled &&
+            !(MoriTheme.uiThemeEngine == UiThemeEngine.Material && MoriTheme.materialEInkMode)
     when (MoriTheme.uiThemeEngine) {
         UiThemeEngine.Miuix -> {
             MiuixMoriPageScaffold(
                 title = title,
                 subtitle = subtitle,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 fixedPadding = fixedPadding,
                 navigationIcon = navigationIcon,
                 actions = actions,
@@ -76,7 +79,7 @@ internal fun MoriPageScaffold(
             MaterialMoriPageScaffold(
                 title = title,
                 subtitle = subtitle,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 fixedPadding = fixedPadding,
                 navigationIcon = navigationIcon,
                 actions = actions,

@@ -3,7 +3,6 @@ package app.mori.reader.ui.components.material
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -29,11 +28,13 @@ fun MaterialExpressiveSwitch(
                 uncheckedIconColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             ),
         thumbContent = {
-            Icon(
-                imageVector = if (checked) Icons.Filled.Check else Icons.Filled.Close,
-                contentDescription = null,
-                modifier = Modifier.size(SwitchDefaults.IconSize),
-            )
+            if (checked) {
+                Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                )
+            }
         },
     )
 }

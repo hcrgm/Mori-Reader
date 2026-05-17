@@ -47,11 +47,13 @@ import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 internal fun ReaderStatus(
     text: String?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
 ) {
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
@@ -72,6 +74,7 @@ internal fun ReaderHeaderInfo(
     title: String,
     progress: String?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     modifier: Modifier = Modifier,
@@ -79,6 +82,7 @@ internal fun ReaderHeaderInfo(
     if (title.isBlank() && progress.isNullOrBlank()) return
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
@@ -113,6 +117,7 @@ internal fun ReaderHeaderInfo(
 @Composable
 internal fun ReaderBottomChrome(
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     bottomPadding: Dp,
@@ -124,11 +129,12 @@ internal fun ReaderBottomChrome(
 ) {
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
         val buttonContentColor = MiuixTheme.colorScheme.onSurface
-        val floatingBackground = floatingReaderContainerColor()
+        val floatingBackground = floatingReaderContainerColor(materialEInkMode)
         Box(
             modifier =
                 modifier
@@ -141,6 +147,7 @@ internal fun ReaderBottomChrome(
         ) {
             FloatingReaderButton(
                 isDark = isDark,
+                materialEInkMode = materialEInkMode,
                 onClick = onBack,
                 modifier =
                     Modifier
@@ -217,19 +224,27 @@ private fun ReaderToolbarButton(
 }
 
 @Composable
-private fun floatingReaderContainerColor(): Color = MiuixTheme.colorScheme.surface.copy(alpha = 0.94f)
+private fun floatingReaderContainerColor(materialEInkMode: Boolean): Color =
+    if (materialEInkMode) {
+        MiuixTheme.colorScheme.surfaceContainerHighest
+    } else {
+        MiuixTheme.colorScheme.surface.copy(alpha = 0.94f)
+    }
 
 @Composable
 internal fun FloatingReaderButton(
     isDark: Boolean,
+    materialEInkMode: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
-    val buttonBackground = floatingReaderContainerColor()
+    val buttonBackground = floatingReaderContainerColor(materialEInkMode)
     val buttonShadow =
-        if (isDark) {
+        if (materialEInkMode) {
+            Color.Transparent
+        } else if (isDark) {
             Color.Black.copy(alpha = 0.34f)
         } else {
             Color(0xFF1C1B18).copy(alpha = 0.16f)
@@ -239,7 +254,7 @@ internal fun FloatingReaderButton(
             modifier
                 .size(52.dp)
                 .shadow(
-                    elevation = 10.dp,
+                    elevation = if (materialEInkMode) 0.dp else 10.dp,
                     shape = CircleShape,
                     spotColor = buttonShadow,
                 ).clip(CircleShape)
@@ -254,20 +269,28 @@ internal fun FloatingReaderButton(
 @Composable
 internal fun ReaderSheetTheme(
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     content: @Composable () -> Unit,
 ) {
     val controller =
-        remember(isDark, monetEnabled, monetKeyColor) {
+        remember(isDark, materialEInkMode, monetEnabled, monetKeyColor) {
             ThemeController(
                 colorSchemeMode =
-                    if (monetEnabled) {
+                    if (materialEInkMode) {
+                        if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light
+                    } else if (monetEnabled) {
                         if (isDark) ColorSchemeMode.MonetDark else ColorSchemeMode.MonetLight
                     } else {
                         if (isDark) ColorSchemeMode.Dark else ColorSchemeMode.Light
                     },
-                keyColor = monetKeyColor.takeIf { it != 0L }?.let(::Color),
+                keyColor =
+                    if (materialEInkMode) {
+                        readerEInkSeedColor(isDark)
+                    } else {
+                        monetKeyColor.takeIf { it != 0L }?.let(::Color)
+                    },
                 colorSpec = ThemeColorSpec.Spec2025,
                 paletteStyle = ThemePaletteStyle.TonalSpot,
             )

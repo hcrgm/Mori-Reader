@@ -10,6 +10,7 @@ internal data class AppearanceSettingsActions(
     val onLanguageModeSelected: (LanguageMode) -> Unit,
     val onMonetEnabledChanged: (Boolean) -> Unit,
     val onMonetKeyColorSelected: (Long) -> Unit,
+    val onMaterialEInkModeChanged: (Boolean) -> Unit,
     val onUiScalePercentChanged: (Int) -> Unit,
     val onBlurEnabledChanged: (Boolean) -> Unit,
 )

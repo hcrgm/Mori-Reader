@@ -33,12 +33,15 @@ internal fun MoriMainTabsScaffold(
     onTabSelected: (AppTab) -> Unit,
     content: @Composable BoxScope.(PaddingValues) -> Unit,
 ) {
+    val effectiveBlurEnabled =
+        blurEnabled &&
+            !(MoriTheme.uiThemeEngine == UiThemeEngine.Material && MoriTheme.materialEInkMode)
     when (MoriTheme.uiThemeEngine) {
         UiThemeEngine.Miuix -> {
             MiuixMoriMainTabsScaffold(
                 selectedTab = selectedTab,
                 isWideScreen = isWideScreen,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 onTabSelected = onTabSelected,
                 content = content,
             )
@@ -48,7 +51,7 @@ internal fun MoriMainTabsScaffold(
             MaterialMoriMainTabsScaffold(
                 selectedTab = selectedTab,
                 isWideScreen = isWideScreen,
-                blurEnabled = blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 onTabSelected = onTabSelected,
                 content = content,
             )

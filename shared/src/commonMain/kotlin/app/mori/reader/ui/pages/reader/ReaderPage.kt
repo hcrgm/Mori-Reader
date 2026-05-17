@@ -83,13 +83,15 @@ fun ReaderPage(
         enabled = fullscreen && !exitingReader,
         onBack = handleBack,
     )
-    val readerBackground = if (isDark) Color(0xFF101010) else Color(0xFFFBFAF7)
+    val materialEInkMode = materialReaderEInkMode(settings)
+    val effectiveBlurEnabled = settings.appearance.blurEnabled && !materialEInkMode
+    val readerBackground = readerBackgroundColor(isDark = isDark, materialEInkMode = materialEInkMode)
     val readerContentTopPadding = if (fullscreen) 52.dp else statusBarPadding + 52.dp
     val readerContentBottomPadding = if (fullscreen) 58.dp else navigationBarPadding + 58.dp
     val readerPopupBottomPadding = readerContentBottomPadding + 24.dp
     val popupBackdrop =
         rememberReaderPopupBackdrop(
-            blurEnabled = settings.appearance.blurEnabled,
+            blurEnabled = effectiveBlurEnabled,
             readerBackground = readerBackground,
         )
     val popupBlurActive = popupBackdrop != null && reader.lookupStack.any { it.visible }
@@ -115,6 +117,7 @@ fun ReaderPage(
                     ReaderStatus(
                         text = stringResource(Res.string.reader_loading_epub),
                         isDark = isDark,
+                        materialEInkMode = materialEInkMode,
                         monetEnabled = settings.appearance.monetEnabled,
                         monetKeyColor = settings.appearance.monetKeyColor,
                     )
@@ -124,6 +127,7 @@ fun ReaderPage(
                     ReaderStatus(
                         text = reader.errorMessage.asString(),
                         isDark = isDark,
+                        materialEInkMode = materialEInkMode,
                         monetEnabled = settings.appearance.monetEnabled,
                         monetKeyColor = settings.appearance.monetKeyColor,
                     )
@@ -133,6 +137,7 @@ fun ReaderPage(
                     ReaderStatus(
                         text = stringResource(Res.string.reader_no_chapter),
                         isDark = isDark,
+                        materialEInkMode = materialEInkMode,
                         monetEnabled = settings.appearance.monetEnabled,
                         monetKeyColor = settings.appearance.monetKeyColor,
                     )
@@ -154,6 +159,7 @@ fun ReaderPage(
                             ReaderWebViewSettings(
                                 verticalWriting = reader.verticalWriting,
                                 isDark = isDark,
+                                eInkMode = materialEInkMode,
                                 scanLength = settings.dictionary.scanLength,
                                 fontSize = settings.reader.fontSize,
                                 lineHeight = settings.reader.lineHeight,
@@ -199,6 +205,7 @@ fun ReaderPage(
                         "${reader.currentCharacter} / ${it.totalCharacterCount} ${reader.progressPercent.formatPercent()}%"
                     },
                 isDark = isDark,
+                materialEInkMode = materialEInkMode,
                 monetEnabled = settings.appearance.monetEnabled,
                 monetKeyColor = settings.appearance.monetKeyColor,
                 modifier =
@@ -213,6 +220,7 @@ fun ReaderPage(
 
             ReaderBottomChrome(
                 isDark = isDark,
+                materialEInkMode = materialEInkMode,
                 monetEnabled = settings.appearance.monetEnabled,
                 monetKeyColor = settings.appearance.monetKeyColor,
                 bottomPadding = if (fullscreen) 0.dp else navigationBarPadding,
@@ -232,6 +240,7 @@ fun ReaderPage(
                 settings = settings,
                 ankiDuplicateExpression = ankiState.duplicateExpression,
                 isDark = isDark,
+                materialEInkMode = materialEInkMode,
                 monetEnabled = settings.appearance.monetEnabled,
                 monetKeyColor = settings.appearance.monetKeyColor,
                 isVertical = index == 0 && reader.verticalWriting,
@@ -239,7 +248,7 @@ fun ReaderPage(
                 viewportHeight = maxHeight,
                 readerTopPadding = readerContentTopPadding,
                 readerBottomPadding = readerPopupBottomPadding,
-                blurEnabled = settings.appearance.blurEnabled,
+                blurEnabled = effectiveBlurEnabled,
                 backdrop = popupBackdrop,
                 onReaderIntent = onReaderIntent,
                 onAnkiIntent = onAnkiIntent,
@@ -252,6 +261,7 @@ fun ReaderPage(
     ReaderChapterSheet(
         show = chaptersOpen,
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = settings.appearance.monetEnabled,
         monetKeyColor = settings.appearance.monetKeyColor,
         title = book?.info?.title.orEmpty(),
@@ -273,6 +283,7 @@ fun ReaderPage(
     ReaderAppearanceSheet(
         show = appearanceOpen,
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = settings.appearance.monetEnabled,
         monetKeyColor = settings.appearance.monetKeyColor,
         readerThemeMode = settings.appearance.readerThemeMode,
@@ -325,6 +336,7 @@ fun ReaderPage(
     ReaderSasayakiSheet(
         show = sasayakiOpen,
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = settings.appearance.monetEnabled,
         monetKeyColor = settings.appearance.monetKeyColor,
         player = reader.sasayakiPlayer,

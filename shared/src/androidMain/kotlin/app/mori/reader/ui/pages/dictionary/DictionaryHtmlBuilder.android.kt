@@ -22,12 +22,14 @@ internal fun dictionaryHtml(
     harmonicFrequency: Boolean,
     deduplicatePitchAccents: Boolean,
     isDark: Boolean,
+    eInkMode: Boolean,
     audioSources: List<String>,
     audioEnableAutoplay: Boolean,
     audioPlaybackMode: String,
     bottomPadding: Float,
     edgeToEdgeContent: Boolean,
     transparentBackground: Boolean,
+    eInkEntryBorderEnabled: Boolean,
     enableInternalPopup: Boolean,
     swipeDismissThreshold: Int,
     ankiNeedsAudio: Boolean,
@@ -60,6 +62,7 @@ internal fun dictionaryHtml(
             bottomPadding,
             edgeToEdgeContent,
             transparentBackground,
+            eInkEntryBorderEnabled,
         )
     }</style>
                     </head>
@@ -81,6 +84,7 @@ internal fun dictionaryHtml(
                     window.harmonicFrequency = $harmonicFrequency;
                     window.deduplicatePitchAccents = $deduplicatePitchAccents;
                     window.isDark = ${WebJson.encodeToString(isDark)};
+                    window.eInkMode = ${WebJson.encodeToString(eInkMode)};
                     window.audioSources = $audioSourcesJson;
                     window.audioEnableAutoplay = $audioEnableAutoplay;
                     window.audioPlaybackMode = ${WebJson.encodeToString(audioPlaybackMode)};
@@ -93,6 +97,7 @@ internal fun dictionaryHtml(
                     window.compactGlossariesAnki = $ankiCompactGlossaries;
                     window.ankiDuplicateExpression = ${WebJson.encodeToString(ankiDuplicateExpression)};
                     document.documentElement.classList.add(window.isDark ? 'dark' : 'light');
+                    if (window.eInkMode) document.documentElement.classList.add('eink');
                     </script>
                     <script>${dictionaryJs(playPronunciationLabel)}</script>
                     </body>
@@ -105,6 +110,7 @@ private fun dictionaryCss(
     bottomPadding: Float,
     edgeToEdgeContent: Boolean,
     transparentBackground: Boolean,
+    eInkEntryBorderEnabled: Boolean,
 ): String {
     val containerPadding = if (edgeToEdgeContent) "0" else "0 2px"
     val pageBackground =
@@ -116,6 +122,22 @@ private fun dictionaryCss(
     val entryBackground =
         if (edgeToEdgeContent || transparentBackground) "transparent" else "var(--mori-entry-bg)"
     val entryRadius = if (edgeToEdgeContent) "0" else "8px"
+    val eInkEntryBorder =
+        if (eInkEntryBorderEnabled) {
+            """
+            :root.eink .entry {
+                border: 2px solid var(--mori-hr-border);
+                border-radius: 0;
+                margin-bottom: 10px;
+            }
+            """.trimIndent()
+        } else {
+            """
+            :root.eink .entry {
+                margin-bottom: 0;
+            }
+            """.trimIndent()
+        }
     val lastEntryMargin =
         if (edgeToEdgeContent) {
             """
@@ -167,6 +189,46 @@ private fun dictionaryCss(
             --mori-popup-shadow: 0 12px 34px rgba(0,0,0,0.48);
             --mori-selection-bg: rgba(255, 213, 84, 0.52);
             --mori-image-overlay: rgba(160,160,160,0.8);
+        }
+        :root.eink {
+            --mori-text: #000000;
+            --mori-text-secondary: #000000;
+            --mori-entry-bg: #ffffff;
+            --mori-audio-button-bg: #ffffff;
+            --mori-audio-button-color: #000000;
+            --mori-tag-bg: #ffffff;
+            --mori-pitch-dict-bg: #000000;
+            --mori-pitch-dict-text: #ffffff;
+            --mori-freq-border: #000000;
+            --mori-freq-dict-bg: #000000;
+            --mori-freq-dict-text: #ffffff;
+            --mori-summary-color: #000000;
+            --mori-hr-border: #000000;
+            --mori-link-color: #000000;
+            --mori-popup-bg: #ffffff;
+            --mori-popup-shadow: none;
+            --mori-selection-bg: rgba(0, 0, 0, 0.18);
+            --mori-image-overlay: rgba(0,0,0,0.9);
+        }
+        :root.dark.eink {
+            --mori-text: #ffffff;
+            --mori-text-secondary: #ffffff;
+            --mori-entry-bg: #000000;
+            --mori-audio-button-bg: #000000;
+            --mori-audio-button-color: #ffffff;
+            --mori-tag-bg: #000000;
+            --mori-pitch-dict-bg: #ffffff;
+            --mori-pitch-dict-text: #000000;
+            --mori-freq-border: #ffffff;
+            --mori-freq-dict-bg: #ffffff;
+            --mori-freq-dict-text: #000000;
+            --mori-summary-color: #ffffff;
+            --mori-hr-border: #ffffff;
+            --mori-link-color: #ffffff;
+            --mori-popup-bg: #000000;
+            --mori-popup-shadow: none;
+            --mori-selection-bg: rgba(255, 255, 255, 0.22);
+            --mori-image-overlay: rgba(255,255,255,0.9);
         }
         @media (prefers-color-scheme: dark) {
             :root:not(.dark):not(.light) {
@@ -241,6 +303,21 @@ private fun dictionaryCss(
         .gloss-sc-table-container { display: block; overflow-x: auto; max-width: 100%; }
         #popup-backdrop { position: fixed; inset: 0; z-index: 10; background: transparent; }
         #popup { position: fixed; left: 10px; right: 10px; max-height: min(54vh, 420px); overflow: auto; z-index: 11; border-radius: 10px; background: var(--mori-popup-bg); box-shadow: var(--mori-popup-shadow); padding: 8px; }
+        :root.eink .audio-button,
+        :root.eink .mine-button,
+        :root.eink .expr-tag,
+        :root.eink .deinflection-tag,
+        :root.eink .frequency-group,
+        :root.eink #popup {
+            border: 1px solid var(--mori-hr-border);
+        }
+        $eInkEntryBorder
+        :root.eink #popup {
+            border-radius: 0;
+        }
+        :root.eink hr {
+            display: none;
+        }
         ::highlight(hoshi-selection) { background: var(--mori-selection-bg); }
         """.trimIndent()
 }

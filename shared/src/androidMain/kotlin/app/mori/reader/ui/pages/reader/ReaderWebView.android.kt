@@ -41,6 +41,7 @@ actual fun ReaderWebView(
     val highlightedSasayakiCueId = state.highlightedSasayakiCueId
     val verticalWriting = config.verticalWriting
     val isDark = config.isDark
+    val eInkMode = config.eInkMode
     val scanLength = config.scanLength
     val fontSize = config.fontSize
     val lineHeight = config.lineHeight
@@ -117,6 +118,7 @@ actual fun ReaderWebView(
                                     fragment = bridge.fragment,
                                     verticalWriting = bridge.verticalWriting,
                                     isDark = bridge.isDark,
+                                    eInkMode = bridge.eInkMode,
                                     fontSize = bridge.fontSize,
                                     lineHeight = bridge.lineHeight,
                                     horizontalPadding = bridge.horizontalPadding,
@@ -203,6 +205,7 @@ actual fun ReaderWebView(
             bridge.fragment = fragment
             bridge.verticalWriting = verticalWriting
             bridge.isDark = isDark
+            bridge.eInkMode = eInkMode
             bridge.scanLength = scanLength
             bridge.fontSize = fontSize
             bridge.lineHeight = lineHeight
@@ -235,6 +238,7 @@ actual fun ReaderWebView(
                     navigationVersion,
                     verticalWriting,
                     isDark,
+                    eInkMode,
                     fontSize,
                     lineHeight,
                     horizontalPadding,
@@ -451,6 +455,7 @@ private class ReaderBridge {
     var fragment: String? = null
     var verticalWriting: Boolean = true
     var isDark: Boolean = false
+    var eInkMode: Boolean = false
     var scanLength: Int = 16
     var fontSize: Int = 22
     var lineHeight: Double = 1.65

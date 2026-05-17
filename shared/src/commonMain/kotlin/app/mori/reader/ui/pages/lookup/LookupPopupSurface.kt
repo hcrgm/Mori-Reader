@@ -1,6 +1,7 @@
 package app.mori.reader.ui.pages.lookup
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -53,6 +54,7 @@ internal fun LookupPopupSurface(
     settings: AppSettings,
     ankiDuplicateExpression: String?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
     zIndex: Float,
@@ -67,7 +69,13 @@ internal fun LookupPopupSurface(
 ) {
     val outsideInteractionSource = remember { MutableInteractionSource() }
     val popupInteractionSource = remember { MutableInteractionSource() }
-    val popupShape = RoundedCornerShape(10.dp)
+    val popupShape =
+        if (materialEInkMode) {
+            RoundedCornerShape(0.dp)
+        } else {
+            RoundedCornerShape(10.dp)
+        }
+    val effectiveBlurEnabled = blurEnabled && !materialEInkMode
     val ankiSettings = settings.anki
     val ankiNeedsAudio = ankiSettings.fieldMappings.values.any { it.contains("{audio}") }
     var canNavigateBack by remember(lookup.id) { mutableStateOf(false) }
@@ -93,10 +101,21 @@ internal fun LookupPopupSurface(
                     .width(layout.width)
                     .height(layout.height)
                     .shadow(
-                        elevation = 18.dp,
+                        elevation = if (materialEInkMode) 0.dp else 18.dp,
                         shape = popupShape,
                         spotColor = Color.Black.copy(alpha = 0.22f),
                     ).clip(popupShape)
+                    .then(
+                        if (materialEInkMode) {
+                            Modifier.border(
+                                width = 2.dp,
+                                color = if (isDark) Color.White else Color.Black,
+                                shape = popupShape,
+                            )
+                        } else {
+                            Modifier
+                        }
+                    )
                     .clickable(
                         interactionSource = popupInteractionSource,
                         indication = null,
@@ -108,7 +127,7 @@ internal fun LookupPopupSurface(
                     Modifier
                         .fillMaxSize()
                         .then(
-                            if (blurEnabled && backdrop != null) {
+                            if (effectiveBlurEnabled && backdrop != null) {
                                 Modifier.textureBlur(
                                     backdrop = backdrop,
                                     shape = popupShape,
@@ -128,7 +147,13 @@ internal fun LookupPopupSurface(
                                         ),
                                 )
                             } else {
-                                Modifier.background(MiuixTheme.colorScheme.surface.copy(alpha = 0.96f))
+                                Modifier.background(
+                                    if (materialEInkMode) {
+                                        MiuixTheme.colorScheme.surface
+                                    } else {
+                                        MiuixTheme.colorScheme.surface.copy(alpha = 0.96f)
+                                    },
+                                )
                             },
                         ),
             )
@@ -136,9 +161,10 @@ internal fun LookupPopupSurface(
                 DictionaryPopupActionBar(
                     canNavigateBack = canNavigateBack,
                     canNavigateForward = canNavigateForward,
-                    blurEnabled = blurEnabled,
+                    blurEnabled = effectiveBlurEnabled,
                     backdrop = backdrop,
                     isDark = isDark,
+                    materialEInkMode = materialEInkMode,
                     onNavigateBack = { navigateBackToken++ },
                     onNavigateForward = { navigateForwardToken++ },
                     onClose = onDismiss,
@@ -168,6 +194,7 @@ internal fun LookupPopupSurface(
                             harmonicFrequency = settings.dictionary.harmonicFrequency,
                             deduplicatePitchAccents = settings.dictionary.deduplicatePitchAccents,
                             isDark = isDark,
+                            eInkMode = materialEInkMode,
                             audioSources = settings.audio.sources,
                             audioEnableAutoplay = settings.audio.enableAutoplay,
                             audioPlaybackMode = settings.audio.playbackMode,
@@ -180,7 +207,8 @@ internal fun LookupPopupSurface(
                                 },
                             contentBottomPadding = 0.dp,
                             edgeToEdgeContent = true,
-                            transparentBackground = blurEnabled,
+                            transparentBackground = effectiveBlurEnabled,
+                            eInkEntryBorderEnabled = false,
                             ankiNeedsAudio = ankiNeedsAudio,
                             ankiAllowDuplicates = ankiSettings.allowDuplicates,
                             ankiUseAnkiConnect = ankiSettings.connectionMode == AnkiConnectionMode.AnkiConnect,

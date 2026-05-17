@@ -17,6 +17,7 @@ data class ReaderWebViewState(
 data class ReaderWebViewSettings(
     val verticalWriting: Boolean = true,
     val isDark: Boolean = false,
+    val eInkMode: Boolean = false,
     val scanLength: Int = 16,
     val fontSize: Int = 22,
     val lineHeight: Double = 1.65,

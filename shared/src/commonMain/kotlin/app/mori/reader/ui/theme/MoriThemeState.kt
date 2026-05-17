@@ -10,6 +10,7 @@ data class MoriThemeState(
     val uiScalePercent: Int,
     val monetEnabled: Boolean,
     val monetKeyColor: Long,
+    val materialEInkMode: Boolean,
     val blurEnabled: Boolean,
 )
 
@@ -20,5 +21,6 @@ fun AppearanceSettings.toMoriThemeState(): MoriThemeState =
         uiScalePercent = uiScalePercent,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
+        materialEInkMode = materialEInkMode,
         blurEnabled = blurEnabled,
     )

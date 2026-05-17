@@ -122,6 +122,10 @@
     <string name="appearance_monet_title">Monet 颜色</string>
     <string name="appearance_monet_summary">使用系统壁纸生成的动态颜色</string>
     <string name="appearance_monet_key_color_title">强调色</string>
+    <string name="appearance_material_eink_mode_title">墨水屏模式</string>
+    <string name="appearance_material_eink_mode_summary">降低 Material 界面的彩度、模糊、阴影和动效；图片内容保持原样。</string>
+    <string name="appearance_miuix_eink_dialog_title">Miuix 不支持墨水屏模式</string>
+    <string name="appearance_miuix_eink_dialog_message">当前已开启墨水屏模式。请先关闭墨水屏模式，再切换到 Miuix。由于 Miuix 引擎没有针对墨水屏设备做优化，在墨水屏设备上使用时，显示和操作体验可能会受影响。</string>
     <string name="appearance_color_scheme_title">色彩搭配</string>
     <string name="appearance_ui_scale_title">界面缩放</string>
     <string name="appearance_ui_scale_summary">调整应用界面显示比例</string>
@@ -332,6 +336,9 @@
     <string name="theme_follow_system">跟随系统</string>
     <string name="theme_light">浅色模式</string>
     <string name="theme_dark">深色模式</string>
+    <string name="theme_follow_system_short">系统</string>
+    <string name="theme_light_short">浅色</string>
+    <string name="theme_dark_short">深色</string>
     <string name="theme_engine_miuix">Miuix</string>
     <string name="theme_engine_material">Material</string>
     <string name="reader_theme_follow_app">跟随应用主题</string>

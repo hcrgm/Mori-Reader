@@ -170,6 +170,10 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setMonetKeyColor(intent.color) }
             }
 
+            is SettingsIntent.SetMaterialEInkMode -> {
+                viewModelScope.launch { settingsRepository.setMaterialEInkMode(intent.enabled) }
+            }
+
             is SettingsIntent.SetMaxResults -> {
                 val value = intent.value.coerceIn(1, 50)
                 viewModelScope.launch { settingsRepository.setMaxResults(value) }

@@ -55,6 +55,7 @@ internal fun ReaderLookupPopup(
     settings: AppSettings,
     ankiDuplicateExpression: String?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     isVertical: Boolean,
@@ -106,6 +107,7 @@ internal fun ReaderLookupPopup(
 
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
@@ -115,6 +117,7 @@ internal fun ReaderLookupPopup(
             settings = settings,
             ankiDuplicateExpression = ankiDuplicateExpression,
             isDark = isDark,
+            materialEInkMode = materialEInkMode,
             blurEnabled = blurEnabled,
             backdrop = backdrop,
             zIndex = 20f,
@@ -155,6 +158,7 @@ internal fun ReaderLookupPopup(
                     blurEnabled = blurEnabled,
                     backdrop = backdrop,
                     isDark = isDark,
+                    materialEInkMode = materialEInkMode,
                     onReplay = { onReaderIntent(ReaderIntent.ReplayCue(cueId)) },
                     onToggle = { onReaderIntent(ReaderIntent.TogglePlayback) },
                     onContinue = { onReaderIntent(ReaderIntent.ContinueFromCue(cueId)) },
@@ -170,11 +174,17 @@ private fun SasayakiPopupControls(
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     onReplay: () -> Unit,
     onToggle: () -> Unit,
     onContinue: () -> Unit,
 ) {
-    val topBarShape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    val topBarShape =
+        if (materialEInkMode) {
+            RoundedCornerShape(0.dp)
+        } else {
+            RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+        }
     Box(
         modifier =
             Modifier
@@ -201,9 +211,13 @@ private fun SasayakiPopupControls(
                         )
                     } else {
                         Modifier.background(
-                            MiuixTheme.colorScheme.surfaceContainerHighest.copy(
-                                alpha = if (isDark) 0.78f else 0.92f,
-                            ),
+                            if (materialEInkMode) {
+                                MiuixTheme.colorScheme.surfaceContainerHighest
+                            } else {
+                                MiuixTheme.colorScheme.surfaceContainerHighest.copy(
+                                    alpha = if (isDark) 0.78f else 0.92f,
+                                )
+                            },
                             shape = topBarShape,
                         )
                     },
@@ -244,7 +258,19 @@ private fun SasayakiPopupControls(
                     }
                 }
             }
-            HorizontalDivider(color = MiuixTheme.colorScheme.dividerLine)
+            HorizontalDivider(
+                thickness = if (materialEInkMode) 2.dp else 0.75.dp,
+                color =
+                    if (materialEInkMode) {
+                        if (isDark) {
+                            Color.White
+                        } else {
+                            Color.Black
+                        }
+                    } else {
+                        MiuixTheme.colorScheme.dividerLine
+                    },
+            )
         }
     }
 }

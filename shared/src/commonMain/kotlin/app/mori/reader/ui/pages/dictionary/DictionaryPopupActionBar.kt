@@ -41,13 +41,19 @@ internal fun DictionaryPopupActionBar(
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     onNavigateBack: () -> Unit,
     onNavigateForward: () -> Unit,
     onClose: () -> Unit,
 ) {
     if (!canNavigateBack && !canNavigateForward) return
 
-    val topBarShape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    val topBarShape =
+        if (materialEInkMode) {
+            RoundedCornerShape(0.dp)
+        } else {
+            RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+        }
 
     Column(
         modifier =
@@ -75,9 +81,13 @@ internal fun DictionaryPopupActionBar(
                         )
                     } else {
                         Modifier.background(
-                            MiuixTheme.colorScheme.surfaceContainerHighest.copy(
-                                alpha = if (isDark) 0.78f else 0.92f,
-                            ),
+                            if (materialEInkMode) {
+                                MiuixTheme.colorScheme.surfaceContainerHighest
+                            } else {
+                                MiuixTheme.colorScheme.surfaceContainerHighest.copy(
+                                    alpha = if (isDark) 0.78f else 0.92f,
+                                )
+                            },
                             shape = topBarShape,
                         )
                     },
@@ -129,7 +139,19 @@ internal fun DictionaryPopupActionBar(
                 )
             }
         }
-        HorizontalDivider(color = MiuixTheme.colorScheme.dividerLine)
+        HorizontalDivider(
+            thickness = if (materialEInkMode) 2.dp else 0.75.dp,
+            color =
+                if (materialEInkMode) {
+                    if (isDark) {
+                        Color.White
+                    } else {
+                        Color.Black
+                    }
+                } else {
+                    MiuixTheme.colorScheme.dividerLine
+                },
+        )
     }
 }
 

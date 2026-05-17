@@ -25,7 +25,7 @@ actual fun rememberMoriAppInfo(): MoriAppInfo {
                 } else {
                     @Suppress("DEPRECATION")
                     packageInfo.versionCode.toLong()
-                },
+            },
         )
     }
 }

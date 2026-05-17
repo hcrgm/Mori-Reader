@@ -6,15 +6,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import app.mori.reader.ui.components.material.materialCardBorder
+import app.mori.reader.ui.components.material.materialCardContainerColor
+import app.mori.reader.ui.theme.MoriTheme
 
 @Composable
 fun MaterialSettingsSection(
@@ -29,35 +34,73 @@ fun MaterialSettingsSection(
             color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.labelLarge,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp), content = content)
+        content()
+    }
+}
+
+@Composable
+fun MaterialSettingsGroup(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    if (MoriTheme.materialEInkMode) {
+        Surface(
+            color = materialCardContainerColor(),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shape = MaterialTheme.shapes.large,
+            border = materialCardBorder(),
+            modifier = modifier.fillMaxWidth(),
+        ) {
+            Column(content = content)
+        }
+    } else {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+            content = content,
+        )
     }
 }
 
 @Composable
 fun MaterialSettingsSurface(
-    shape: Shape,
+    shape: Shape = MaterialTheme.shapes.large,
     modifier: Modifier = Modifier,
+    color: Color = materialCardContainerColor(),
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
+    groupedInSection: Boolean = false,
+    showDivider: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val useEInkGroupedStyle = groupedInSection && MoriTheme.materialEInkMode
+    val surfaceShape = if (useEInkGroupedStyle) RectangleShape else shape
     Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shape = shape,
+        color = color,
+        contentColor = contentColor,
+        shape = surfaceShape,
+        border = if (useEInkGroupedStyle) null else materialCardBorder(),
         modifier =
             modifier
                 .fillMaxWidth()
                 .then(
                     if (onClick != null) {
                         Modifier
-                            .clip(shape)
+                            .clip(surfaceShape)
                             .clickable(onClick = onClick)
                     } else {
                         Modifier
                     },
                 ),
     ) {
-        Column(content = content)
+        Column {
+            if (useEInkGroupedStyle && showDivider) {
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant,
+                )
+            }
+            Column(content = content)
+        }
     }
 }
 

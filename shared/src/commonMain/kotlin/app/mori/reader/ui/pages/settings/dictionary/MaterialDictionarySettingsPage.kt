@@ -1,5 +1,6 @@
 package app.mori.reader.ui.pages.settings.dictionary
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,7 +17,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberOverscrollEffect
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -91,12 +94,16 @@ import app.mori.reader.shared.generated.resources.tab_dictionary
 import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.components.material.MaterialBackButton
 import app.mori.reader.ui.components.material.MaterialExpressiveSwitch
+import app.mori.reader.ui.components.material.materialCardBorder
+import app.mori.reader.ui.components.navigation.eInkPagerSwipeModifier
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
 import app.mori.reader.ui.components.settings.MaterialSettingsSection
 import app.mori.reader.ui.components.settings.MaterialSettingsSurface
 import app.mori.reader.ui.components.settings.materialSettingsSegmentedItemShape
 import app.mori.reader.ui.text.UiText
 import app.mori.reader.ui.text.asString
+import app.mori.reader.ui.theme.MoriTheme
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
@@ -122,6 +129,15 @@ internal fun MaterialDictionarySettingsPage(
     val pagerState = rememberPagerState(pageCount = { dictionarySettingsPages.size })
     val pagerCoroutineScope = rememberCoroutineScope()
     val selectedPage = pagerState.currentPage
+    val reduceMotion = MoriTheme.materialEInkMode
+    val defaultOverscrollEffect = rememberOverscrollEffect()
+    val defaultFlingBehavior = PagerDefaults.flingBehavior(state = pagerState)
+    val instantFlingBehavior =
+        PagerDefaults.flingBehavior(
+            state = pagerState,
+            snapAnimationSpec = tween(durationMillis = 0),
+        )
+    val flingBehavior = if (reduceMotion) instantFlingBehavior else defaultFlingBehavior
     val controller =
         rememberDictionarySettingsController(
             dictionaryState = dictionaryState,
@@ -191,7 +207,11 @@ internal fun MaterialDictionarySettingsPage(
                         selected = selectedPage == index,
                         onClick = {
                             pagerCoroutineScope.launch {
-                                pagerState.animateScrollToPage(index)
+                                if (reduceMotion) {
+                                    pagerState.scrollToPage(index)
+                                } else {
+                                    pagerState.animateScrollToPage(index)
+                                }
                             }
                         },
                         text = { Text(text = title) },
@@ -203,8 +223,21 @@ internal fun MaterialDictionarySettingsPage(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .weight(1f),
+                        .weight(1f)
+                        .eInkPagerSwipeModifier(
+                            enabled = reduceMotion,
+                            currentPage = pagerState.currentPage,
+                            pageCount = dictionarySettingsPages.size,
+                            onPageChange = { page ->
+                                pagerCoroutineScope.launch {
+                                    pagerState.scrollToPage(page)
+                                }
+                            },
+                        ),
                 beyondViewportPageCount = 1,
+                flingBehavior = flingBehavior,
+                userScrollEnabled = !reduceMotion,
+                overscrollEffect = if (reduceMotion) null else defaultOverscrollEffect,
                 key = { it },
             ) { page ->
                 when (page) {
@@ -363,7 +396,7 @@ private fun MaterialDictionaryLookupSettingsPage(
     ) {
         item {
             MaterialSettingsSection(title = stringResource(Res.string.dict_settings_query_display)) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                MaterialSettingsGroup {
                     MaterialSliderSetting(
                         title = stringResource(Res.string.dict_settings_max_results),
                         value = settings.dictionary.maxResults.toFloat(),
@@ -371,6 +404,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         steps = 48,
                         valueText = settings.dictionary.maxResults.toString(),
                         shape = materialSettingsSegmentedItemShape(index = 0, count = 7),
+                        showDivider = false,
                         onValueChangeFinished = { onIntent(SettingsIntent.SetMaxResults(it.toInt())) },
                     )
                     MaterialSliderSetting(
@@ -380,6 +414,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         steps = 62,
                         valueText = settings.dictionary.scanLength.toString(),
                         shape = materialSettingsSegmentedItemShape(index = 1, count = 7),
+                        showDivider = true,
                         onValueChangeFinished = { onIntent(SettingsIntent.SetScanLength(it.toInt())) },
                     )
                     MaterialSwitchSetting(
@@ -387,6 +422,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         summaryRes = Res.string.dict_settings_collapse_summary,
                         checked = settings.dictionary.collapseDictionaries,
                         shape = materialSettingsSegmentedItemShape(index = 2, count = 7),
+                        showDivider = true,
                         onCheckedChange = { onIntent(SettingsIntent.SetCollapseDictionaries(it)) },
                     )
                     MaterialSwitchSetting(
@@ -394,6 +430,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         summaryRes = Res.string.dict_settings_compact_summary,
                         checked = settings.dictionary.compactGlossaries,
                         shape = materialSettingsSegmentedItemShape(index = 3, count = 7),
+                        showDivider = true,
                         onCheckedChange = { onIntent(SettingsIntent.SetCompactGlossaries(it)) },
                     )
                     MaterialSwitchSetting(
@@ -401,6 +438,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         summaryRes = Res.string.dict_settings_show_tags_summary,
                         checked = settings.dictionary.showExpressionTags,
                         shape = materialSettingsSegmentedItemShape(index = 4, count = 7),
+                        showDivider = true,
                         onCheckedChange = { onIntent(SettingsIntent.SetShowExpressionTags(it)) },
                     )
                     MaterialSwitchSetting(
@@ -408,6 +446,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         summaryRes = Res.string.dict_settings_merge_freq_summary,
                         checked = settings.dictionary.harmonicFrequency,
                         shape = materialSettingsSegmentedItemShape(index = 5, count = 7),
+                        showDivider = true,
                         onCheckedChange = { onIntent(SettingsIntent.SetHarmonicFrequency(it)) },
                     )
                     MaterialSwitchSetting(
@@ -415,6 +454,7 @@ private fun MaterialDictionaryLookupSettingsPage(
                         summaryRes = Res.string.dict_settings_dedup_pitch_summary,
                         checked = settings.dictionary.deduplicatePitchAccents,
                         shape = materialSettingsSegmentedItemShape(index = 6, count = 7),
+                        showDivider = true,
                         onCheckedChange = { onIntent(SettingsIntent.SetDeduplicatePitchAccents(it)) },
                     )
                 }
@@ -558,6 +598,7 @@ private fun MaterialStatusCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
+        border = materialCardBorder(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -579,10 +620,15 @@ private fun MaterialSliderSetting(
     steps: Int,
     valueText: String,
     shape: Shape,
+    showDivider: Boolean,
     onValueChangeFinished: (Float) -> Unit,
 ) {
     var currentValue by remember(value) { mutableStateOf(value) }
-    MaterialSettingsSurface(shape = shape) {
+    MaterialSettingsSurface(
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+    ) {
         Column(
             modifier =
                 Modifier
@@ -622,10 +668,13 @@ private fun MaterialSwitchSetting(
     summaryRes: StringResource,
     checked: Boolean,
     shape: Shape,
+    showDivider: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
     MaterialSettingsSurface(
         shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
         onClick = { onCheckedChange(!checked) },
     ) {
         ListItem(

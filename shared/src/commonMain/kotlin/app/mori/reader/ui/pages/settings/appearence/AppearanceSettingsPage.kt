@@ -21,6 +21,7 @@ fun AppearanceSettingsPage(
                 onLanguageModeSelected = { onSettingsIntent(SettingsIntent.SetLanguageMode(it)) },
                 onMonetEnabledChanged = { onSettingsIntent(SettingsIntent.SetMonetEnabled(it)) },
                 onMonetKeyColorSelected = { onSettingsIntent(SettingsIntent.SetMonetKeyColor(it)) },
+                onMaterialEInkModeChanged = { onSettingsIntent(SettingsIntent.SetMaterialEInkMode(it)) },
                 onUiScalePercentChanged = { onSettingsIntent(SettingsIntent.SetUiScalePercent(it)) },
                 onBlurEnabledChanged = { onSettingsIntent(SettingsIntent.SetBlurEnabled(it)) },
             )

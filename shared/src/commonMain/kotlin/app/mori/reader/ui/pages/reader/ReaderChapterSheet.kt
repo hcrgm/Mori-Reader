@@ -54,6 +54,7 @@ import top.yukonga.miuix.kmp.window.WindowDialog
 internal fun ReaderChapterSheet(
     show: Boolean,
     isDark: Boolean,
+    materialEInkMode: Boolean,
     monetEnabled: Boolean,
     monetKeyColor: Long,
     title: String,
@@ -71,6 +72,7 @@ internal fun ReaderChapterSheet(
 
     ReaderSheetTheme(
         isDark = isDark,
+        materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {

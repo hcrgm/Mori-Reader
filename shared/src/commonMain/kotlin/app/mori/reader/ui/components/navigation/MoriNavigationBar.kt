@@ -20,6 +20,7 @@ import app.mori.reader.shared.generated.resources.tab_settings
 import app.mori.reader.ui.AppTab
 import app.mori.reader.ui.components.scaffold.moriPageBarBlur
 import app.mori.reader.ui.components.scaffold.moriPageBarColor
+import app.mori.reader.ui.theme.MoriTheme
 import app.mori.reader.ui.theme.moriSurfaceColor
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.blur.LayerBackdrop
@@ -70,13 +71,29 @@ internal fun MaterialMoriNavigationBar(
 ) {
     val activeBackdrop = backdrop.takeIf { blurEnabled }
     val barColor = activeBackdrop.moriPageBarColor(MaterialTheme.colorScheme.surfaceContainer)
+    val isEInkMode = MoriTheme.materialEInkMode
     val itemColors =
         NavigationBarItemDefaults.colors(
-            selectedIconColor = MaterialTheme.colorScheme.primary,
-            selectedTextColor = MaterialTheme.colorScheme.primary,
+            selectedIconColor =
+                if (isEInkMode) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
+            selectedTextColor =
+                if (isEInkMode) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
             unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
             unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            indicatorColor = MaterialTheme.colorScheme.secondaryContainer,
+            indicatorColor =
+                if (isEInkMode) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.secondaryContainer
+                },
         )
 
     Box(

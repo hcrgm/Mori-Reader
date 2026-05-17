@@ -9,6 +9,7 @@ internal fun readerBootstrapScript(
     fragment: String?,
     verticalWriting: Boolean,
     isDark: Boolean,
+    eInkMode: Boolean,
     fontSize: Int,
     lineHeight: Double,
     horizontalPadding: Int,
@@ -25,8 +26,15 @@ internal fun readerBootstrapScript(
     sasayakiHighlightColor: String,
 ): String {
     val writingMode = if (verticalWriting) "vertical-rl" else "horizontal-tb"
-    val background = if (isDark) "#101010" else "#fbfaf7"
-    val foreground = if (isDark) "#f2f2f2" else "#1b1b1b"
+    val background =
+        when {
+            isDark -> "#000000"
+            eInkMode -> "#ffffff"
+            else -> "#fbfaf7"
+        }
+    val foreground = if (isDark) "#ffffff" else if (eInkMode) "#000000" else "#1b1b1b"
+    val linkColor = if (eInkMode) "#000000" else "rgba(66, 108, 245, 1)"
+    val selectionColor = if (eInkMode) "rgba(0, 0, 0, 0.18)" else "rgba(120, 150, 255, 0.35)"
     val safeFontSize = fontSize.coerceIn(16, 40)
     val safeLineHeight = lineHeight.coerceIn(1.0, 2.5)
     val safeHorizontalPadding = horizontalPadding.coerceIn(0, 50).toDouble()
@@ -202,6 +210,17 @@ internal fun readerBootstrapScript(
     val highlightedCueJs = highlightedSasayakiCueId?.jsString() ?: "null"
     val cueHighlightColor =
         sasayakiHighlightColor.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
+    val activeCueBackground =
+        if (sasayakiHighlightEnabled) {
+            if (eInkMode) {
+                "rgba(90, 91, 85, 0.22)"
+            } else {
+                cueHighlightColor
+            }
+        } else {
+            "transparent"
+        }
+    val activeCueOutline = if (eInkMode && sasayakiHighlightEnabled) "#777771" else "transparent"
     return """
         (function() {
           var viewport = document.querySelector('meta[name="viewport"]');
@@ -227,12 +246,13 @@ internal fun readerBootstrapScript(
               max-height: ${if (verticalWriting) "calc(${100 - safeVerticalPadding}vh - ${bottomOverlap * (100 - safeVerticalPadding) / 100.0}px)" else "${100 - safeVerticalPadding}vh"} !important;
             }
             a {
-              color: rgba(66, 108, 245, 1) !important;
+              color: $linkColor !important;
+              text-decoration: ${if (eInkMode) "underline" else "inherit"} !important;
             }
             rt, rp { user-select: none; }
-            ::selection { background: rgba(120, 150, 255, 0.35); }
+            ::selection { background: $selectionColor; }
             ::highlight(mori-selection) {
-              background-color: rgba(120, 150, 255, 0.35);
+              background-color: $selectionColor;
               color: inherit;
             }
             .mori-sasayaki-cue {
@@ -241,7 +261,8 @@ internal fun readerBootstrapScript(
               -webkit-box-decoration-break: clone;
             }
             .mori-sasayaki-cue-active {
-              background: ${if (sasayakiHighlightEnabled) cueHighlightColor else "transparent"};
+              background: $activeCueBackground;
+              outline: 1px solid $activeCueOutline;
               color: inherit;
             }
           `;

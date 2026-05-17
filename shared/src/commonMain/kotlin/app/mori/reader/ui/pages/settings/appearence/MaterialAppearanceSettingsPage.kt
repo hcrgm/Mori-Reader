@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,14 +26,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Brightness3
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonGroupDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -41,8 +40,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -73,6 +73,9 @@ import app.mori.reader.shared.generated.resources.appearance_blur_title
 import app.mori.reader.shared.generated.resources.appearance_color_scheme_title
 import app.mori.reader.shared.generated.resources.appearance_language_summary
 import app.mori.reader.shared.generated.resources.appearance_language_title
+import app.mori.reader.shared.generated.resources.appearance_material_eink_mode_title
+import app.mori.reader.shared.generated.resources.appearance_miuix_eink_dialog_message
+import app.mori.reader.shared.generated.resources.appearance_miuix_eink_dialog_title
 import app.mori.reader.shared.generated.resources.appearance_monet_summary
 import app.mori.reader.shared.generated.resources.appearance_monet_title
 import app.mori.reader.shared.generated.resources.appearance_theme_title
@@ -82,6 +85,7 @@ import app.mori.reader.shared.generated.resources.appearance_ui_scale_summary
 import app.mori.reader.shared.generated.resources.appearance_ui_scale_title
 import app.mori.reader.shared.generated.resources.cd_appearance
 import app.mori.reader.shared.generated.resources.cd_back
+import app.mori.reader.shared.generated.resources.cd_close
 import app.mori.reader.shared.generated.resources.color_amber
 import app.mori.reader.shared.generated.resources.color_blue
 import app.mori.reader.shared.generated.resources.color_blue_grey
@@ -105,10 +109,18 @@ import app.mori.reader.shared.generated.resources.theme_dark
 import app.mori.reader.shared.generated.resources.theme_engine_material
 import app.mori.reader.shared.generated.resources.theme_engine_miuix
 import app.mori.reader.shared.generated.resources.theme_follow_system
+import app.mori.reader.shared.generated.resources.theme_follow_system_short
 import app.mori.reader.shared.generated.resources.theme_light
+import app.mori.reader.shared.generated.resources.theme_light_short
+import app.mori.reader.shared.generated.resources.theme_dark_short
 import app.mori.reader.ui.components.material.MaterialBackButton
+import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
+import app.mori.reader.ui.components.material.MaterialDropdownSelectorRow
 import app.mori.reader.ui.components.material.MaterialExpressiveSwitch
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
+import app.mori.reader.ui.components.settings.MaterialSettingsGroup
+import app.mori.reader.ui.components.settings.MaterialSettingsSurface
+import app.mori.reader.ui.theme.MoriTheme
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.blur.isRenderEffectSupported
 import kotlin.math.roundToInt
@@ -120,6 +132,10 @@ internal fun MaterialAppearanceSettingsPage(
     actions: AppearanceSettingsActions,
     onBack: () -> Unit,
 ) {
+    var showMiuixEInkDialog by remember { mutableStateOf(false) }
+    val hideMaterialColorTuning =
+        settings.appearance.uiThemeEngine == UiThemeEngine.Material && settings.appearance.materialEInkMode
+
     MoriPageScaffold(
         title = stringResource(Res.string.cd_appearance),
         blurEnabled = settings.appearance.blurEnabled,
@@ -143,25 +159,29 @@ internal fun MaterialAppearanceSettingsPage(
                 MaterialThemeModeSection(
                     selected = settings.appearance.themeMode,
                     onSelected = actions.onThemeModeSelected,
+                    materialEInkMode = settings.appearance.materialEInkMode,
+                    onMaterialEInkModeChanged = actions.onMaterialEInkModeChanged,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            item {
-                MaterialColorSchemeSection(
-                    selectedColor =
-                        if (settings.appearance.monetEnabled) {
-                            settings.appearance.monetKeyColor
-                        } else {
-                            0L
+            if (!hideMaterialColorTuning) {
+                item {
+                    MaterialColorSchemeSection(
+                        selectedColor =
+                            if (settings.appearance.monetEnabled) {
+                                settings.appearance.monetKeyColor
+                            } else {
+                                0L
+                            },
+                        onColorSelected = { color ->
+                            if (!settings.appearance.monetEnabled) {
+                                actions.onMonetEnabledChanged(true)
+                            }
+                            actions.onMonetKeyColorSelected(color)
                         },
-                    onColorSelected = { color ->
-                        if (!settings.appearance.monetEnabled) {
-                            actions.onMonetEnabledChanged(true)
-                        }
-                        actions.onMonetKeyColorSelected(color)
-                    },
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
+                }
             }
             item {
                 MaterialAppearanceSection(
@@ -176,10 +196,22 @@ internal fun MaterialAppearanceSettingsPage(
                             UiThemeEngine.entries.map { engine ->
                                 MaterialDropdownOption(
                                     label = engine.localizedLabel(),
-                                    onSelected = { actions.onUiThemeEngineSelected(engine) },
+                                    selected = engine == settings.appearance.uiThemeEngine,
+                                    onSelected = {
+                                        if (
+                                            settings.appearance.uiThemeEngine == UiThemeEngine.Material &&
+                                            settings.appearance.materialEInkMode &&
+                                            engine == UiThemeEngine.Miuix
+                                        ) {
+                                            showMiuixEInkDialog = true
+                                        } else {
+                                            actions.onUiThemeEngineSelected(engine)
+                                        }
+                                    },
                                 )
-                        },
+                            },
                         shape = materialSegmentedItemShape(index = 0, count = 4),
+                        showDivider = false,
                     )
                     MaterialChoiceRow(
                         title = stringResource(Res.string.appearance_language_title),
@@ -189,26 +221,32 @@ internal fun MaterialAppearanceSettingsPage(
                             LanguageMode.entries.map { mode ->
                                 MaterialDropdownOption(
                                     label = mode.localizedLabel(),
+                                    selected = mode == settings.appearance.languageMode,
                                     onSelected = { actions.onLanguageModeSelected(mode) },
                                 )
                             },
                         shape = materialSegmentedItemShape(index = 1, count = 4),
+                        showDivider = true,
                     )
                     MaterialUiScaleRow(
                         uiScalePercent = settings.appearance.uiScalePercent,
                         onUiScalePercentChanged = actions.onUiScalePercentChanged,
-                        shape = materialSegmentedItemShape(index = 2, count = 4),
+                        shape = materialSegmentedItemShape(index = 2, count = if (hideMaterialColorTuning) 3 else 4),
+                        showDivider = true,
                     )
-                    MaterialSwitchRow(
-                        title = stringResource(Res.string.appearance_monet_title),
-                        summary = stringResource(Res.string.appearance_monet_summary),
-                        checked = settings.appearance.monetEnabled,
-                        onCheckedChange = actions.onMonetEnabledChanged,
-                        shape = materialSegmentedItemShape(index = 3, count = 4),
-                    )
+                    if (!hideMaterialColorTuning) {
+                        MaterialSwitchRow(
+                            title = stringResource(Res.string.appearance_monet_title),
+                            summary = stringResource(Res.string.appearance_monet_summary),
+                            checked = settings.appearance.monetEnabled,
+                            onCheckedChange = actions.onMonetEnabledChanged,
+                            shape = materialSegmentedItemShape(index = 3, count = 4),
+                            showDivider = true,
+                        )
+                    }
                 }
             }
-            if (isRenderEffectSupported()) {
+            if (isRenderEffectSupported() && !hideMaterialColorTuning) {
                 item {
                     MaterialAppearanceSection(
                         title = "",
@@ -220,11 +258,25 @@ internal fun MaterialAppearanceSettingsPage(
                             checked = settings.appearance.blurEnabled,
                             onCheckedChange = actions.onBlurEnabledChanged,
                             shape = materialSegmentedItemShape(index = 0, count = 1),
+                            showDivider = false,
                         )
                     }
                 }
             }
         }
+    }
+
+    if (showMiuixEInkDialog) {
+        AlertDialog(
+            onDismissRequest = { showMiuixEInkDialog = false },
+            title = { Text(text = stringResource(Res.string.appearance_miuix_eink_dialog_title)) },
+            text = { Text(text = stringResource(Res.string.appearance_miuix_eink_dialog_message)) },
+            confirmButton = {
+                TextButton(onClick = { showMiuixEInkDialog = false }) {
+                    Text(text = stringResource(Res.string.cd_close))
+                }
+            },
+        )
     }
 }
 
@@ -243,7 +295,7 @@ private fun MaterialAppearanceSection(
                 style = MaterialTheme.typography.labelLarge,
             )
         }
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        MaterialSettingsGroup {
             content()
         }
     }
@@ -256,46 +308,24 @@ private fun MaterialChoiceRow(
     selectedLabel: String,
     options: List<MaterialDropdownOption>,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    MaterialSettingsRowSurface(shape = shape, onClick = { expanded = true }) {
-        Box {
-            ListItem(
-                headlineContent = { Text(text = title) },
-                supportingContent = { summary?.let { Text(text = it) } },
-                trailingContent = {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = selectedLabel,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium,
-                        )
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                options.forEach { option ->
-                    DropdownMenuItem(
-                        text = { Text(text = option.label) },
-                        onClick = {
-                            option.onSelected()
-                            expanded = false
-                        },
-                    )
-                }
-            }
-        }
-    }
+    MaterialDropdownSelectorRow(
+        title = title,
+        summary = summary,
+        selectedLabel = selectedLabel,
+        options =
+            options.map { option ->
+                MaterialDropdownMenuOption(
+                    label = option.label,
+                    selected = option.selected,
+                    onSelected = option.onSelected,
+                )
+            },
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+    )
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -303,6 +333,8 @@ private fun MaterialChoiceRow(
 private fun MaterialThemeModeSection(
     selected: ThemeMode,
     onSelected: (ThemeMode) -> Unit,
+    materialEInkMode: Boolean,
+    onMaterialEInkModeChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     MaterialAppearanceSection(
@@ -310,41 +342,108 @@ private fun MaterialThemeModeSection(
         modifier = modifier,
     ) {
         val haptic = LocalHapticFeedback.current
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+        MaterialSettingsRowSurface(
+            shape = materialSegmentedItemShape(index = 0, count = 1),
+            groupedInSection = true,
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+            Column(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                ThemeMode.entries.forEachIndexed { index, mode ->
-                    ToggleButton(
-                        checked = mode == selected,
-                        onCheckedChange = { checked ->
-                            if (checked) {
-                                haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                                onSelected(mode)
-                            }
-                        },
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .semantics { role = Role.RadioButton },
-                        shapes =
-                            when (index) {
-                                0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                                ThemeMode.entries.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                                else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+                ) {
+                    ThemeMode.entries.forEachIndexed { index, mode ->
+                        ToggleButton(
+                            checked = mode == selected,
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                                    onSelected(mode)
+                                }
                             },
-                    ) {
-                        Icon(
-                            imageVector = mode.icon(),
-                            contentDescription = mode.localizedLabel(),
-                        )
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .semantics { role = Role.RadioButton },
+                            shapes =
+                                when (index) {
+                                    0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
+                                    ThemeMode.entries.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
+                                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
+                                },
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center,
+                            ) {
+                                Icon(
+                                    imageVector = mode.icon(),
+                                    contentDescription = null,
+                                )
+                                Spacer(modifier = Modifier.size(ToggleButtonDefaults.IconSpacing))
+                                Text(
+                                    text = mode.shortLabel(),
+                                    style = MaterialTheme.typography.labelMedium,
+                                )
+                            }
+                        }
                     }
                 }
+                Spacer(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
+                )
+                MaterialEInkModeCard(
+                    checked = materialEInkMode,
+                    onCheckedChange = onMaterialEInkModeChanged,
+                )
             }
+        }
+    }
+}
+
+@Composable
+private fun MaterialEInkModeCard(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    Surface(
+        onClick = {
+            onCheckedChange(!checked)
+        },
+        shape = MaterialTheme.shapes.medium,
+        color =
+            if (checked) {
+                colorScheme.primaryContainer.copy(alpha = 0.62f)
+            } else {
+                Color.Transparent
+            },
+        contentColor =
+            if (checked) {
+                colorScheme.onPrimaryContainer
+            } else {
+                colorScheme.onSurface
+            },
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(Res.string.appearance_material_eink_mode_title),
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            MaterialExpressiveSwitch(
+                checked = checked,
+                onCheckedChange = onCheckedChange,
+            )
         }
     }
 }
@@ -361,9 +460,14 @@ private fun MaterialUiScaleRow(
     uiScalePercent: Int,
     onUiScalePercentChanged: (Int) -> Unit,
     shape: Shape,
+    showDivider: Boolean,
 ) {
     var sliderValue by remember(uiScalePercent) { mutableFloatStateOf(uiScalePercent.toFloat()) }
-    MaterialSettingsRowSurface(shape = shape) {
+    MaterialSettingsRowSurface(
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+    ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -408,8 +512,13 @@ private fun MaterialSwitchRow(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     shape: Shape,
+    showDivider: Boolean,
 ) {
-    MaterialSettingsRowSurface(shape = shape) {
+    MaterialSettingsRowSurface(
+        shape = shape,
+        groupedInSection = true,
+        showDivider = showDivider,
+    ) {
         ListItem(
             headlineContent = { Text(text = title) },
             supportingContent = { summary?.let { Text(text = it) } },
@@ -435,7 +544,10 @@ private fun MaterialColorSchemeSection(
         title = stringResource(Res.string.appearance_color_scheme_title),
         modifier = modifier,
     ) {
-        MaterialSettingsRowSurface(shape = materialSegmentedItemShape(index = 0, count = 1)) {
+        MaterialSettingsRowSurface(
+            shape = materialSegmentedItemShape(index = 0, count = 1),
+            groupedInSection = true,
+        ) {
             LazyRow(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -508,7 +620,10 @@ private fun MaterialColorOptionButton(
                         useCenter = true,
                     )
                 }
-                val scale by animateFloatAsState(targetValue = if (selected) 1.1f else 1.0f)
+                val reduceMotion = MoriTheme.materialEInkMode
+                val targetScale = if (selected) 1.1f else 1.0f
+                val animatedScale by animateFloatAsState(targetValue = targetScale)
+                val scale = if (reduceMotion) targetScale else animatedScale
                 Box(
                     modifier =
                         Modifier.graphicsLayer {
@@ -517,11 +632,7 @@ private fun MaterialColorOptionButton(
                         },
                     contentAlignment = Alignment.Center,
                 ) {
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = selected,
-                        enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                        exit = fadeOut() + scaleOut(targetScale = 0.8f),
-                    ) {
+                    val selectedIndicator: @Composable () -> Unit = {
                         Box(
                             modifier =
                                 Modifier
@@ -548,11 +659,7 @@ private fun MaterialColorOptionButton(
                             }
                         }
                     }
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = !selected,
-                        enter = fadeIn() + scaleIn(initialScale = 0.8f),
-                        exit = fadeOut() + scaleOut(targetScale = 0.8f),
-                    ) {
+                    val unselectedIndicator: @Composable () -> Unit = {
                         Box(
                             modifier =
                                 Modifier
@@ -560,6 +667,28 @@ private fun MaterialColorOptionButton(
                                     .clip(CircleShape)
                                     .background(swatchColor),
                         )
+                    }
+                    if (reduceMotion) {
+                        if (selected) {
+                            selectedIndicator()
+                        } else {
+                            unselectedIndicator()
+                        }
+                    } else {
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = selected,
+                            enter = fadeIn() + scaleIn(initialScale = 0.8f),
+                            exit = fadeOut() + scaleOut(targetScale = 0.8f),
+                        ) {
+                            selectedIndicator()
+                        }
+                        androidx.compose.animation.AnimatedVisibility(
+                            visible = !selected,
+                            enter = fadeIn() + scaleIn(initialScale = 0.8f),
+                            exit = fadeOut() + scaleOut(targetScale = 0.8f),
+                        ) {
+                            unselectedIndicator()
+                        }
                     }
                 }
             }
@@ -575,25 +704,17 @@ private fun MaterialColorOptionButton(
 @Composable
 private fun MaterialSettingsRowSurface(
     shape: Shape,
+    groupedInSection: Boolean = false,
+    showDivider: Boolean = false,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-        contentColor = MaterialTheme.colorScheme.onSurface,
+    MaterialSettingsSurface(
         shape = shape,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (onClick != null) {
-                        Modifier
-                            .clip(shape)
-                            .clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    },
-                ),
+        groupedInSection = groupedInSection,
+        showDivider = showDivider,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
     ) {
         content()
     }
@@ -630,6 +751,7 @@ private fun materialSegmentedItemShape(
 
 private data class MaterialDropdownOption(
     val label: String,
+    val selected: Boolean = false,
     val onSelected: () -> Unit,
 )
 
@@ -644,6 +766,14 @@ private fun ThemeMode.localizedLabel(): String =
         ThemeMode.System -> stringResource(Res.string.theme_follow_system)
         ThemeMode.Light -> stringResource(Res.string.theme_light)
         ThemeMode.Dark -> stringResource(Res.string.theme_dark)
+    }
+
+@Composable
+private fun ThemeMode.shortLabel(): String =
+    when (this) {
+        ThemeMode.System -> stringResource(Res.string.theme_follow_system_short)
+        ThemeMode.Light -> stringResource(Res.string.theme_light_short)
+        ThemeMode.Dark -> stringResource(Res.string.theme_dark_short)
     }
 
 @Composable

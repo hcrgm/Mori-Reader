@@ -1,7 +1,4 @@
-// Copyright 2026, compose-miuix-ui contributors
-// SPDX-License-Identifier: Apache-2.0
-
-package component.effect
+package app.mori.reader.ui.components.miuix.effect
 
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -25,18 +22,20 @@ internal fun Modifier.bgEffectDraw(
     playing: Boolean,
     colorStage: () -> Float,
     alpha: () -> Float,
-): Modifier = this then BgEffectElement(
-    painter = painter,
-    preset = preset,
-    deviceType = deviceType,
-    isDarkTheme = isDarkTheme,
-    surface = surface,
-    effectBackground = effectBackground,
-    isFullSize = isFullSize,
-    playing = playing,
-    colorStage = colorStage,
-    alpha = alpha,
-)
+): Modifier =
+    this then
+        BgEffectElement(
+            painter = painter,
+            preset = preset,
+            deviceType = deviceType,
+            isDarkTheme = isDarkTheme,
+            surface = surface,
+            effectBackground = effectBackground,
+            isFullSize = isFullSize,
+            playing = playing,
+            colorStage = colorStage,
+            alpha = alpha,
+        )
 
 private data class BgEffectElement(
     val painter: BgEffectPainter,
@@ -50,19 +49,19 @@ private data class BgEffectElement(
     val colorStage: () -> Float,
     val alpha: () -> Float,
 ) : ModifierNodeElement<BgEffectNode>() {
-
-    override fun create(): BgEffectNode = BgEffectNode(
-        painter = painter,
-        preset = preset,
-        deviceType = deviceType,
-        isDarkTheme = isDarkTheme,
-        surface = surface,
-        effectBackground = effectBackground,
-        isFullSize = isFullSize,
-        playing = playing,
-        colorStage = colorStage,
-        alpha = alpha,
-    )
+    override fun create(): BgEffectNode =
+        BgEffectNode(
+            painter = painter,
+            preset = preset,
+            deviceType = deviceType,
+            isDarkTheme = isDarkTheme,
+            surface = surface,
+            effectBackground = effectBackground,
+            isFullSize = isFullSize,
+            playing = playing,
+            colorStage = colorStage,
+            alpha = alpha,
+        )
 
     override fun update(node: BgEffectNode) {
         node.update(
@@ -93,7 +92,6 @@ private class BgEffectNode(
     private var alpha: () -> Float,
 ) : Modifier.Node(),
     DrawModifierNode {
-
     private var animationJob: Job? = null
     private var animTime: Float = 0f
     private var startOffset: Float = 0f
@@ -144,18 +142,19 @@ private class BgEffectNode(
     private fun startAnimation() {
         animationJob?.cancel()
         startOffset = animTime
-        animationJob = coroutineScope.launch {
-            val minDeltaNanos = 1_000_000_000L / 60L
-            val origin = withFrameNanos { it }
-            var lastEmit = origin
-            while (isActive) {
-                val now = withFrameNanos { it }
-                if (now - lastEmit < minDeltaNanos) continue
-                lastEmit = now
-                animTime = startOffset + (now - origin) / 1_000_000_000f
-                invalidateDraw()
+        animationJob =
+            coroutineScope.launch {
+                val minDeltaNanos = 1_000_000_000L / 60L
+                val origin = withFrameNanos { it }
+                var lastEmit = origin
+                while (isActive) {
+                    val now = withFrameNanos { it }
+                    if (now - lastEmit < minDeltaNanos) continue
+                    lastEmit = now
+                    animTime = startOffset + (now - origin) / 1_000_000_000f
+                    invalidateDraw()
+                }
             }
-        }
     }
 
     override fun ContentDrawScope.draw() {

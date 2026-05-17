@@ -1,5 +1,6 @@
 package app.mori.reader.ui.theme
 
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialExpressiveTheme
@@ -53,6 +54,7 @@ fun AppTheme(
                     ProvideMoriTheme(
                         themeMode = themeState.themeMode,
                         uiThemeEngine = themeState.uiThemeEngine,
+                        materialEInkMode = false,
                     ) {
                         ApplySystemBarsThemeEffect(darkTheme = darkTheme)
                         content()
@@ -61,20 +63,35 @@ fun AppTheme(
             }
 
             UiThemeEngine.Material -> {
-                MaterialExpressiveTheme(
-                    colorScheme =
+                val colorScheme =
+                    if (themeState.materialEInkMode) {
+                        remember(darkTheme) { materialEInkColorScheme(darkTheme) }
+                    } else {
                         rememberMaterialColorScheme(
                             darkTheme = darkTheme,
                             monetEnabled = themeState.monetEnabled,
                             monetKeyColor = themeState.monetKeyColor,
-                        ),
+                        )
+                    }
+                MaterialExpressiveTheme(
+                    colorScheme = colorScheme,
                 ) {
-                    ProvideMoriTheme(
-                        themeMode = themeState.themeMode,
-                        uiThemeEngine = themeState.uiThemeEngine,
+                    CompositionLocalProvider(
+                        LocalOverscrollFactory provides
+                            if (themeState.materialEInkMode) {
+                                null
+                            } else {
+                                LocalOverscrollFactory.current
+                            },
                     ) {
-                        ApplySystemBarsThemeEffect(darkTheme = darkTheme)
-                        content()
+                        ProvideMoriTheme(
+                            themeMode = themeState.themeMode,
+                            uiThemeEngine = themeState.uiThemeEngine,
+                            materialEInkMode = themeState.materialEInkMode,
+                        ) {
+                            ApplySystemBarsThemeEffect(darkTheme = darkTheme)
+                            content()
+                        }
                     }
                 }
             }
