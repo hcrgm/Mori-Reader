@@ -228,30 +228,49 @@ fun DictionaryPage(
             )
         }
 
-        dictionaryState.popupStack.forEachIndexed { index, lookup ->
-            DictionaryLookupPopup(
-                lookup = lookup,
-                popupIndex = index,
-                settings = settings,
-                ankiDuplicateExpression = ankiState.duplicateExpression,
-                isDark = isDark,
-                materialEInkMode = materialEInkMode,
-                viewportWidth = maxWidth,
-                viewportHeight = maxHeight,
-                topInset =
-                    searchTopPadding +
-                        DictionarySearchFieldHeight +
-                        DictionarySearchFieldContentGap,
-                bottomInset = bottomPadding + 8.dp,
-                blurEnabled = effectiveBlurEnabled,
-                backdrop = contentBackdrop,
-                onDictionaryIntent = onDictionaryIntent,
-                onAnkiIntent = onAnkiIntent,
-                onVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
-                onSwipeDismiss = { onDictionaryIntent(DictionaryIntent.DismissPopup(index)) },
-                onDismiss = { onDictionaryIntent(DictionaryIntent.DismissPopup(index)) },
-            )
-        }
+        DictionaryLookupPopupStack(
+            lookups = dictionaryState.popupStack,
+            settings = settings,
+            ankiDuplicateExpression = ankiState.duplicateExpression,
+            isDark = isDark,
+            materialEInkMode = materialEInkMode,
+            viewportWidth = maxWidth,
+            viewportHeight = maxHeight,
+            topInset =
+                searchTopPadding +
+                    DictionarySearchFieldHeight +
+                    DictionarySearchFieldContentGap,
+            bottomInset = bottomPadding + 8.dp,
+            blurEnabled = effectiveBlurEnabled,
+            backdrop = contentBackdrop,
+            onPopupTextSelected = { popupIndex, text, rect ->
+                onDictionaryIntent(
+                    DictionaryIntent.PopupTextSelected(
+                        parentIndex = popupIndex,
+                        text = text,
+                        rect = rect,
+                    ),
+                )
+            },
+            onMineEntry = { lookup, content ->
+                onAnkiIntent(
+                    AnkiIntent.MineNote(
+                        content = content,
+                        context = AnkiMiningContext(sentence = lookup.selectedText),
+                    ),
+                )
+            },
+            onCheckDuplicate = { expression ->
+                onAnkiIntent(AnkiIntent.CheckDuplicate(expression))
+            },
+            onVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,
+            onSwipeDismiss = { index ->
+                onDictionaryIntent(DictionaryIntent.DismissPopup(index))
+            },
+            onDismiss = { index ->
+                onDictionaryIntent(DictionaryIntent.DismissPopup(index))
+            },
+        )
     }
 }
 

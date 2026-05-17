@@ -65,6 +65,7 @@ internal fun LookupPopupSurface(
     onCheckDuplicate: (String) -> Unit,
     modifier: Modifier = Modifier,
     onVerticalScrollActiveChange: (Boolean) -> Unit = {},
+    onOutsideClick: () -> Unit = onDismiss,
     topContent: @Composable ColumnScope.() -> Unit = {},
 ) {
     val outsideInteractionSource = remember { MutableInteractionSource() }
@@ -91,7 +92,7 @@ internal fun LookupPopupSurface(
                 .clickable(
                     interactionSource = outsideInteractionSource,
                     indication = null,
-                    onClick = onDismiss,
+                    onClick = onOutsideClick,
                 ),
     ) {
         Box(

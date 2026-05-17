@@ -4,4 +4,15 @@
     <style name="Theme.Mori" parent="android:Theme.Material.NoActionBar">
         <item name="android:forceDarkAllowed">false</item>
     </style>
+
+    <style name="Theme.Mori.DictionaryLookup" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:backgroundDimAmount">0</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:colorAccent">@android:color/transparent</item>
+        <item name="android:forceDarkAllowed">false</item>
+    </style>
 </resources>
