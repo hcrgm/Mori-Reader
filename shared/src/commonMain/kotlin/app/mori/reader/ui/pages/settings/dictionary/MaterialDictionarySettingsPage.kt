@@ -277,6 +277,12 @@ internal fun MaterialDictionarySettingsPage(
         onDismiss = controller.dismissDeletion,
         onConfirm = controller.confirmDeletion,
     )
+    DictionaryImportFeedback(
+        dictionaryState = dictionaryState,
+        onDismissSummary = {
+            onIntent(SettingsIntent.DismissDictionaryImportSummary)
+        },
+    )
 }
 
 @Composable

@@ -45,6 +45,11 @@
     <!-- ===================== Bookshelf (HomePage) ===================== -->
     <string name="home_tab_all">全部</string>
     <string name="home_importing">正在导入图书</string>
+    <string name="home_import_progress">正在导入第 %1$d/%2$d 本</string>
+    <string name="book_import_failed_partial_title">部分图书未导入</string>
+    <string name="book_import_failed_all_title">图书导入失败</string>
+    <string name="book_import_failed_partial_message">以下图书没有导入成功，你可以检查文件后再试一次。</string>
+    <string name="book_import_failed_all_message">所选图书都没有导入成功，请检查文件后再试一次。</string>
     <string name="home_loading">正在加载书架</string>
     <string name="home_empty_bookshelf">书架里还没有图书</string>
     <string name="home_empty_bookshelf_hint">先导入一本书，把书架慢慢填满吧。</string>
@@ -389,6 +394,17 @@
     <string name="toast_dict_checking_updates">正在检查词典更新</string>
     <string name="toast_dict_updates_complete">词典更新检查完成</string>
     <string name="toast_dict_update_failed">词典更新失败</string>
+    <string name="dict_import_progress">正在导入第 %1$d/%2$d 本</string>
+    <string name="dict_import_complete">导入完成，成功 %1$d 本，失败 %2$d 本</string>
+    <string name="dict_import_failed_partial_title">部分词典未导入</string>
+    <string name="dict_import_failed_all_title">词典导入失败</string>
+    <string name="dict_import_failed_partial_message">以下词典没有导入成功，你可以检查文件后再试一次。</string>
+    <string name="dict_import_failed_all_message">所选词典都没有导入成功，请检查文件后再试一次。</string>
+    <string name="dict_import_reason_label">原因：%1$s</string>
+    <string name="dict_import_reason_unsupported">不是支持的词典文件</string>
+    <string name="dict_import_reason_corrupted">词典文件已损坏或不完整</string>
+    <string name="dict_import_reason_unreadable">这个词典无法读取</string>
+    <string name="dict_import_reason_unknown">导入时发生问题，请重试</string>
 
     <!-- Error messages -->
     <string name="error_bookshelf_load_failed">书架加载失败</string>

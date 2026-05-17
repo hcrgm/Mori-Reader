@@ -37,6 +37,8 @@ sealed interface BookshelfIntent {
         val id: String,
     ) : BookshelfIntent
 
+    data object DismissBookImportSummary : BookshelfIntent
+
     data object DismissHomeError : BookshelfIntent
 
     data class SetBookshelfSortMode(

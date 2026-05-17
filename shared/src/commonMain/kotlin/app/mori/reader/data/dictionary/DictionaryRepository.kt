@@ -6,7 +6,8 @@ interface DictionaryRepository {
     suspend fun importDictionaries(
         type: DictionaryType,
         uriStrings: List<String>,
-    ): DictionaryCatalog
+        onProgress: ((DictionaryImportProgress) -> Unit)? = null,
+    ): DictionaryImportResult
 
     suspend fun setEnabled(
         type: DictionaryType,
@@ -44,3 +45,26 @@ enum class MoveDirection {
     Up,
     Down,
 }
+
+data class DictionaryImportProgress(
+    val currentIndex: Int,
+    val totalCount: Int,
+)
+
+data class DictionaryImportFailure(
+    val fileName: String,
+    val reason: DictionaryImportFailureReason,
+)
+
+enum class DictionaryImportFailureReason {
+    UnsupportedFile,
+    CorruptedFile,
+    UnreadableFile,
+    Unknown,
+}
+
+data class DictionaryImportResult(
+    val catalog: DictionaryCatalog,
+    val successCount: Int,
+    val failures: List<DictionaryImportFailure>,
+)

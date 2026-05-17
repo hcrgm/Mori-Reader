@@ -9,7 +9,10 @@ interface BookRepository {
 
     suspend fun loadReaderBook(bookId: String): ReaderBook
 
-    suspend fun importBooks(uriStrings: List<String>): BookCatalog
+    suspend fun importBooks(
+        uriStrings: List<String>,
+        onProgress: (BookImportProgress) -> Unit = {},
+    ): BookImportResult
 
     suspend fun saveReaderProgress(
         bookId: String,
@@ -35,3 +38,19 @@ interface BookRepository {
 
     suspend fun deleteBook(bookId: String): BookCatalog
 }
+
+data class BookImportProgress(
+    val currentIndex: Int,
+    val totalCount: Int,
+    val currentName: String,
+)
+
+data class BookImportResult(
+    val catalog: BookCatalog,
+    val successCount: Int,
+    val failures: List<BookImportFailureItem>,
+)
+
+data class BookImportFailureItem(
+    val fileName: String,
+)

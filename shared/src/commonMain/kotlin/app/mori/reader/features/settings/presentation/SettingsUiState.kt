@@ -1,6 +1,7 @@
 package app.mori.reader.features.settings.presentation
 
 import app.mori.reader.data.dictionary.DictionaryInfo
+import app.mori.reader.data.dictionary.DictionaryImportFailureReason
 import app.mori.reader.data.dictionary.DictionaryType
 import app.mori.reader.ui.text.UiText
 
@@ -17,6 +18,8 @@ data class DictionaryManagementState(
     val isLoading: Boolean = true,
     val isImporting: Boolean = false,
     val isUpdating: Boolean = false,
+    val importProgress: DictionaryImportUiProgress? = null,
+    val importSummary: DictionaryImportSummary? = null,
     val statusText: UiText? = null,
     val errorMessage: UiText? = null,
 ) {
@@ -27,3 +30,19 @@ data class DictionaryManagementState(
             DictionaryType.Pitch -> pitchDictionaries
         }
 }
+
+data class DictionaryImportUiProgress(
+    val currentIndex: Int,
+    val totalCount: Int,
+)
+
+data class DictionaryImportSummary(
+    val successCount: Int,
+    val failureCount: Int,
+    val failures: List<DictionaryImportFailureItem>,
+)
+
+data class DictionaryImportFailureItem(
+    val fileName: String,
+    val reason: DictionaryImportFailureReason,
+)

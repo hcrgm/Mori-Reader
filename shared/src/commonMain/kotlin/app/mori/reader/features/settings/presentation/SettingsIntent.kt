@@ -252,4 +252,6 @@ sealed interface SettingsIntent {
     data object UpdateDictionaries : SettingsIntent
 
     data object DismissDictionaryError : SettingsIntent
+
+    data object DismissDictionaryImportSummary : SettingsIntent
 }

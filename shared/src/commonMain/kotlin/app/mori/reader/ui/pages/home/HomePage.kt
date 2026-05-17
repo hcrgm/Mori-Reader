@@ -86,6 +86,11 @@ fun HomePage(
         rememberEpubPicker { uris ->
             onBookshelfIntent(BookshelfIntent.BookshelfImportBooks(uris))
         }
+    val onImportBooks = {
+        if (!home.isImporting) {
+            epubPicker()
+        }
+    }
 
     val categoryIds = listOf<String?>(null) + home.categories.map { it.id }
     val selectedIndex = categoryIds.indexOf(home.selectedCategoryId).takeIf { it >= 0 } ?: 0
@@ -164,7 +169,7 @@ fun HomePage(
                     contextMenuBook = null
                     contextMenuPage = null
                 },
-                onImportBooks = epubPicker,
+                onImportBooks = onImportBooks,
                 onBookshelfIntent = onBookshelfIntent,
                 onOpenBook = onOpenBook,
             )
@@ -224,7 +229,7 @@ fun HomePage(
                     }
                 },
                 actions = {
-                    IconButton(onClick = epubPicker) {
+                    IconButton(onClick = onImportBooks) {
                         Icon(
                             imageVector = MiuixIcons.Add,
                             contentDescription = stringResource(Res.string.cd_import_book),
@@ -281,7 +286,7 @@ fun HomePage(
                 selectedTabIndex = pagerState.currentPage.coerceAtMost(tabs.lastIndex),
                 currentSortMode = settings.bookshelf.sortMode,
                 onTabSelected = onSelectTab,
-                onImportBook = epubPicker,
+                onImportBook = onImportBooks,
                 onManageCategories = { categoryManagerOpen = true },
                 onSetSortMode = { option ->
                     onBookshelfIntent(BookshelfIntent.SetBookshelfSortMode(option))

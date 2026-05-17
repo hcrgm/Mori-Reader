@@ -195,6 +195,12 @@ internal fun MiuixDictionarySettingsPage(
                 onDismiss = controller.dismissDeletion,
                 onConfirm = controller.confirmDeletion,
             )
+            DictionaryImportFeedback(
+                dictionaryState = dictionaryState,
+                onDismissSummary = {
+                    onIntent(SettingsIntent.DismissDictionaryImportSummary)
+                },
+            )
         }
     }
 }

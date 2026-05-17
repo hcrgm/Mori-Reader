@@ -2,13 +2,17 @@ package app.mori.reader.data.dictionary
 
 import android.content.Context
 import android.net.Uri
+import android.provider.OpenableColumns
 import de.manhhao.hoshi.HoshiDicts
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.io.IOException
 import java.net.URL
 import java.util.UUID
+import java.util.zip.ZipException
+import java.util.zip.ZipFile
 
 internal class AndroidDictionaryRepository(
     private val context: Context,
@@ -51,24 +55,43 @@ internal class AndroidDictionaryRepository(
     override suspend fun importDictionaries(
         type: DictionaryType,
         uriStrings: List<String>,
-    ): DictionaryCatalog =
+        onProgress: ((DictionaryImportProgress) -> Unit)?,
+    ): DictionaryImportResult =
         withContext(Dispatchers.IO) {
             val outputDir = typeDirectory(type).also { it.mkdirs() }
-            val failures = mutableListOf<String>()
+            val failures = mutableListOf<DictionaryImportFailure>()
+            var successCount = 0
 
             uriStrings.forEachIndexed { index, uriString ->
                 val uri = Uri.parse(uriString)
+                val displayName = displayName(uri) ?: uri.decodedFallbackName("词典-${index + 1}.zip")
                 val tempZip =
                     File(context.cacheDir, "dictionary-import-${System.nanoTime()}-$index.zip")
+                onProgress?.invoke(
+                    DictionaryImportProgress(
+                        currentIndex = index + 1,
+                        totalCount = uriStrings.size,
+                    ),
+                )
                 try {
                     copyUriToFile(uri, tempZip)
                     val result =
                         HoshiDicts.importDictionary(tempZip.absolutePath, outputDir.absolutePath)
                     if (!result.success) {
-                        failures += uri.lastPathSegment ?: uriString
+                        failures +=
+                            DictionaryImportFailure(
+                                fileName = displayName,
+                                reason = classifyImportFailure(tempZip),
+                            )
+                    } else {
+                        successCount += 1
                     }
-                } catch (_: Throwable) {
-                    failures += uri.lastPathSegment ?: uriString
+                } catch (throwable: Throwable) {
+                    failures +=
+                        DictionaryImportFailure(
+                            fileName = displayName,
+                            reason = classifyImportFailure(tempZip, throwable),
+                        )
                 } finally {
                     tempZip.delete()
                 }
@@ -76,13 +99,11 @@ internal class AndroidDictionaryRepository(
 
             val catalog = scanAndPersist()
             rebuildQuery(catalog)
-            if (failures.size == uriStrings.size) {
-                throw IllegalStateException("导入失败，请确认选择的是 Yomitan .zip 词典。")
-            }
-            if (failures.isNotEmpty()) {
-                throw IllegalStateException("部分词典导入失败：${failures.joinToString(", ")}")
-            }
-            catalog
+            DictionaryImportResult(
+                catalog = catalog,
+                successCount = successCount,
+                failures = failures,
+            )
         }
 
     override suspend fun setEnabled(
@@ -399,6 +420,46 @@ internal class AndroidDictionaryRepository(
 
     private fun typeDirectory(type: DictionaryType): File = File(dictionariesRoot, type.directoryName)
 
+    private fun displayName(uri: Uri): String? =
+        runCatching {
+            context.contentResolver
+                .query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)
+                ?.use { cursor ->
+                    if (!cursor.moveToFirst()) return@use null
+                    val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                    if (index >= 0) cursor.getString(index)?.takeIf(String::isNotBlank) else null
+                }
+        }.getOrNull()
+
+    private fun classifyImportFailure(
+        tempZip: File,
+        throwable: Throwable? = null,
+    ): DictionaryImportFailureReason {
+        if (throwable is SecurityException || throwable is IOException) {
+            return DictionaryImportFailureReason.UnreadableFile
+        }
+
+        return runCatching {
+            ZipFile(tempZip).use { zip ->
+                val hasIndex = zip.entries().asSequence().any { entry ->
+                    !entry.isDirectory && entry.name.substringAfterLast('/') == "index.json"
+                }
+                when {
+                    !hasIndex -> DictionaryImportFailureReason.UnsupportedFile
+                    throwable is ZipException -> DictionaryImportFailureReason.CorruptedFile
+                    throwable != null -> DictionaryImportFailureReason.CorruptedFile
+                    else -> DictionaryImportFailureReason.Unknown
+                }
+            }
+        }.getOrElse {
+            when (throwable) {
+                is ZipException -> DictionaryImportFailureReason.CorruptedFile
+                is SecurityException, is IOException -> DictionaryImportFailureReason.UnreadableFile
+                else -> DictionaryImportFailureReason.CorruptedFile
+            }
+        }
+    }
+
     private fun copyUriToFile(
         uri: Uri,
         target: File,
@@ -409,6 +470,14 @@ internal class AndroidDictionaryRepository(
         }
     }
 }
+
+private fun Uri.decodedFallbackName(defaultName: String): String =
+    Uri
+        .decode(lastPathSegment.orEmpty())
+        .substringAfterLast('/')
+        .substringAfterLast(':')
+        .substringBefore('?')
+        .ifBlank { defaultName }
 
 private fun List<DictionaryInfo>.withOrder(): List<DictionaryInfo> = mapIndexed { index, dictionary -> dictionary.copy(order = index) }
 

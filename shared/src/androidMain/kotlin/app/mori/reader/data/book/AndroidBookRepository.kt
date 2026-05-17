@@ -3,6 +3,7 @@ package app.mori.reader.data.book
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.net.toUri
 import app.mori.reader.data.filteredReaderCharacterCount
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import java.net.URLDecoder
 import java.util.UUID
 import java.util.zip.ZipFile
 import javax.xml.parsers.DocumentBuilderFactory
+import kotlin.time.Clock
 
 internal class AndroidBookRepository(
     private val context: Context,
@@ -54,7 +56,7 @@ internal class AndroidBookRepository(
                 loadBookMetadataStorage(bookDir)
                     ?: throw IllegalArgumentException("图书不存在")
 
-            val now = System.currentTimeMillis()
+            val now = Clock.System.now().toEpochMilliseconds()
             saveBookMetadataStorage(bookDir, metadata.copy(lastOpenedAt = now))
             publishCatalog(buildCatalog())
 
@@ -71,18 +73,36 @@ internal class AndroidBookRepository(
             )
         }
 
-    override suspend fun importBooks(uriStrings: List<String>): BookCatalog =
+    override suspend fun importBooks(
+        uriStrings: List<String>,
+        onProgress: (BookImportProgress) -> Unit,
+    ): BookImportResult =
         withContext(Dispatchers.IO) {
-            if (uriStrings.isEmpty()) return@withContext loadCatalog()
+            if (uriStrings.isEmpty()) {
+                return@withContext BookImportResult(
+                    catalog = loadCatalog(),
+                    successCount = 0,
+                    failures = emptyList(),
+                )
+            }
             booksRoot.mkdirs()
             val categories = loadCategories()
             val readingCategoryId =
                 categories.firstOrNull { it.name == DEFAULT_READING_CATEGORY_NAME }?.id
             val categoryMap = loadBookCategoryMap().toMutableMap()
-            val failures = mutableListOf<String>()
+            val failures = mutableListOf<BookImportFailureItem>()
+            var successCount = 0
 
-            uriStrings.forEach { uriString ->
-                val uri = Uri.parse(uriString)
+            uriStrings.forEachIndexed { index, uriString ->
+                val uri = uriString.toUri()
+                val currentName = displayName(uri) ?: uri.lastPathSegment ?: uriString
+                onProgress(
+                    BookImportProgress(
+                        currentIndex = index + 1,
+                        totalCount = uriStrings.size,
+                        currentName = currentName,
+                    ),
+                )
                 val bookId = UUID.randomUUID().toString()
                 val tempBookDir = File(booksRoot, UUID.randomUUID().toString())
                 val sourceFile = File(tempBookDir, SOURCE_FILE_NAME)
@@ -90,13 +110,13 @@ internal class AndroidBookRepository(
                     tempBookDir.mkdirs()
                     copyUriToFile(uri, sourceFile)
                     val fallbackTitle = displayName(uri)?.removeSuffix(".epub") ?: "未命名图书"
-                    val importedAt = System.currentTimeMillis()
+                    val importedAt = Clock.System.now().toEpochMilliseconds()
                     val metadata = parseEpub(sourceFile, tempBookDir, fallbackTitle)
                     val safeTitle = sanitizeFileName(metadata.title.ifBlank { fallbackTitle })
                     val bookDir = File(booksRoot, safeTitle)
                     if (bookDir.exists()) {
                         tempBookDir.deleteRecursively()
-                        return@forEach
+                        return@forEachIndexed
                     }
                     if (!tempBookDir.renameTo(bookDir)) {
                         throw IllegalStateException("无法创建图书目录")
@@ -123,18 +143,20 @@ internal class AndroidBookRepository(
                     saveReaderBookInfoStorage(bookDir, processing.info)
                     saveReaderTocStorage(bookDir, processing.tocRows)
                     finalSourceFile.delete()
+                    successCount += 1
                 } catch (_: Throwable) {
                     tempBookDir.deleteRecursively()
-                    failures += displayName(uri) ?: uri.lastPathSegment ?: uriString
+                    failures += BookImportFailureItem(fileName = currentName)
                 }
             }
 
-            if (failures.isNotEmpty() && buildCatalog().books.isEmpty()) {
-                throw IllegalStateException("导入失败，请确认选择的是 EPUB 文件。")
-            }
-
             saveBookCategoryMap(categoryMap)
-            buildCatalog().also(::publishCatalog)
+            val catalog = buildCatalog().also(::publishCatalog)
+            BookImportResult(
+                catalog = catalog,
+                successCount = successCount,
+                failures = failures,
+            )
         }
 
     override suspend fun saveReaderProgress(
@@ -168,7 +190,7 @@ internal class AndroidBookRepository(
             val chapter = readerBook.chapters[clampedIndex]
             val characterCount =
                 chapter.characterStart + (chapter.characterCount * clampedProgress).toInt()
-            val now = System.currentTimeMillis()
+            val now = Clock.System.now().toEpochMilliseconds()
             saveBookmark(
                 bookDir,
                 ReaderBookmark(
@@ -194,7 +216,7 @@ internal class AndroidBookRepository(
                     BookCategory(
                         id = UUID.randomUUID().toString(),
                         name = trimmed,
-                        createdAt = System.currentTimeMillis(),
+                        createdAt = Clock.System.now().toEpochMilliseconds(),
                         order = (categories.maxOfOrNull(BookCategory::order) ?: -1) + 1,
                     ),
             )
@@ -978,7 +1000,7 @@ internal class AndroidBookRepository(
         BookCategory(
             id = UUID.randomUUID().toString(),
             name = DEFAULT_READING_CATEGORY_NAME,
-            createdAt = System.currentTimeMillis(),
+            createdAt = Clock.System.now().toEpochMilliseconds(),
             order = 0,
         )
 }

@@ -3,6 +3,9 @@ package app.mori.reader.features.bookshelf.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.book.BookCatalog
+import app.mori.reader.data.book.BookImportFailureItem
+import app.mori.reader.data.book.BookImportProgress
+import app.mori.reader.data.book.BookImportResult
 import app.mori.reader.data.book.BookRepository
 import app.mori.reader.data.settings.BookshelfSortMode
 import app.mori.reader.data.settings.SettingsRepository
@@ -100,6 +103,12 @@ class BookshelfViewModel(
                 }
             }
 
+            BookshelfIntent.DismissBookImportSummary -> {
+                _state.update {
+                    it.copy(importSummary = null)
+                }
+            }
+
             is BookshelfIntent.DismissHomeError -> {
                 _state.update {
                     it.copy(errorMessage = null)
@@ -121,16 +130,26 @@ class BookshelfViewModel(
     }
 
     private fun importBooks(uriStrings: List<String>) {
-        if (uriStrings.isEmpty()) return
-        _state.update { it.copy(isImporting = true, errorMessage = null) }
+        if (uriStrings.isEmpty() || _state.value.isImporting) return
+        _state.update {
+            it.copy(
+                isImporting = true,
+                importProgress = null,
+                importSummary = null,
+                errorMessage = null,
+            )
+        }
         viewModelScope.launch {
-            runCatching { bookRepository.importBooks(uriStrings) }
-                .onSuccess { catalog ->
+            runCatching {
+                bookRepository.importBooks(uriStrings, ::onImportProgress)
+            }.onSuccess { result ->
                     _state.update { state ->
                         state.withCatalog(
-                            books = catalog.books,
-                            categories = catalog.categories,
+                            books = result.catalog.books,
+                            categories = result.catalog.categories,
                             isImporting = false,
+                            importProgress = null,
+                            importSummary = result.toUiSummary(),
                             errorMessage = null,
                         )
                     }
@@ -138,12 +157,40 @@ class BookshelfViewModel(
                     _state.update {
                         it.copy(
                             isImporting = false,
+                            importProgress = null,
                             errorMessage = throwable.uiTextOr(Res.string.error_book_import_failed),
                         )
                     }
                 }
         }
     }
+
+    private fun onImportProgress(progress: BookImportProgress) {
+        _state.update {
+            it.copy(
+                importProgress =
+                    BookImportUiProgress(
+                        currentIndex = progress.currentIndex,
+                        totalCount = progress.totalCount,
+                        currentName = progress.currentName,
+                    ),
+            )
+        }
+    }
+
+    private fun BookImportResult.toUiSummary(): BookImportSummary? =
+        failures
+            .takeIf { it.isNotEmpty() }
+            ?.let { currentFailures ->
+                BookImportSummary(
+                    successCount = successCount,
+                    failureCount = currentFailures.size,
+                    failures = currentFailures.map { it.toUiItem() },
+                )
+            }
+
+    private fun BookImportFailureItem.toUiItem(): BookImportFailureUiItem =
+        BookImportFailureUiItem(fileName = fileName)
 
     private fun mutateBookCatalog(block: suspend () -> BookCatalog) {
         viewModelScope.launch {

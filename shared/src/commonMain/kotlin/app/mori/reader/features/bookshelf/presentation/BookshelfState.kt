@@ -10,6 +10,8 @@ data class BookshelfState(
     val selectedCategoryId: String? = null,
     val isLoading: Boolean = true,
     val isImporting: Boolean = false,
+    val importProgress: BookImportUiProgress? = null,
+    val importSummary: BookImportSummary? = null,
     val errorMessage: UiText? = null,
 )
 
@@ -18,6 +20,8 @@ internal fun BookshelfState.withCatalog(
     categories: List<BookCategory>,
     isLoading: Boolean = this.isLoading,
     isImporting: Boolean = this.isImporting,
+    importProgress: BookImportUiProgress? = this.importProgress,
+    importSummary: BookImportSummary? = this.importSummary,
     errorMessage: UiText? = this.errorMessage,
 ): BookshelfState {
     val categoryIds = categories.mapTo(mutableSetOf()) { it.id }
@@ -28,6 +32,24 @@ internal fun BookshelfState.withCatalog(
         selectedCategoryId = selectedCategoryId,
         isLoading = isLoading,
         isImporting = isImporting,
+        importProgress = importProgress,
+        importSummary = importSummary,
         errorMessage = errorMessage,
     )
 }
+
+data class BookImportUiProgress(
+    val currentIndex: Int,
+    val totalCount: Int,
+    val currentName: String,
+)
+
+data class BookImportSummary(
+    val successCount: Int,
+    val failureCount: Int,
+    val failures: List<BookImportFailureUiItem>,
+)
+
+data class BookImportFailureUiItem(
+    val fileName: String,
+)

@@ -41,7 +41,6 @@ import app.mori.reader.shared.generated.resources.home_empty_bookshelf
 import app.mori.reader.shared.generated.resources.home_empty_bookshelf_hint
 import app.mori.reader.shared.generated.resources.home_empty_category
 import app.mori.reader.shared.generated.resources.home_empty_category_hint
-import app.mori.reader.shared.generated.resources.home_importing
 import app.mori.reader.shared.generated.resources.home_loading
 import app.mori.reader.ui.components.navigation.eInkPagerSwipeModifier
 import app.mori.reader.ui.text.asString
@@ -126,7 +125,7 @@ fun BookshelfContent(
                 visibleBooks.isNotEmpty()
         val standaloneState =
             when {
-                home.errorMessage != null || home.isImporting -> null
+                home.errorMessage != null -> null
                 home.isLoading ->
                     BookshelfEmptyStateModel(
                         face = "( -_-) zZ",
@@ -154,7 +153,7 @@ fun BookshelfContent(
         LaunchedEffect(settings.bookshelf.sortMode) {
             if (
                 !home.isLoading &&
-                (visibleBooks.isNotEmpty() || home.errorMessage != null || home.isImporting)
+                (visibleBooks.isNotEmpty() || home.errorMessage != null)
             ) {
                 gridState.scrollToItem(0)
             }
@@ -206,15 +205,6 @@ fun BookshelfContent(
                             message = error.asString(),
                             onDismiss = { onBookshelfIntent(BookshelfIntent.DismissHomeError) },
                         )
-                    }
-                }
-
-                if (home.isImporting) {
-                    item(
-                        key = "importing",
-                        span = { GridItemSpan(maxLineSpan) },
-                    ) {
-                        StatusCard(text = stringResource(Res.string.home_importing))
                     }
                 }
 

@@ -45,6 +45,11 @@
     <!-- ===================== Bookshelf (HomePage) ===================== -->
     <string name="home_tab_all">All</string>
     <string name="home_importing">Importing book</string>
+    <string name="home_import_progress">Importing %1$d/%2$d</string>
+    <string name="book_import_failed_partial_title">Some books were not imported</string>
+    <string name="book_import_failed_all_title">Book import failed</string>
+    <string name="book_import_failed_partial_message">The following books were not imported. Check the files and try again.</string>
+    <string name="book_import_failed_all_message">None of the selected books were imported. Check the files and try again.</string>
     <string name="home_loading">Loading bookshelf</string>
     <string name="home_empty_bookshelf">Your bookshelf is empty</string>
     <string name="home_empty_bookshelf_hint">Import a book to start building your library.</string>
@@ -389,6 +394,17 @@
     <string name="toast_dict_checking_updates">Checking for dictionary updates</string>
     <string name="toast_dict_updates_complete">Dictionary update check complete</string>
     <string name="toast_dict_update_failed">Dictionary update failed</string>
+    <string name="dict_import_progress">Importing %1$d/%2$d</string>
+    <string name="dict_import_complete">Import complete: %1$d succeeded, %2$d failed</string>
+    <string name="dict_import_failed_partial_title">Some dictionaries were not imported</string>
+    <string name="dict_import_failed_all_title">Dictionary import failed</string>
+    <string name="dict_import_failed_partial_message">The following dictionaries were not imported. Check the files and try again.</string>
+    <string name="dict_import_failed_all_message">None of the selected dictionaries were imported. Check the files and try again.</string>
+    <string name="dict_import_reason_label">Reason: %1$s</string>
+    <string name="dict_import_reason_unsupported">This is not a supported dictionary file</string>
+    <string name="dict_import_reason_corrupted">The dictionary file is damaged or incomplete</string>
+    <string name="dict_import_reason_unreadable">This dictionary could not be read</string>
+    <string name="dict_import_reason_unknown">Something went wrong during import. Please try again</string>
 
     <!-- Error messages -->
     <string name="error_bookshelf_load_failed">Failed to load bookshelf</string>

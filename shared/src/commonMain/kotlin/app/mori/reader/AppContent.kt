@@ -32,6 +32,7 @@ import app.mori.reader.ui.AppIntent
 import app.mori.reader.ui.AppState
 import app.mori.reader.ui.navigation.AppRoute
 import app.mori.reader.ui.navigation.MainTabsContent
+import app.mori.reader.ui.pages.home.BookshelfImportFeedback
 import app.mori.reader.ui.pages.reader.ReaderPage
 import app.mori.reader.ui.pages.settings.about.AboutPage
 import app.mori.reader.ui.pages.settings.about.OpenSourceLicensesPage
@@ -203,6 +204,12 @@ fun AppContent(
             modifier = Modifier.fillMaxSize(),
             onBack = navigationState::popRoot,
             transitionEffects = rootTransitionEffects,
+        )
+        BookshelfImportFeedback(
+            home = bookshelfState,
+            onDismissSummary = {
+                onBookshelfIntent(BookshelfIntent.DismissBookImportSummary)
+            },
         )
     }
 }

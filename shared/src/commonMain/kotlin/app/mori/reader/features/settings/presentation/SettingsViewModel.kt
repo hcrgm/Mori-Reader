@@ -4,12 +4,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.audio.AudioRepository
 import app.mori.reader.data.dictionary.DictionaryCatalog
+import app.mori.reader.data.dictionary.DictionaryImportResult
 import app.mori.reader.data.dictionary.DictionaryRepository
 import app.mori.reader.data.dictionary.DictionaryType
 import app.mori.reader.data.dictionary.MoveDirection
 import app.mori.reader.data.settings.AudioSource
 import app.mori.reader.data.settings.SettingsRepository
 import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.dict_import_complete
 import app.mori.reader.shared.generated.resources.error_dictionary_load_failed
 import app.mori.reader.shared.generated.resources.error_dictionary_operation_failed
 import app.mori.reader.shared.generated.resources.toast_audio_local_delete_failed
@@ -20,8 +22,6 @@ import app.mori.reader.shared.generated.resources.toast_audio_url_exists
 import app.mori.reader.shared.generated.resources.toast_audio_url_requires_term_or_reading
 import app.mori.reader.shared.generated.resources.toast_dict_checking_updates
 import app.mori.reader.shared.generated.resources.toast_dict_import_failed
-import app.mori.reader.shared.generated.resources.toast_dict_imported
-import app.mori.reader.shared.generated.resources.toast_dict_importing
 import app.mori.reader.shared.generated.resources.toast_dict_update_failed
 import app.mori.reader.shared.generated.resources.toast_dict_updates_complete
 import app.mori.reader.ui.AppEffect
@@ -342,6 +342,12 @@ class SettingsViewModel(
                     it.copy(errorMessage = null)
                 }
             }
+
+            SettingsIntent.DismissDictionaryImportSummary -> {
+                updateDictionaryManagement {
+                    it.copy(importSummary = null)
+                }
+            }
         }
     }
 
@@ -456,21 +462,48 @@ class SettingsViewModel(
             it.copy(
                 isImporting = true,
                 isLoading = false,
-                statusText = uiText(Res.string.toast_dict_importing),
+                importProgress = null,
+                importSummary = null,
+                statusText = null,
                 errorMessage = null,
             )
         }
         viewModelScope.launch {
-            runCatching { dictionaryRepository.importDictionaries(type, uriStrings) }
-                .onSuccess { catalog ->
-                    updateDictionaryCatalog(catalog) {
-                        it.copy(isImporting = false, statusText = null)
+            runCatching {
+                dictionaryRepository.importDictionaries(type, uriStrings) { progress ->
+                    updateDictionaryManagement {
+                        it.copy(
+                            importProgress =
+                                DictionaryImportUiProgress(
+                                    currentIndex = progress.currentIndex,
+                                    totalCount = progress.totalCount,
+                                ),
+                        )
                     }
-                    _effects.trySend(AppEffect.ShowMessage(uiText(Res.string.toast_dict_imported)))
+                }
+            }.onSuccess { result ->
+                    updateDictionaryCatalog(result.catalog) {
+                        it.copy(
+                            isImporting = false,
+                            importProgress = null,
+                            statusText = null,
+                            importSummary = result.toUiSummary(),
+                        )
+                    }
+                    _effects.trySend(
+                        AppEffect.ShowMessage(
+                            uiText(
+                                Res.string.dict_import_complete,
+                                result.successCount,
+                                result.failures.size,
+                            ),
+                        ),
+                    )
                 }.onFailure { throwable ->
                     updateDictionaryManagement {
                         it.copy(
                             isImporting = false,
+                            importProgress = null,
                             statusText = null,
                             errorMessage = throwable.uiTextOr(Res.string.toast_dict_import_failed),
                         )
@@ -558,6 +591,21 @@ class SettingsViewModel(
         _state.update { state ->
             state.copy(dictionaryManagement = transform(state.dictionaryManagement))
         }
+    }
+
+    private fun DictionaryImportResult.toUiSummary(): DictionaryImportSummary? {
+        if (failures.isEmpty()) return null
+        return DictionaryImportSummary(
+            successCount = successCount,
+            failureCount = failures.size,
+            failures =
+                failures.map { failure ->
+                    DictionaryImportFailureItem(
+                        fileName = failure.fileName,
+                        reason = failure.reason,
+                    )
+                },
+        )
     }
 }
 
