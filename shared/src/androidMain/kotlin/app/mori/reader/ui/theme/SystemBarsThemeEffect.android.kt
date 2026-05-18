@@ -3,6 +3,7 @@ package app.mori.reader.ui.theme
 import android.content.Context
 import android.content.ContextWrapper
 import android.graphics.Color
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -33,7 +34,9 @@ actual fun ApplySystemBarsThemeEffect(darkTheme: Boolean) {
                     darkTheme
                 },
         )
-        activity.window.isNavigationBarContrastEnforced = false
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            activity.window.isNavigationBarContrastEnforced = false
+        }
         WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
             isAppearanceLightStatusBars = !darkTheme
             isAppearanceLightNavigationBars = !darkTheme

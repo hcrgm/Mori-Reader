@@ -144,6 +144,10 @@ fun ReaderPage(
                 }
 
                 else -> {
+                    val currentChapterSasayakiCues =
+                        remember(reader.sasayakiMatches, reader.chapterIndex) {
+                            reader.currentChapterSasayakiCues
+                        }
                     ReaderWebView(
                         state =
                             ReaderWebViewState(
@@ -152,7 +156,7 @@ fun ReaderPage(
                                 navigationVersion = reader.navigationVersion,
                                 fragment = reader.fragment,
                                 selectionHighlightLength = reader.lookupStack.firstOrNull()?.highlightLength,
-                                sasayakiCues = reader.currentChapterSasayakiCues,
+                                sasayakiCues = currentChapterSasayakiCues,
                                 highlightedSasayakiCueId = reader.sasayakiPlayer.currentCueId,
                             ),
                         config =

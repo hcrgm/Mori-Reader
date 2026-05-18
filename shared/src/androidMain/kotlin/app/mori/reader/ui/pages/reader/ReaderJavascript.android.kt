@@ -261,8 +261,8 @@ internal fun readerBootstrapScript(
               -webkit-box-decoration-break: clone;
             }
             .mori-sasayaki-cue-active {
-              background: $activeCueBackground;
-              outline: 1px solid $activeCueOutline;
+              background: var(--mori-sasayaki-active-background, $activeCueBackground);
+              outline: 1px solid var(--mori-sasayaki-active-outline, $activeCueOutline);
               color: inherit;
             }
           `;
@@ -722,6 +722,17 @@ internal fun readerBootstrapScript(
           window.moriSasayaki = {
             cues: [],
             activeCueId: null,
+            autoScroll: $sasayakiAutoScroll,
+            configure: function(options) {
+              options = options || {};
+              if (typeof options.autoScroll === 'boolean') this.autoScroll = options.autoScroll;
+              if (typeof options.activeBackground === 'string') {
+                document.documentElement.style.setProperty('--mori-sasayaki-active-background', options.activeBackground);
+              }
+              if (typeof options.activeOutline === 'string') {
+                document.documentElement.style.setProperty('--mori-sasayaki-active-outline', options.activeOutline);
+              }
+            },
             isIgnored: function(node) {
               var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
               return !!(el && el.closest('rt, rp, script, style'));
@@ -853,7 +864,7 @@ internal fun readerBootstrapScript(
               var selector = '.mori-sasayaki-cue[data-sasayaki-cue-id="' + String(id).replace(/"/g, '\\"') + '"]';
               var spans = Array.from(document.querySelectorAll(selector));
               spans.forEach(function(span) { span.classList.add('mori-sasayaki-cue-active'); });
-              if ($sasayakiAutoScroll && spans.length) {
+              if (this.autoScroll && spans.length) {
                 this.scrollToCue(spans[0]);
               }
               this.activeCueId = spans.length ? String(id) : null;

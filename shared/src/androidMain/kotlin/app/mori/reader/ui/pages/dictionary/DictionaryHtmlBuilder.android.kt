@@ -2,52 +2,54 @@ package app.mori.reader.ui.pages.dictionary
 
 import app.mori.reader.data.dictionary.DictionaryLookupEntry
 
-internal fun dictionaryHtml(
-    query: String,
-    entries: List<DictionaryLookupEntry>,
-    styles: Map<String, String>,
-    isSearching: Boolean,
-    hasSearched: Boolean,
-    errorMessage: String?,
-    searchingMessage: String,
-    noResultsMessage: String,
-    idleMessage: String,
-    playPronunciationLabel: String,
-    maxResults: Int,
-    scanLength: Int,
-    topPadding: Float,
-    collapseDictionaries: Boolean,
-    compactGlossaries: Boolean,
-    showExpressionTags: Boolean,
-    harmonicFrequency: Boolean,
-    deduplicatePitchAccents: Boolean,
-    isDark: Boolean,
-    eInkMode: Boolean,
-    audioSources: List<String>,
-    audioEnableAutoplay: Boolean,
-    audioPlaybackMode: String,
-    bottomPadding: Float,
-    edgeToEdgeContent: Boolean,
-    transparentBackground: Boolean,
-    eInkEntryBorderEnabled: Boolean,
-    enableInternalPopup: Boolean,
-    swipeDismissThreshold: Int,
-    ankiNeedsAudio: Boolean,
-    ankiAllowDuplicates: Boolean,
-    ankiUseAnkiConnect: Boolean,
-    ankiEmbedMedia: Boolean,
-    ankiCompactGlossaries: Boolean,
-    ankiDuplicateExpression: String?,
-): String {
-    val entriesJson = WebJson.encodeToString(entries)
-    val stylesJson = WebJson.encodeToString(styles)
-    val audioSourcesJson = WebJson.encodeToString(audioSources)
+internal data class DictionaryHtmlParams(
+    val query: String,
+    val entries: List<DictionaryLookupEntry>,
+    val styles: Map<String, String>,
+    val isSearching: Boolean,
+    val hasSearched: Boolean,
+    val errorMessage: String?,
+    val searchingMessage: String,
+    val noResultsMessage: String,
+    val idleMessage: String,
+    val playPronunciationLabel: String,
+    val maxResults: Int,
+    val scanLength: Int,
+    val topPadding: Float,
+    val collapseDictionaries: Boolean,
+    val compactGlossaries: Boolean,
+    val showExpressionTags: Boolean,
+    val harmonicFrequency: Boolean,
+    val deduplicatePitchAccents: Boolean,
+    val isDark: Boolean,
+    val eInkMode: Boolean,
+    val audioSources: List<String>,
+    val audioEnableAutoplay: Boolean,
+    val audioPlaybackMode: String,
+    val bottomPadding: Float,
+    val edgeToEdgeContent: Boolean,
+    val transparentBackground: Boolean,
+    val eInkEntryBorderEnabled: Boolean,
+    val enableInternalPopup: Boolean,
+    val swipeDismissThreshold: Int,
+    val ankiNeedsAudio: Boolean,
+    val ankiAllowDuplicates: Boolean,
+    val ankiUseAnkiConnect: Boolean,
+    val ankiEmbedMedia: Boolean,
+    val ankiCompactGlossaries: Boolean,
+    val ankiDuplicateExpression: String?,
+)
+
+internal fun dictionaryHtml(params: DictionaryHtmlParams): String {
+    val entriesJson = WebJson.encodeToString(params.entries)
+    val stylesJson = WebJson.encodeToString(params.styles)
+    val audioSourcesJson = WebJson.encodeToString(params.audioSources)
     val message =
         when {
-            errorMessage != null -> errorMessage
-            isSearching -> searchingMessage
-            hasSearched && entries.isEmpty() -> noResultsMessage
-            !hasSearched -> idleMessage
+            params.errorMessage != null -> params.errorMessage
+            params.isSearching -> params.searchingMessage
+            params.hasSearched && params.entries.isEmpty() -> params.noResultsMessage
+            !params.hasSearched -> params.idleMessage
             else -> ""
         }
     return """
@@ -58,11 +60,11 @@ internal fun dictionaryHtml(
                     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
                     <style>${
         dictionaryCss(
-            topPadding,
-            bottomPadding,
-            edgeToEdgeContent,
-            transparentBackground,
-            eInkEntryBorderEnabled,
+            params.topPadding,
+            params.bottomPadding,
+            params.edgeToEdgeContent,
+            params.transparentBackground,
+            params.eInkEntryBorderEnabled,
         )
     }</style>
                     </head>
@@ -73,33 +75,33 @@ internal fun dictionaryHtml(
                     <div id="popup" hidden><div id="popup-content"></div></div>
                     <script>
                     window.lookupEntries = $entriesJson;
-                    window.lookupQuery = ${WebJson.encodeToString(query)};
+                    window.lookupQuery = ${WebJson.encodeToString(params.query)};
                     window.dictionaryStyles = $stylesJson;
                     window.emptyMessage = ${WebJson.encodeToString(message)};
-                    window.scanLength = $scanLength;
-                    window.maxResults = $maxResults;
-                    window.collapseDictionaries = $collapseDictionaries;
-                    window.compactGlossaries = $compactGlossaries;
-                    window.showExpressionTags = $showExpressionTags;
-                    window.harmonicFrequency = $harmonicFrequency;
-                    window.deduplicatePitchAccents = $deduplicatePitchAccents;
-                    window.isDark = ${WebJson.encodeToString(isDark)};
-                    window.eInkMode = ${WebJson.encodeToString(eInkMode)};
+                    window.scanLength = ${params.scanLength};
+                    window.maxResults = ${params.maxResults};
+                    window.collapseDictionaries = ${params.collapseDictionaries};
+                    window.compactGlossaries = ${params.compactGlossaries};
+                    window.showExpressionTags = ${params.showExpressionTags};
+                    window.harmonicFrequency = ${params.harmonicFrequency};
+                    window.deduplicatePitchAccents = ${params.deduplicatePitchAccents};
+                    window.isDark = ${WebJson.encodeToString(params.isDark)};
+                    window.eInkMode = ${WebJson.encodeToString(params.eInkMode)};
                     window.audioSources = $audioSourcesJson;
-                    window.audioEnableAutoplay = $audioEnableAutoplay;
-                    window.audioPlaybackMode = ${WebJson.encodeToString(audioPlaybackMode)};
-                    window.enableInternalPopup = $enableInternalPopup;
-                    window.swipeThreshold = ${swipeDismissThreshold.coerceIn(0, 80)};
-                    window.needsAudio = $ankiNeedsAudio;
-                    window.allowDupes = $ankiAllowDuplicates;
-                    window.useAnkiConnect = $ankiUseAnkiConnect;
-                    window.embedMedia = $ankiEmbedMedia;
-                    window.compactGlossariesAnki = $ankiCompactGlossaries;
-                    window.ankiDuplicateExpression = ${WebJson.encodeToString(ankiDuplicateExpression)};
+                    window.audioEnableAutoplay = ${params.audioEnableAutoplay};
+                    window.audioPlaybackMode = ${WebJson.encodeToString(params.audioPlaybackMode)};
+                    window.enableInternalPopup = ${params.enableInternalPopup};
+                    window.swipeThreshold = ${params.swipeDismissThreshold.coerceIn(0, 80)};
+                    window.needsAudio = ${params.ankiNeedsAudio};
+                    window.allowDupes = ${params.ankiAllowDuplicates};
+                    window.useAnkiConnect = ${params.ankiUseAnkiConnect};
+                    window.embedMedia = ${params.ankiEmbedMedia};
+                    window.compactGlossariesAnki = ${params.ankiCompactGlossaries};
+                    window.ankiDuplicateExpression = ${WebJson.encodeToString(params.ankiDuplicateExpression)};
                     document.documentElement.classList.add(window.isDark ? 'dark' : 'light');
                     if (window.eInkMode) document.documentElement.classList.add('eink');
                     </script>
-                    <script>${dictionaryJs(playPronunciationLabel)}</script>
+                    <script>${dictionaryJs(params.playPronunciationLabel)}</script>
                     </body>
                     </html>
         """.trimIndent()

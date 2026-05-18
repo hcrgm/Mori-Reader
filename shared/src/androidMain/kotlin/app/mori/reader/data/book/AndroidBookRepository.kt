@@ -30,6 +30,7 @@ internal class AndroidBookRepository(
     private val booksRoot = File(context.filesDir, BOOKS_DIR_NAME)
     private val categoriesFile = File(booksRoot, CATEGORIES_FILE)
     private val bookCategoryMapFile = File(booksRoot, BOOK_CATEGORY_MAP_FILE)
+    private val bookDirectoryCache = mutableMapOf<String, File>()
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -161,49 +162,19 @@ internal class AndroidBookRepository(
 
     override suspend fun saveReaderProgress(
         bookId: String,
-        chapterIndex: Int,
-        chapterProgress: Double,
-    ): BookCatalog =
+        bookmark: ReaderBookmark,
+    ) {
         withContext(Dispatchers.IO) {
             val bookDir =
                 findBookDirectory(bookId)
-                    ?: return@withContext buildCatalog().also(::publishCatalog)
-            val metadata =
-                loadBookMetadataStorage(bookDir)
-                    ?: return@withContext buildCatalog().also(::publishCatalog)
-            val readerBook =
-                parseReaderBook(
-                    sourceFile = null,
-                    bookDir = bookDir,
-                    book =
-                        computeBookInfo(
-                            metadata,
-                            loadBookCategoryMap()[bookId].orEmpty(),
-                            loadReaderBookInfoStorage(bookDir),
-                            loadBookmark(bookDir),
-                        ),
-                )
-            if (readerBook.chapters.isEmpty()) return@withContext buildCatalog().also(::publishCatalog)
-
-            val clampedIndex = chapterIndex.coerceIn(readerBook.chapters.indices)
-            val clampedProgress = chapterProgress.coerceIn(0.0, 1.0)
-            val chapter = readerBook.chapters[clampedIndex]
-            val characterCount =
-                chapter.characterStart + (chapter.characterCount * clampedProgress).toInt()
+                    ?: return@withContext
             val now = Clock.System.now().toEpochMilliseconds()
             saveBookmark(
                 bookDir,
-                ReaderBookmark(
-                    chapterIndex = clampedIndex,
-                    chapterProgress = clampedProgress,
-                    characterCount = characterCount,
-                    lastModifiedAt = now,
-                ),
+                bookmark.copy(lastModifiedAt = now),
             )
-            saveBookMetadataStorage(bookDir, metadata.copy(lastOpenedAt = now))
-
-            buildCatalog().also(::publishCatalog)
         }
+    }
 
     override suspend fun createCategory(name: String): BookCatalog =
         withContext(Dispatchers.IO) {
@@ -278,6 +249,7 @@ internal class AndroidBookRepository(
     override suspend fun deleteBook(bookId: String): BookCatalog =
         withContext(Dispatchers.IO) {
             findBookDirectory(bookId)?.deleteRecursively()
+            bookDirectoryCache.remove(bookId)
             val categoryMap = loadBookCategoryMap().toMutableMap()
             categoryMap.remove(bookId)
             saveBookCategoryMap(categoryMap)
@@ -371,9 +343,13 @@ internal class AndroidBookRepository(
             .orEmpty()
 
     private fun findBookDirectory(bookId: String): File? =
-        listBookDirectories().firstOrNull { directory ->
-            loadBookMetadataStorage(directory)?.id == bookId
-        }
+        bookDirectoryCache[bookId]
+            ?.takeIf { it.isDirectory }
+            ?: listBookDirectories().firstOrNull { directory ->
+                loadBookMetadataStorage(directory)?.id == bookId
+            }?.also { directory ->
+                bookDirectoryCache[bookId] = directory
+            }
 
     private fun copyUriToFile(
         uri: Uri,

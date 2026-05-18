@@ -16,9 +16,8 @@ interface BookRepository {
 
     suspend fun saveReaderProgress(
         bookId: String,
-        chapterIndex: Int,
-        chapterProgress: Double,
-    ): BookCatalog
+        bookmark: ReaderBookmark,
+    )
 
     suspend fun createCategory(name: String): BookCatalog
 

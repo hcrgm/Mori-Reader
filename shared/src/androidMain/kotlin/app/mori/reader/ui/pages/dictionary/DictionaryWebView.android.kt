@@ -13,6 +13,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
@@ -28,6 +30,8 @@ import app.mori.reader.data.dictionary.DictionaryTraceStep
 import app.mori.reader.data.settings.AudioPlaybackMode
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
 import de.manhhao.hoshi.HoshiDicts
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -95,7 +99,7 @@ actual fun DictionaryWebView(
     val currentOnNavigationStateChange = rememberUpdatedState(onNavigationStateChange)
     val bridge = remember { DictionaryBridge() }
     val resourceHandler = remember { DictionaryWebResourceHandler(bridge.audioSourceResolver) }
-    val html =
+    val htmlParams =
         remember(
             query,
             entries,
@@ -133,7 +137,7 @@ actual fun DictionaryWebView(
             ankiCompactGlossaries,
             ankiDuplicateExpression,
         ) {
-            dictionaryHtml(
+            DictionaryHtmlParams(
                 query = query,
                 entries = entries,
                 styles = dictionaryStyles,
@@ -171,6 +175,9 @@ actual fun DictionaryWebView(
                 ankiDuplicateExpression = ankiDuplicateExpression,
             )
         }
+    val html by produceState(initialValue = "", htmlParams) {
+        value = withContext(Dispatchers.Default) { dictionaryHtml(htmlParams) }
+    }
 
     AndroidView(
         modifier = modifier,
@@ -256,8 +263,10 @@ actual fun DictionaryWebView(
                     }
                     false
                 }
-                tag = html
-                loadDataWithBaseURL("https://mori.dictionary/", html, "text/html", "UTF-8", null)
+                if (html.isNotEmpty()) {
+                    tag = html
+                    loadDataWithBaseURL("https://mori.dictionary/", html, "text/html", "UTF-8", null)
+                }
             }
         },
         update = { webView ->
@@ -278,7 +287,7 @@ actual fun DictionaryWebView(
                 bridge.lastNavigateForwardToken = navigateForwardToken
                 webView.evaluateJavascript("window.navigateForward?.()", null)
             }
-            if (webView.tag != html) {
+            if (html.isNotEmpty() && webView.tag != html) {
                 webView.tag = html
                 webView.loadDataWithBaseURL(
                     "https://mori.dictionary/",

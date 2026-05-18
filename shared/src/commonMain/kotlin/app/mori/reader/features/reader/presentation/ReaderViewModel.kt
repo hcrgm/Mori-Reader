@@ -409,10 +409,24 @@ class ReaderViewModel(
         chapterIndex: Int,
         progress: Double,
     ) {
-        val currentBookId = _state.value.bookId ?: return
+        val reader = _state.value
+        val currentBookId = reader.bookId ?: return
+        val book = reader.book ?: return
+        val chapter = book.chapters.getOrNull(chapterIndex) ?: return
+        val clampedProgress = progress.coerceIn(0.0, 1.0)
+        val bookmark =
+            ReaderBookmark(
+                chapterIndex = chapterIndex,
+                chapterProgress = clampedProgress,
+                characterCount =
+                    (
+                        chapter.characterStart +
+                            (chapter.characterCount * clampedProgress).toInt()
+                    ).coerceIn(0, book.totalCharacterCount),
+            )
         viewModelScope.launch {
             runCatching {
-                bookRepository.saveReaderProgress(currentBookId, chapterIndex, progress)
+                bookRepository.saveReaderProgress(currentBookId, bookmark)
             }
         }
     }

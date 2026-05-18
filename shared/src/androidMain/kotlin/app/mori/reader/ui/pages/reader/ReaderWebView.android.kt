@@ -232,34 +232,50 @@ actual fun ReaderWebView(
                 webView.setLayerType(targetLayerType, null)
             }
             val sourceUrl = chapter?.sourceUrl
-            val key =
-                listOf(
-                    sourceUrl,
-                    navigationVersion,
-                    verticalWriting,
-                    isDark,
-                    eInkMode,
-                    fontSize,
-                    lineHeight,
-                    horizontalPadding,
-                    verticalPadding,
-                    avoidPageBreak,
-                    justifyText,
-                    characterSpacing,
-                    continuousMode,
-                    hideFurigana,
-                    sasayakiCues.joinToString(";") { "${it.id}:${it.start}:${it.length}" },
-                    sasayakiAutoScroll,
-                    sasayakiHighlightEnabled,
-                    sasayakiHighlightColor,
-                ).joinToString("|")
-            if (sourceUrl != null && webView.tag != key) {
-                webView.tag = key
+            val reloadKey =
+                ReaderReloadKey(
+                    sourceUrl = sourceUrl,
+                    navigationVersion = navigationVersion,
+                    verticalWriting = verticalWriting,
+                    isDark = isDark,
+                    eInkMode = eInkMode,
+                    fontSize = fontSize,
+                    lineHeight = lineHeight,
+                    horizontalPadding = horizontalPadding,
+                    verticalPadding = verticalPadding,
+                    avoidPageBreak = avoidPageBreak,
+                    justifyText = justifyText,
+                    characterSpacing = characterSpacing,
+                    continuousMode = continuousMode,
+                    hideFurigana = hideFurigana,
+                )
+            val sasayakiConfigKey =
+                SasayakiConfigKey(
+                    autoScroll = sasayakiAutoScroll,
+                    highlightEnabled = sasayakiHighlightEnabled,
+                    highlightColor = sasayakiHighlightColor,
+                    eInkMode = eInkMode,
+                )
+            val sasayakiCueSignature = sasayakiCues.signature()
+            if (sourceUrl != null && webView.reloadKey != reloadKey) {
+                webView.reloadKey = reloadKey
+                webView.appliedSasayakiConfigKey = sasayakiConfigKey
+                webView.appliedSasayakiCueSignature = sasayakiCueSignature
+                bridge.appliedHighlightedSasayakiCueId = highlightedSasayakiCueId
                 bridge.isRestoring = true
                 bridge.appliedSelectionHighlightLength = null
-                bridge.appliedHighlightedSasayakiCueId = null
                 webView.alpha = 0f
                 webView.loadUrl(sourceUrl)
+            } else if (webView.appliedSasayakiConfigKey != sasayakiConfigKey) {
+                webView.appliedSasayakiConfigKey = sasayakiConfigKey
+                webView.evaluateJavascript(sasayakiConfigKey.toScript(), null)
+            } else if (webView.appliedSasayakiCueSignature != sasayakiCueSignature) {
+                webView.appliedSasayakiCueSignature = sasayakiCueSignature
+                bridge.appliedHighlightedSasayakiCueId = highlightedSasayakiCueId
+                webView.evaluateJavascript(
+                    sasayakiCueUpdateScript(sasayakiCues, highlightedSasayakiCueId),
+                    null,
+                )
             } else if (bridge.appliedSelectionHighlightLength != selectionHighlightLength) {
                 bridge.appliedSelectionHighlightLength = selectionHighlightLength
                 val script =
@@ -283,6 +299,10 @@ actual fun ReaderWebView(
 private class MoriReaderWebView(
     context: Context,
 ) : WebView(context) {
+    var reloadKey: ReaderReloadKey? = null
+    var appliedSasayakiConfigKey: SasayakiConfigKey? = null
+    var appliedSasayakiCueSignature: SasayakiCueSignature? = null
+
     @Suppress("DEPRECATION")
     fun toJsViewportPoint(
         x: Float,
@@ -382,6 +402,84 @@ private class ReaderGestureTouchListener(
     private companion object {
         const val MIN_DISTANCE = 72f
     }
+}
+
+private data class ReaderReloadKey(
+    val sourceUrl: String?,
+    val navigationVersion: Int,
+    val verticalWriting: Boolean,
+    val isDark: Boolean,
+    val eInkMode: Boolean,
+    val fontSize: Int,
+    val lineHeight: Double,
+    val horizontalPadding: Int,
+    val verticalPadding: Int,
+    val avoidPageBreak: Boolean,
+    val justifyText: Boolean,
+    val characterSpacing: Double,
+    val continuousMode: Boolean,
+    val hideFurigana: Boolean,
+)
+
+private data class SasayakiConfigKey(
+    val autoScroll: Boolean,
+    val highlightEnabled: Boolean,
+    val highlightColor: String,
+    val eInkMode: Boolean,
+) {
+    fun toScript(): String {
+        val activeBackground =
+            if (highlightEnabled) {
+                if (eInkMode) {
+                    "rgba(90, 91, 85, 0.22)"
+                } else {
+                    highlightColor.takeIf { it.matches(Regex("^#[0-9A-Fa-f]{8}$")) } ?: "#FFC0485C"
+                }
+            } else {
+                "transparent"
+            }
+        val activeOutline = if (eInkMode && highlightEnabled) "#777771" else "transparent"
+        return """
+            window.moriSasayaki && window.moriSasayaki.configure({
+              autoScroll: $autoScroll,
+              activeBackground: ${activeBackground.jsString()},
+              activeOutline: ${activeOutline.jsString()}
+            })
+        """.trimIndent()
+    }
+}
+
+private data class SasayakiCueSignature(
+    val count: Int,
+    val hash: Int,
+)
+
+private fun List<SasayakiCueRange>.signature(): SasayakiCueSignature {
+    var hash = 1
+    forEach { cue ->
+        hash = 31 * hash + cue.id.hashCode()
+        hash = 31 * hash + cue.start
+        hash = 31 * hash + cue.length
+    }
+    return SasayakiCueSignature(count = size, hash = hash)
+}
+
+private fun sasayakiCueUpdateScript(
+    cues: List<SasayakiCueRange>,
+    highlightedCueId: String?,
+): String {
+    val highlightedCueJs = highlightedCueId?.jsString() ?: "null"
+    return """
+        (function() {
+          if (!window.moriSasayaki) return;
+          window.moriSasayaki.applySasayakiCues(${cues.toJsonArrayString()});
+          if ($highlightedCueJs !== null) {
+            window.moriSasayaki.highlightSasayakiCue($highlightedCueJs);
+          } else {
+            window.moriSasayaki.clearSasayakiCue();
+          }
+        })()
+    """.trimIndent()
 }
 
 private fun handleTapSelection(

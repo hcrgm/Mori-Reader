@@ -4,7 +4,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.C
@@ -26,6 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -43,12 +44,14 @@ internal class AndroidAudiobookPlayerRepository(
             encodeDefaults = true
         }
     private var preparedBookId: String? = null
+    private var preparedBookDir: File? = null
     private var preparedAudioAssetInfo: AudiobookAssetInfo? = null
     private var preparedMediaInfo: SasayakiMediaInfo = SasayakiMediaInfo()
     private var preparedMatches: List<SasayakiMatch> = emptyList()
     private var publishedCueId: String? = null
     private var tickJob: Job? = null
     private var lastPersistAt = 0L
+    private val persistMutex = Mutex()
     private val player = ExoPlayer.Builder(context).build()
     private val sessionPlayer =
         SasayakiSessionPlayer(
@@ -83,39 +86,42 @@ internal class AndroidAudiobookPlayerRepository(
         audioAssetInfo: AudiobookAssetInfo,
         matches: List<SasayakiMatch>,
         mediaInfo: SasayakiMediaInfo,
-    ) = withContext(Dispatchers.Main.immediate) {
-        val audioUri = resolveAudioUri(bookId, audioAssetInfo)
-        val playback = loadPlayback(bookId)
-        preparedBookId = bookId
-        preparedAudioAssetInfo = audioAssetInfo
-        preparedMediaInfo = mediaInfo
-        preparedMatches = matches.sortedBy { it.startTimeMs }
-        publishedCueId = cueAtOrBefore(playback.positionMs, playback.delayMs)?.id
-        player.setMediaItem(
-            MediaItem
-                .Builder()
-                .setUri(audioUri)
-                .setMediaMetadata(buildMediaMetadata(currentCue()))
-                .build(),
-        )
-        player.playbackParameters = PlaybackParameters(playback.rate.coerceIn(MIN_RATE, MAX_RATE))
-        player.prepare()
-        if (playback.positionMs > 0L) {
-            player.seekTo(playback.positionMs)
-        }
-        _snapshot.update {
-            it.copy(
-                bookId = bookId,
-                isReady = true,
-                isPlaying = false,
-                positionMs = playback.positionMs,
-                delayMs = playback.delayMs.coerceIn(MIN_DELAY_MS, MAX_DELAY_MS),
-                rate = playback.rate.coerceIn(MIN_RATE, MAX_RATE),
-                currentCueId = publishedCueId,
-                errorMessage = null,
+    ) {
+        val preparedData = withContext(Dispatchers.IO) { preparePlaybackData(bookId, audioAssetInfo) }
+        withContext(Dispatchers.Main.immediate) {
+            preparedBookId = bookId
+            preparedBookDir = preparedData.bookDir
+            preparedAudioAssetInfo = audioAssetInfo
+            preparedMediaInfo = mediaInfo
+            preparedMatches = matches.sortedBy { it.startTimeMs }
+            publishedCueId = cueAtOrBefore(preparedData.playback.positionMs, preparedData.playback.delayMs)?.id
+            player.setMediaItem(
+                MediaItem
+                    .Builder()
+                    .setUri(preparedData.audioUri)
+                    .setMediaMetadata(buildMediaMetadata(currentCue()))
+                    .build(),
             )
+            player.playbackParameters =
+                PlaybackParameters(preparedData.playback.rate.coerceIn(MIN_RATE, MAX_RATE))
+            player.prepare()
+            if (preparedData.playback.positionMs > 0L) {
+                player.seekTo(preparedData.playback.positionMs)
+            }
+            _snapshot.update {
+                it.copy(
+                    bookId = bookId,
+                    isReady = true,
+                    isPlaying = false,
+                    positionMs = preparedData.playback.positionMs,
+                    delayMs = preparedData.playback.delayMs.coerceIn(MIN_DELAY_MS, MAX_DELAY_MS),
+                    rate = preparedData.playback.rate.coerceIn(MIN_RATE, MAX_RATE),
+                    currentCueId = publishedCueId,
+                    errorMessage = null,
+                )
+            }
+            publishSnapshot()
         }
-        publishSnapshot()
     }
 
     override suspend fun togglePlayPause() =
@@ -289,8 +295,7 @@ internal class AndroidAudiobookPlayerRepository(
     }
 
     private fun persistCurrent() {
-        val bookId = preparedBookId ?: return
-        val bookDir = findBookDirectory(bookId) ?: return
+        val bookDir = preparedBookDir ?: return
         val data =
             SasayakiPlaybackData(
                 positionMs = player.currentPosition.coerceAtLeast(0L),
@@ -298,16 +303,20 @@ internal class AndroidAudiobookPlayerRepository(
                 rate = _snapshot.value.rate,
                 updatedAt = System.currentTimeMillis(),
             )
-        runCatching {
-            File(
-                bookDir,
-                PLAYBACK_FILE,
-            ).writeText(json.encodeToString(SasayakiPlaybackData.serializer(), data))
+        scope.launch(Dispatchers.IO) {
+            persistMutex.withLock {
+                runCatching {
+                    File(
+                        bookDir,
+                        PLAYBACK_FILE,
+                    ).writeText(json.encodeToString(SasayakiPlaybackData.serializer(), data))
+                }
+            }
         }
     }
 
-    private fun loadPlayback(bookId: String): SasayakiPlaybackData {
-        val bookDir = findBookDirectory(bookId) ?: return SasayakiPlaybackData()
+    private fun loadPlayback(bookDir: File?): SasayakiPlaybackData {
+        if (bookDir == null) return SasayakiPlaybackData()
         return runCatching {
             json.decodeFromString(
                 SasayakiPlaybackData.serializer(),
@@ -324,6 +333,7 @@ internal class AndroidAudiobookPlayerRepository(
         player.stop()
         player.clearMediaItems()
         preparedBookId = null
+        preparedBookDir = null
         preparedAudioAssetInfo = null
         preparedMediaInfo = SasayakiMediaInfo()
         preparedMatches = emptyList()
@@ -336,15 +346,27 @@ internal class AndroidAudiobookPlayerRepository(
     }
 
     private fun resolveAudioUri(
-        bookId: String,
+        bookDir: File?,
         asset: AudiobookAssetInfo,
     ): Uri {
         asset.sourceUriString?.let { return Uri.parse(it) }
-        val bookDir = findBookDirectory(bookId) ?: throw IllegalArgumentException("图书不存在")
+        val resolvedBookDir = bookDir ?: throw IllegalArgumentException("图书不存在")
         val relative = asset.localRelativePath ?: throw IllegalArgumentException("有声书音频不存在")
-        val file = File(bookDir, relative)
+        val file = File(resolvedBookDir, relative)
         require(file.exists()) { "有声书音频不存在" }
         return Uri.fromFile(file)
+    }
+
+    private fun preparePlaybackData(
+        bookId: String,
+        asset: AudiobookAssetInfo,
+    ): PreparedPlaybackData {
+        val bookDir = findBookDirectory(bookId)
+        return PreparedPlaybackData(
+            bookDir = bookDir,
+            audioUri = resolveAudioUri(bookDir, asset),
+            playback = loadPlayback(bookDir),
+        )
     }
 
     private fun findBookDirectory(bookId: String): File? =
@@ -402,11 +424,7 @@ internal class AndroidAudiobookPlayerRepository(
 
     private fun startMediaSessionService() {
         val intent = Intent(context, AndroidAudiobookMediaSessionService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(intent)
-        } else {
-            context.startService(intent)
-        }
+        context.startForegroundService(intent)
     }
 
     internal fun mediaSession(): MediaSession = mediaSession
@@ -415,6 +433,12 @@ internal class AndroidAudiobookPlayerRepository(
 @Serializable
 private data class PlayerBookMetadataStorage(
     val id: String,
+)
+
+private data class PreparedPlaybackData(
+    val bookDir: File?,
+    val audioUri: Uri,
+    val playback: SasayakiPlaybackData,
 )
 
 private const val BOOKS_DIR_NAME = "Books"
