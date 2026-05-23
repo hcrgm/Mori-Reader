@@ -18,11 +18,15 @@ data class AppearanceSettings(
     val monetKeyColor: Long = 0L,
     val materialEInkMode: Boolean = false,
     val blurEnabled: Boolean = true,
-    val readerFullscreen: Boolean = false,
 )
 
+@Serializable
 data class ReaderSettings(
+    val fullscreen: Boolean = true,
+    val actionBarPinned: Boolean = false,
+    val showReadingInfo: Boolean = true,
     val verticalWriting: Boolean = true,
+    val fontFamily: String? = null,
     val fontSize: Int = 22,
     val lineHeight: Double = 1.65,
     val horizontalPadding: Int = 5,
@@ -33,14 +37,19 @@ data class ReaderSettings(
     val characterSpacing: Double = 0.0,
     val continuousMode: Boolean = false,
     val hideFurigana: Boolean = false,
+    val popupWidth: Int = 320,
+    val popupHeight: Int = 250,
+    val popupFullWidth: Boolean = false,
+    val popupSwipeToDismiss: Boolean = false,
+    val popupSwipeThreshold: Int = 40,
 )
 
-data class PopupSettings(
-    val width: Int = 320,
-    val height: Int = 250,
-    val fullWidth: Boolean = false,
-    val swipeToDismiss: Boolean = false,
-    val swipeThreshold: Int = 40,
+@Serializable
+data class ReaderPersonalizedScheme(
+    val id: String,
+    val name: String,
+    val settings: ReaderSettings,
+    val createdAt: Long,
 )
 
 data class DictionarySettings(
@@ -78,12 +87,18 @@ data class AppSettings(
     val bookshelf: BookshelfSettings = BookshelfSettings(),
     val appearance: AppearanceSettings = AppearanceSettings(),
     val reader: ReaderSettings = ReaderSettings(),
-    val popup: PopupSettings = PopupSettings(),
+    val readerPersonalizedSchemes: List<ReaderPersonalizedScheme> = emptyList(),
     val dictionary: DictionarySettings = DictionarySettings(),
     val audio: AudioSettings = AudioSettings(),
     val sasayaki: SasayakiSettings = SasayakiSettings(),
     val anki: AnkiSettings = AnkiSettings(),
 )
+
+fun AppSettings.findReaderScheme(schemeId: String?): ReaderPersonalizedScheme? =
+    schemeId?.let { targetId -> readerPersonalizedSchemes.firstOrNull { it.id == targetId } }
+
+fun AppSettings.effectiveReaderSettings(schemeId: String?): ReaderSettings =
+    findReaderScheme(schemeId)?.settings ?: reader
 
 enum class BookshelfSortMode(
     val wireName: String,

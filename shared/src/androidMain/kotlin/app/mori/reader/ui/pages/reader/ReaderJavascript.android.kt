@@ -10,6 +10,7 @@ internal fun readerBootstrapScript(
     verticalWriting: Boolean,
     isDark: Boolean,
     eInkMode: Boolean,
+    fontFamily: String?,
     fontSize: Int,
     lineHeight: Double,
     horizontalPadding: Int,
@@ -36,6 +37,12 @@ internal fun readerBootstrapScript(
     val linkColor = if (eInkMode) "#000000" else "rgba(66, 108, 245, 1)"
     val selectionColor = if (eInkMode) "rgba(0, 0, 0, 0.18)" else "rgba(120, 150, 255, 0.35)"
     val safeFontSize = fontSize.coerceIn(16, 40)
+    val fontFamilyCss =
+        fontFamily
+            ?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { "font-family: ${it.cssFamilyString()} !important;" }
+            .orEmpty()
     val safeLineHeight = lineHeight.coerceIn(1.0, 2.5)
     val safeHorizontalPadding = horizontalPadding.coerceIn(0, 50).toDouble()
     val safeVerticalPadding = verticalPadding.coerceIn(0, 50).toDouble()
@@ -108,7 +115,7 @@ internal fun readerBootstrapScript(
             }
             body {
               box-sizing: border-box !important;
-              font-family: serif !important;
+              $fontFamilyCss
               font-size: ${safeFontSize}px !important;
               $textSpacingCss
               padding: $bodyPadding !important;
@@ -147,7 +154,7 @@ internal fun readerBootstrapScript(
             }
             body {
               box-sizing: border-box !important;
-              font-family: serif !important;
+              $fontFamilyCss
               font-size: ${safeFontSize}px !important;
               $textSpacingCss
               column-width: var(--page-width, 100vw) !important;
@@ -504,6 +511,50 @@ internal fun readerBootstrapScript(
               }
 
               return totalChars > 0 ? exploredChars / totalChars : 0;
+            },
+            getCurrentPageText: function(maxChars) {
+              var limit = Math.max(0, Number(maxChars) || 100);
+              if (limit <= 0) return '';
+              var walker = this.createWalker();
+              var parts = [];
+              var total = 0;
+              var node;
+
+              function isVisible(rect) {
+                return rect.right > 0 &&
+                  rect.bottom > 0 &&
+                  rect.left < window.innerWidth &&
+                  rect.top < window.innerHeight;
+              }
+
+              function normalizedText(text) {
+                return (text || '').replace(/\s+/g, ' ').trim();
+              }
+
+              while (node = walker.nextNode()) {
+                var range = document.createRange();
+                range.selectNodeContents(node);
+                var rects = Array.from(range.getClientRects ? range.getClientRects() : []);
+                var visible = rects.some(isVisible);
+                if (!visible) {
+                  var fallbackRect = range.getBoundingClientRect();
+                  visible = isVisible(fallbackRect);
+                }
+                if (!visible) continue;
+
+                var text = normalizedText(node.textContent || '');
+                if (!text) continue;
+
+                var remaining = limit - total;
+                if (remaining <= 0) break;
+                var chunk = Array.from(text).slice(0, remaining).join('');
+                if (!chunk) continue;
+                parts.push(chunk);
+                total += Array.from(chunk).length;
+                if (total >= limit) break;
+              }
+
+              return parts.join('').trim();
             },
             restoreProgress: async function(progress) {
               await document.fonts.ready;
@@ -1221,3 +1272,6 @@ internal fun String.jsString(): String =
         }
         append('\'')
     }
+
+private fun String.cssFamilyString(): String =
+    "'${replace("\\", "\\\\").replace("'", "\\'")}'"

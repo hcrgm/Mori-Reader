@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -32,6 +33,7 @@ import app.mori.reader.ui.theme.MoriTheme
 data class MaterialDropdownMenuOption(
     val label: String,
     val selected: Boolean = false,
+    val dividerBefore: Boolean = false,
     val onSelected: () -> Unit,
 )
 
@@ -115,6 +117,9 @@ fun MaterialDropdownMenu(
         modifier = modifier,
     ) {
         options.forEach { option ->
+            if (option.dividerBefore) {
+                HorizontalDivider()
+            }
             val selectedBackgroundColor =
                 if (isEInkMode) {
                     MaterialTheme.colorScheme.primary

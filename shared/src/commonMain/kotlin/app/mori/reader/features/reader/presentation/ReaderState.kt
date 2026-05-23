@@ -5,6 +5,7 @@ import app.mori.reader.data.audiobook.SasayakiCueRange
 import app.mori.reader.data.audiobook.SasayakiMatch
 import app.mori.reader.data.audiobook.SasayakiPlayerSnapshot
 import app.mori.reader.data.book.ReaderBook
+import app.mori.reader.data.book.ReaderSavedBookmark
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.ui.text.UiText
 
@@ -55,4 +56,16 @@ data class ReaderState(
             if (total <= 0) return 0.0
             return currentCharacter.toDouble() / total.toDouble() * 100.0
         }
+
+    val savedBookmarks: List<ReaderSavedBookmark>
+        get() = book?.savedBookmarks.orEmpty()
+
+    val currentSavedBookmark: ReaderSavedBookmark?
+        get() =
+            savedBookmarks.firstOrNull { bookmark ->
+                bookmark.chapterIndex == chapterIndex && bookmark.characterCount == currentCharacter
+            }
+
+    val isCurrentPositionBookmarked: Boolean
+        get() = currentSavedBookmark != null
 }

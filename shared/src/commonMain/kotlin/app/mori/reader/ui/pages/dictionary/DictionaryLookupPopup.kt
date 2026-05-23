@@ -5,6 +5,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.anki.AnkiMiningContent
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.data.settings.ReaderSettings
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
 import app.mori.reader.ui.pages.lookup.LookupPopupLayout
@@ -39,6 +40,7 @@ internal fun DictionaryLookupPopupStack(
     onOutsideClick: (Int) -> Unit = onDismiss,
     firstPopupPlacement: DictionaryFirstPopupPlacement = DictionaryFirstPopupPlacement.Selection,
 ) {
+    val readerSettings = settings.reader
     lookups.forEachIndexed { popupIndex, lookup ->
         if (!lookup.visible) return@forEachIndexed
 
@@ -46,7 +48,7 @@ internal fun DictionaryLookupPopupStack(
             if (popupIndex == 0 && firstPopupPlacement == DictionaryFirstPopupPlacement.TopFullWidth) {
                 LookupPopupLayout(
                     width = (viewportWidth - 12.dp).coerceAtLeast(1.dp),
-                    height = settings.popup.height.dp,
+                    height = readerSettings.popupHeight.dp,
                     left = 6.dp,
                     top = topInset + 6.dp,
                 )
@@ -54,7 +56,7 @@ internal fun DictionaryLookupPopupStack(
                 lookupPopupLayout(
                     lookup = lookup,
                     popupIndex = popupIndex,
-                    settings = settings,
+                    readerSettings = readerSettings,
                     viewportWidth = viewportWidth,
                     viewportHeight = viewportHeight,
                     topInset = topInset,
@@ -68,6 +70,7 @@ internal fun DictionaryLookupPopupStack(
             lookup = lookup,
             layout = layout,
             settings = settings,
+            readerSettings = readerSettings,
             ankiDuplicateExpression = ankiDuplicateExpression,
             isDark = isDark,
             materialEInkMode = materialEInkMode,
@@ -92,7 +95,7 @@ internal fun DictionaryLookupPopupStack(
 private fun lookupPopupLayout(
     lookup: ReaderLookupState,
     popupIndex: Int,
-    settings: AppSettings,
+    readerSettings: ReaderSettings,
     viewportWidth: Dp,
     viewportHeight: Dp,
     topInset: Dp,
@@ -107,10 +110,10 @@ private fun lookupPopupLayout(
             selectionBottom = rect.y.dp + rect.height.dp,
             screenWidth = viewportWidth,
             screenHeight = viewportHeight,
-            maxWidth = settings.popup.width.dp,
-            maxHeight = settings.popup.height.dp,
+            maxWidth = readerSettings.popupWidth.dp,
+            maxHeight = readerSettings.popupHeight.dp,
             isVertical = false,
-            isFullWidth = allowFirstPopupFullWidth && popupIndex == 0 && settings.popup.fullWidth,
+            isFullWidth = allowFirstPopupFullWidth && popupIndex == 0 && readerSettings.popupFullWidth,
             topInset = topInset,
             bottomInset = bottomInset,
         )
@@ -121,10 +124,10 @@ private fun lookupPopupLayout(
         selectionBottom = viewportHeight - bottomInset,
         screenWidth = viewportWidth,
         screenHeight = viewportHeight,
-        maxWidth = settings.popup.width.dp,
-        maxHeight = settings.popup.height.dp,
+        maxWidth = readerSettings.popupWidth.dp,
+        maxHeight = readerSettings.popupHeight.dp,
         isVertical = false,
-        isFullWidth = allowFirstPopupFullWidth && popupIndex == 0 && settings.popup.fullWidth,
+        isFullWidth = allowFirstPopupFullWidth && popupIndex == 0 && readerSettings.popupFullWidth,
         topInset = topInset,
         bottomInset = bottomInset,
     )

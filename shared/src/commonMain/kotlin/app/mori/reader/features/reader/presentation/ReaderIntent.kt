@@ -48,6 +48,18 @@ sealed interface ReaderIntent {
         val progress: Double,
     ) : ReaderIntent
 
+    data class ToggleCurrentBookmark(
+        val snippet: String = "",
+    ) : ReaderIntent
+
+    data class DeleteBookmark(
+        val bookmarkId: String,
+    ) : ReaderIntent
+
+    data class SetBookReaderScheme(
+        val schemeId: String?,
+    ) : ReaderIntent
+
     data object CloseBook : ReaderIntent
 
     data object TogglePlayback : ReaderIntent

@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import app.mori.reader.data.audiobook.SasayakiCueRange
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
+import org.json.JSONArray
 import org.json.JSONObject
 import kotlin.math.abs
 
@@ -36,6 +37,7 @@ actual fun ReaderWebView(
     val progress = state.progress
     val navigationVersion = state.navigationVersion
     val fragment = state.fragment
+    val capturePageTextRequestKey = state.capturePageTextRequestKey
     val selectionHighlightLength = state.selectionHighlightLength
     val sasayakiCues = state.sasayakiCues
     val highlightedSasayakiCueId = state.highlightedSasayakiCueId
@@ -43,6 +45,7 @@ actual fun ReaderWebView(
     val isDark = config.isDark
     val eInkMode = config.eInkMode
     val scanLength = config.scanLength
+    val fontFamily = config.fontFamily
     val fontSize = config.fontSize
     val lineHeight = config.lineHeight
     val horizontalPadding = config.horizontalPadding
@@ -52,21 +55,26 @@ actual fun ReaderWebView(
     val characterSpacing = config.characterSpacing
     val continuousMode = config.continuousMode
     val hideFurigana = config.hideFurigana
+    val viewportLayoutKey = config.viewportLayoutKey
     val sasayakiAutoScroll = config.sasayakiAutoScroll
     val sasayakiHighlightEnabled = config.sasayakiHighlightEnabled
     val sasayakiHighlightColor = config.sasayakiHighlightColor
     val stabilizeForBackdrop = config.stabilizeForBackdrop
     val onProgressChanged = callbacks.onProgressChanged
     val onProgressSaved = callbacks.onProgressSaved
+    val onPageTextCaptured = callbacks.onPageTextCaptured
     val onTextSelected = callbacks.onTextSelected
     val onLinkActivated = callbacks.onLinkActivated
+    val onUserInteraction = callbacks.onUserInteraction
     val onTapOutside = callbacks.onTapOutside
     val onNextChapter = callbacks.onNextChapter
     val onPreviousChapter = callbacks.onPreviousChapter
     val currentProgressChanged = rememberUpdatedState(onProgressChanged)
     val currentProgressSaved = rememberUpdatedState(onProgressSaved)
+    val currentPageTextCaptured = rememberUpdatedState(onPageTextCaptured)
     val currentTextSelected = rememberUpdatedState(onTextSelected)
     val currentLinkActivated = rememberUpdatedState(onLinkActivated)
+    val currentUserInteraction = rememberUpdatedState(onUserInteraction)
     val currentTapOutside = rememberUpdatedState(onTapOutside)
     val currentNextChapter = rememberUpdatedState(onNextChapter)
     val currentPreviousChapter = rememberUpdatedState(onPreviousChapter)
@@ -119,6 +127,7 @@ actual fun ReaderWebView(
                                     verticalWriting = bridge.verticalWriting,
                                     isDark = bridge.isDark,
                                     eInkMode = bridge.eInkMode,
+                                    fontFamily = bridge.fontFamily,
                                     fontSize = bridge.fontSize,
                                     lineHeight = bridge.lineHeight,
                                     horizontalPadding = bridge.horizontalPadding,
@@ -162,6 +171,7 @@ actual fun ReaderWebView(
                 setOnTouchListener(
                     ReaderGestureTouchListener(
                         context = context,
+                        onUserInteraction = { currentUserInteraction.value() },
                         onTap = { x, y ->
                             handleTapSelection(
                                 webView = this@apply,
@@ -198,6 +208,7 @@ actual fun ReaderWebView(
         update = { webView ->
             bridge.onProgressChanged = { currentProgressChanged.value(it) }
             bridge.onProgressSaved = { currentProgressSaved.value(it) }
+            bridge.onPageTextCaptured = { currentPageTextCaptured.value(it) }
             bridge.onTextSelected =
                 { text, sentence, rect -> currentTextSelected.value(text, sentence, rect) }
             bridge.onLinkActivated = { href -> currentLinkActivated.value(href) }
@@ -207,6 +218,7 @@ actual fun ReaderWebView(
             bridge.isDark = isDark
             bridge.eInkMode = eInkMode
             bridge.scanLength = scanLength
+            bridge.fontFamily = fontFamily
             bridge.fontSize = fontSize
             bridge.lineHeight = lineHeight
             bridge.horizontalPadding = horizontalPadding
@@ -239,6 +251,7 @@ actual fun ReaderWebView(
                     verticalWriting = verticalWriting,
                     isDark = isDark,
                     eInkMode = eInkMode,
+                    fontFamily = fontFamily,
                     fontSize = fontSize,
                     lineHeight = lineHeight,
                     horizontalPadding = horizontalPadding,
@@ -248,6 +261,7 @@ actual fun ReaderWebView(
                     characterSpacing = characterSpacing,
                     continuousMode = continuousMode,
                     hideFurigana = hideFurigana,
+                    viewportLayoutKey = viewportLayoutKey,
                 )
             val sasayakiConfigKey =
                 SasayakiConfigKey(
@@ -291,6 +305,13 @@ actual fun ReaderWebView(
                         ?.let { "window.moriSasayaki && window.moriSasayaki.highlightSasayakiCue(${it.jsString()})" }
                         ?: "window.moriSasayaki && window.moriSasayaki.clearSasayakiCue()"
                 webView.evaluateJavascript(script, null)
+            } else if (webView.lastCapturePageTextRequestKey != capturePageTextRequestKey) {
+                webView.lastCapturePageTextRequestKey = capturePageTextRequestKey
+                if (capturePageTextRequestKey > 0) {
+                    webView.evaluateJavascript("window.moriReader && window.moriReader.getCurrentPageText(100)") { result ->
+                        bridge.onPageTextCaptured(decodeJsStringResult(result))
+                    }
+                }
             }
         },
     )
@@ -302,6 +323,7 @@ private class MoriReaderWebView(
     var reloadKey: ReaderReloadKey? = null
     var appliedSasayakiConfigKey: SasayakiConfigKey? = null
     var appliedSasayakiCueSignature: SasayakiCueSignature? = null
+    var lastCapturePageTextRequestKey: Int = 0
 
     @Suppress("DEPRECATION")
     fun toJsViewportPoint(
@@ -358,10 +380,12 @@ private class MoriReaderWebView(
             }
         }
     }
+
 }
 
 private class ReaderGestureTouchListener(
     context: Context,
+    private val onUserInteraction: () -> Unit = {},
     private val onTap: (x: Float, y: Float) -> Unit = { _, _ -> },
     private val onLeftSwipe: () -> Unit = {},
     private val onRightSwipe: () -> Unit = {},
@@ -372,6 +396,9 @@ private class ReaderGestureTouchListener(
         view: View,
         event: MotionEvent,
     ): Boolean {
+        if (event.actionMasked == MotionEvent.ACTION_MOVE) {
+            onUserInteraction()
+        }
         detector.onTouchEvent(event)
         return false
     }
@@ -410,6 +437,7 @@ private data class ReaderReloadKey(
     val verticalWriting: Boolean,
     val isDark: Boolean,
     val eInkMode: Boolean,
+    val fontFamily: String?,
     val fontSize: Int,
     val lineHeight: Double,
     val horizontalPadding: Int,
@@ -419,6 +447,7 @@ private data class ReaderReloadKey(
     val characterSpacing: Double,
     val continuousMode: Boolean,
     val hideFurigana: Boolean,
+    val viewportLayoutKey: Int,
 )
 
 private data class SasayakiConfigKey(
@@ -499,7 +528,9 @@ private fun handleTapSelection(
             AndroidMoriReader.linkActivated(href);
             return 'link';
           }
-          return window.moriSelection.selectText($jsX, $jsY, $scanLength);
+          var selection = window.moriSelection.selectText($jsX, $jsY, $scanLength);
+          if (selection !== null) return 'selection';
+          return window.moriSelection.characterAtPoint($jsX, $jsY) ? 'text' : null;
         })()
         """.trimIndent()
     webView.evaluateJavascript(script) { result ->
@@ -556,6 +587,7 @@ private class ReaderBridge {
     var eInkMode: Boolean = false
     var scanLength: Int = 16
     var fontSize: Int = 22
+    var fontFamily: String? = null
     var lineHeight: Double = 1.65
     var horizontalPadding: Int = 5
     var verticalPadding: Int = 0
@@ -575,6 +607,7 @@ private class ReaderBridge {
     var webView: WebView? = null
     var onProgressChanged: (Double) -> Unit = {}
     var onProgressSaved: (Double) -> Unit = {}
+    var onPageTextCaptured: (String) -> Unit = {}
     var onTextSelected: (String, String, ReaderSelectionRect?) -> Unit = { _, _, _ -> }
     var onLinkActivated: (String) -> Unit = {}
 
@@ -625,6 +658,12 @@ private class ReaderBridge {
                 ?.start()
         }
     }
+}
+
+private fun decodeJsStringResult(result: String?): String {
+    val value = result?.trim().orEmpty()
+    if (value.isBlank() || value == "null") return ""
+    return runCatching { JSONArray("[$value]").optString(0) }.getOrDefault("")
 }
 
 private fun WebView.hitTestIsInternalLink(): Boolean {

@@ -8,7 +8,9 @@ import app.mori.reader.data.audiobook.SasayakiMediaInfo
 import app.mori.reader.data.book.BookRepository
 import app.mori.reader.data.book.ReaderBook
 import app.mori.reader.data.book.ReaderBookmark
+import app.mori.reader.data.book.ReaderSavedBookmark
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.data.settings.effectiveReaderSettings
 import app.mori.reader.data.settings.SettingsRepository
 import app.mori.reader.features.dictionary.domain.DictionaryLookupUseCase
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
@@ -130,6 +132,32 @@ class ReaderViewModel(
                 updateReaderProgress(intent.progress, persist = true)
             }
 
+            is ReaderIntent.ToggleCurrentBookmark -> {
+                toggleCurrentBookmark(intent.snippet)
+            }
+
+            is ReaderIntent.DeleteBookmark -> {
+                deleteBookmark(intent.bookmarkId)
+            }
+
+            is ReaderIntent.SetBookReaderScheme -> {
+                _state.update { state ->
+                    val currentBook = state.book ?: return@update state
+                    state.copy(
+                        book =
+                            currentBook.copy(
+                                info =
+                                    currentBook.info.copy(
+                                        readerSchemeId = intent.schemeId,
+                                        lastReaderSchemeId = intent.schemeId ?: currentBook.info.lastReaderSchemeId,
+                                    ),
+                            ),
+                        navigationVersion = state.navigationVersion + 1,
+                        fragment = null,
+                    )
+                }
+            }
+
             is ReaderIntent.TextSelected -> {
                 lookupReaderSelection(
                     intent.text,
@@ -176,6 +204,7 @@ class ReaderViewModel(
                 maxResults = settings.dictionary.maxResults
                 autoPauseOnLookup = settings.sasayaki.autoPauseOnLookup
                 autoScroll = settings.sasayaki.autoScroll
+                reconcileBookReaderSchemes(settings)
                 _state.update { state ->
                     if (state.verticalWriting == settings.reader.verticalWriting) {
                         state
@@ -189,7 +218,12 @@ class ReaderViewModel(
                 if (
                     previous != null &&
                     _state.value.book != null &&
-                    shouldRefreshReaderLayout(previous = previous, next = settings)
+                    shouldRefreshReaderLayout(
+                        previous = previous.effectiveReaderSettings(_state.value.book?.info?.readerSchemeId),
+                        next = settings.effectiveReaderSettings(_state.value.book?.info?.readerSchemeId),
+                        previousThemeMode = previous.appearance.readerThemeMode,
+                        nextThemeMode = settings.appearance.readerThemeMode,
+                    )
                 ) {
                     _state.update {
                         it.copy(
@@ -215,6 +249,51 @@ class ReaderViewModel(
         }
     }
 
+    private fun reconcileBookReaderSchemes(settings: AppSettings) {
+        val currentBook = _state.value.book ?: return
+        val normalizedBook = normalizeBookReaderSchemes(currentBook, settings)
+        if (normalizedBook.info == currentBook.info) return
+        _state.update { state ->
+            state.copy(
+                book = normalizedBook,
+                navigationVersion =
+                    if (currentBook.info.readerSchemeId != normalizedBook.info.readerSchemeId) {
+                        state.navigationVersion + 1
+                    } else {
+                        state.navigationVersion
+                    },
+                fragment =
+                    if (currentBook.info.readerSchemeId != normalizedBook.info.readerSchemeId) {
+                        null
+                    } else {
+                        state.fragment
+                    },
+            )
+        }
+    }
+
+    private fun normalizeBookReaderSchemes(
+        book: ReaderBook,
+        settings: AppSettings?,
+    ): ReaderBook {
+        val currentInfo = book.info
+        val normalizedInfo =
+            currentInfo.normalizeReaderSchemes(
+                validSchemeIds = settings?.readerPersonalizedSchemes.orEmpty().map { it.id }.toSet(),
+            )
+        if (normalizedInfo == currentInfo) return book
+        viewModelScope.launch {
+            runCatching {
+                bookRepository.repairBookReaderSchemes(
+                    bookId = currentInfo.id,
+                    readerSchemeId = normalizedInfo.readerSchemeId,
+                    lastReaderSchemeId = normalizedInfo.lastReaderSchemeId,
+                )
+            }
+        }
+        return book.copy(info = normalizedInfo)
+    }
+
     private fun loadReaderBook(bookId: String) {
         val current = _state.value
         if (current.bookId == bookId && current.book != null && !current.isLoading) return
@@ -229,15 +308,16 @@ class ReaderViewModel(
         viewModelScope.launch {
             runCatching { bookRepository.loadReaderBook(bookId) }
                 .onSuccess { book ->
+                    val normalizedBook = normalizeBookReaderSchemes(book, currentSettings)
                     val audiobookBundle =
                         runCatching { audiobookRepository.loadAssets(bookId) }.getOrNull()
                     val sasayakiMatches = audiobookBundle?.matchData?.matches.orEmpty()
-                    val chapterIndex = book.bookmark.chapterIndex.coerceIn(book.chapters.indices)
-                    val chapterProgress = book.bookmark.chapterProgress.coerceIn(0.0, 1.0)
+                    val chapterIndex = normalizedBook.bookmark.chapterIndex.coerceIn(normalizedBook.chapters.indices)
+                    val chapterProgress = normalizedBook.bookmark.chapterProgress.coerceIn(0.0, 1.0)
                     _state.update { state ->
                         state.copy(
                             bookId = bookId,
-                            book = book,
+                            book = normalizedBook,
                             sasayakiAudioAssetInfo = audiobookBundle?.audioAssetInfo,
                             sasayakiMatches = sasayakiMatches,
                             chapterIndex = chapterIndex,
@@ -255,7 +335,7 @@ class ReaderViewModel(
                                 bookId = bookId,
                                 audioAssetInfo = audioAsset,
                                 matches = sasayakiMatches,
-                                mediaInfo = book.sasayakiMediaInfo(),
+                                mediaInfo = normalizedBook.sasayakiMediaInfo(),
                             )
                         }
                     }
@@ -602,7 +682,84 @@ class ReaderViewModel(
         }
         super.onCleared()
     }
+
+    private fun toggleCurrentBookmark(snippet: String) {
+        val reader = _state.value
+        val currentBookId = reader.bookId ?: return
+        val book = reader.book ?: return
+        val chapter = book.chapters.getOrNull(reader.chapterIndex) ?: return
+        val existing = reader.currentSavedBookmark
+        val nextBookmarks =
+            if (existing != null) {
+                book.savedBookmarks.filterNot { it.id == existing.id }
+            } else {
+                val createdAt = (book.savedBookmarks.maxOfOrNull(ReaderSavedBookmark::createdAt) ?: 0L) + 1L
+                listOf(
+                    ReaderSavedBookmark(
+                        id = "${chapter.index}-${reader.currentCharacter}-$createdAt",
+                        chapterIndex = reader.chapterIndex,
+                        chapterProgress = reader.chapterProgress.coerceIn(0.0, 1.0),
+                        characterCount = reader.currentCharacter,
+                        snippet = snippet.asBookmarkSnippet(),
+                        createdAt = createdAt,
+                    ),
+                ) + book.savedBookmarks
+            }
+        updateSavedBookmarks(
+            bookId = currentBookId,
+            bookmarks = nextBookmarks,
+        )
+    }
+
+    private fun deleteBookmark(bookmarkId: String) {
+        val reader = _state.value
+        val currentBookId = reader.bookId ?: return
+        val book = reader.book ?: return
+        val nextBookmarks = book.savedBookmarks.filterNot { it.id == bookmarkId }
+        if (nextBookmarks.size == book.savedBookmarks.size) return
+        updateSavedBookmarks(
+            bookId = currentBookId,
+            bookmarks = nextBookmarks,
+        )
+    }
+
+    private fun updateSavedBookmarks(
+        bookId: String,
+        bookmarks: List<ReaderSavedBookmark>,
+    ) {
+        val normalized =
+            bookmarks
+                .distinctBy(ReaderSavedBookmark::id)
+                .sortedByDescending(ReaderSavedBookmark::createdAt)
+        _state.update { state ->
+            val currentBook = state.book ?: return@update state
+            state.copy(book = currentBook.copy(savedBookmarks = normalized))
+        }
+        viewModelScope.launch {
+            runCatching {
+                bookRepository.saveReaderBookmarks(bookId, normalized)
+            }
+        }
+    }
 }
+
+private fun app.mori.reader.data.book.BookInfo.normalizeReaderSchemes(validSchemeIds: Set<String>) =
+    copy(
+        readerSchemeId = readerSchemeId?.takeIf(validSchemeIds::contains),
+        lastReaderSchemeId =
+            when {
+                lastReaderSchemeId != null && lastReaderSchemeId in validSchemeIds -> lastReaderSchemeId
+                readerSchemeId != null && readerSchemeId in validSchemeIds -> readerSchemeId
+                else -> null
+            },
+    )
+
+private const val BOOKMARK_SNIPPET_MAX_LENGTH = 100
+
+private fun String.asBookmarkSnippet(): String =
+    replace(Regex("\\s+"), " ")
+        .trim()
+        .take(BOOKMARK_SNIPPET_MAX_LENGTH)
 
 private fun ReaderBook.sasayakiMediaInfo(): SasayakiMediaInfo =
     SasayakiMediaInfo(

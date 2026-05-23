@@ -342,7 +342,7 @@ private class DictionaryBridge {
                             deinflectionTrace =
                                 result.process
                                     .reversed()
-                                    .map { DictionaryTraceStep(name = it) },
+                                    .map { DictionaryTraceStep(name = it.name) },
                             glossaries =
                                 term.glossaries.map {
                                     DictionaryGlossary(

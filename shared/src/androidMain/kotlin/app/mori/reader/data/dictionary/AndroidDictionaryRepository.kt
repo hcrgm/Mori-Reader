@@ -248,7 +248,7 @@ internal class AndroidDictionaryRepository(
                             matched = result.matched,
                             deinflectionTrace =
                                 result.process.reversed().map {
-                                    DictionaryTraceStep(name = it)
+                                    DictionaryTraceStep(name = it.name)
                                 },
                             glossaries =
                                 term.glossaries.map {
@@ -441,9 +441,10 @@ internal class AndroidDictionaryRepository(
 
         return runCatching {
             ZipFile(tempZip).use { zip ->
-                val hasIndex = zip.entries().asSequence().any { entry ->
-                    !entry.isDirectory && entry.name.substringAfterLast('/') == "index.json"
-                }
+                val hasIndex =
+                    zip.entries().asSequence().any { entry ->
+                        !entry.isDirectory && entry.name.substringAfterLast('/') == "index.json"
+                    }
                 when {
                     !hasIndex -> DictionaryImportFailureReason.UnsupportedFile
                     throwable is ZipException -> DictionaryImportFailureReason.CorruptedFile

@@ -13,13 +13,11 @@ import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.reader_settings_display_title
-import app.mori.reader.shared.generated.resources.reader_settings_popup_title
 import app.mori.reader.shared.generated.resources.reader_settings_typography_title
 import app.mori.reader.shared.generated.resources.settings_reader_title
 import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.MoriSettingsSection
 import app.mori.reader.ui.components.settings.ReaderDisplaySettingsGroup
-import app.mori.reader.ui.components.settings.ReaderPopupSettingsGroup
 import app.mori.reader.ui.components.settings.ReaderTypographySettingsGroup
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Icon
@@ -59,13 +57,22 @@ internal fun MiuixReaderSettingsPage(
                 MoriSettingsSection(title = stringResource(Res.string.reader_settings_display_title)) {
                     ReaderDisplaySettingsGroup(
                         readerThemeMode = settings.appearance.readerThemeMode,
+                        fullscreen = settings.reader.fullscreen,
+                        actionBarPinned = settings.reader.actionBarPinned,
+                        showReadingInfo = settings.reader.showReadingInfo,
                         verticalWriting = settings.reader.verticalWriting,
                         continuousMode = settings.reader.continuousMode,
                         hideFurigana = settings.reader.hideFurigana,
-                        fullscreen = settings.appearance.readerFullscreen,
-                        avoidPageBreak = settings.reader.avoidPageBreak,
-                        justifyText = settings.reader.justifyText,
                         onReaderThemeModeSelected = { onSettingsIntent(SettingsIntent.SetReaderThemeMode(it)) },
+                        onToggleFullscreen = {
+                            onSettingsIntent(SettingsIntent.SetReaderFullscreen(!settings.reader.fullscreen))
+                        },
+                        onToggleActionBarPinned = {
+                            onSettingsIntent(SettingsIntent.SetReaderActionBarPinned(!settings.reader.actionBarPinned))
+                        },
+                        onToggleShowReadingInfo = {
+                            onSettingsIntent(SettingsIntent.SetReaderShowReadingInfo(!settings.reader.showReadingInfo))
+                        },
                         onToggleWritingMode = {
                             onSettingsIntent(SettingsIntent.SetReaderVerticalWriting(!settings.reader.verticalWriting))
                         },
@@ -74,13 +81,6 @@ internal fun MiuixReaderSettingsPage(
                         },
                         onToggleHideFurigana = {
                             onSettingsIntent(SettingsIntent.SetReaderHideFurigana(!settings.reader.hideFurigana))
-                        },
-                        onFullscreenChanged = { onSettingsIntent(SettingsIntent.SetReaderFullscreen(it)) },
-                        onAvoidPageBreakChanged = {
-                            onSettingsIntent(SettingsIntent.SetReaderAvoidPageBreak(it))
-                        },
-                        onJustifyTextChanged = {
-                            onSettingsIntent(SettingsIntent.SetReaderJustifyText(it))
                         },
                     )
                 }
@@ -93,6 +93,8 @@ internal fun MiuixReaderSettingsPage(
                         lineHeight = settings.reader.lineHeight,
                         horizontalPadding = settings.reader.horizontalPadding,
                         verticalPadding = settings.reader.verticalPadding,
+                        avoidPageBreak = settings.reader.avoidPageBreak,
+                        justifyText = settings.reader.justifyText,
                         characterSpacing = settings.reader.characterSpacing,
                         onFontSizeChanged = { onSettingsIntent(SettingsIntent.SetReaderFontSize(it)) },
                         onLineHeightChanged = { onSettingsIntent(SettingsIntent.SetReaderLineHeight(it)) },
@@ -102,31 +104,14 @@ internal fun MiuixReaderSettingsPage(
                         onVerticalPaddingChanged = {
                             onSettingsIntent(SettingsIntent.SetReaderVerticalPadding(it))
                         },
+                        onAvoidPageBreakChanged = {
+                            onSettingsIntent(SettingsIntent.SetReaderAvoidPageBreak(it))
+                        },
+                        onJustifyTextChanged = {
+                            onSettingsIntent(SettingsIntent.SetReaderJustifyText(it))
+                        },
                         onCharacterSpacingChanged = {
                             onSettingsIntent(SettingsIntent.SetReaderCharacterSpacing(it))
-                        },
-                    )
-                }
-            }
-
-            item {
-                MoriSettingsSection(title = stringResource(Res.string.reader_settings_popup_title)) {
-                    ReaderPopupSettingsGroup(
-                        popupWidth = settings.popup.width,
-                        popupHeight = settings.popup.height,
-                        popupFullWidth = settings.popup.fullWidth,
-                        popupSwipeToDismiss = settings.popup.swipeToDismiss,
-                        popupSwipeThreshold = settings.popup.swipeThreshold,
-                        onPopupWidthChanged = { onSettingsIntent(SettingsIntent.SetPopupWidth(it)) },
-                        onPopupHeightChanged = { onSettingsIntent(SettingsIntent.SetPopupHeight(it)) },
-                        onTogglePopupFullWidth = {
-                            onSettingsIntent(SettingsIntent.SetPopupFullWidth(!settings.popup.fullWidth))
-                        },
-                        onTogglePopupSwipeToDismiss = {
-                            onSettingsIntent(SettingsIntent.SetPopupSwipeToDismiss(!settings.popup.swipeToDismiss))
-                        },
-                        onPopupSwipeThresholdChanged = {
-                            onSettingsIntent(SettingsIntent.SetPopupSwipeThreshold(it))
                         },
                     )
                 }

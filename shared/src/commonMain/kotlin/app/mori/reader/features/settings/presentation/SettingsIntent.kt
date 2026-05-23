@@ -6,6 +6,8 @@ import app.mori.reader.data.dictionary.MoveDirection
 import app.mori.reader.data.settings.AudioPlaybackMode
 import app.mori.reader.data.settings.BookshelfSortMode
 import app.mori.reader.data.settings.LanguageMode
+import app.mori.reader.data.settings.ReaderPersonalizedScheme
+import app.mori.reader.data.settings.ReaderSettings
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.data.settings.ThemeMode
 import app.mori.reader.data.settings.UiThemeEngine
@@ -35,6 +37,18 @@ sealed interface SettingsIntent {
         val mode: ReaderThemeMode,
     ) : SettingsIntent
 
+    data class SetReaderFullscreen(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
+    data class SetReaderActionBarPinned(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
+    data class SetReaderShowReadingInfo(
+        val enabled: Boolean,
+    ) : SettingsIntent
+
     data class SetBlurEnabled(
         val enabled: Boolean,
     ) : SettingsIntent
@@ -48,10 +62,6 @@ sealed interface SettingsIntent {
     ) : SettingsIntent
 
     data class SetMaterialEInkMode(
-        val enabled: Boolean,
-    ) : SettingsIntent
-
-    data class SetReaderFullscreen(
         val enabled: Boolean,
     ) : SettingsIntent
 
@@ -99,24 +109,31 @@ sealed interface SettingsIntent {
         val enabled: Boolean,
     ) : SettingsIntent
 
-    data class SetPopupWidth(
-        val value: Int,
+    data class UpdateGlobalReaderSettings(
+        val settings: ReaderSettings,
     ) : SettingsIntent
 
-    data class SetPopupHeight(
-        val value: Int,
+    data class CreateReaderPersonalizedScheme(
+        val scheme: ReaderPersonalizedScheme,
     ) : SettingsIntent
 
-    data class SetPopupFullWidth(
-        val enabled: Boolean,
+    data class RenameReaderPersonalizedScheme(
+        val schemeId: String,
+        val name: String,
     ) : SettingsIntent
 
-    data class SetPopupSwipeToDismiss(
-        val enabled: Boolean,
+    data class UpdateReaderPersonalizedSchemeSettings(
+        val schemeId: String,
+        val settings: ReaderSettings,
     ) : SettingsIntent
 
-    data class SetPopupSwipeThreshold(
-        val value: Int,
+    data class DeleteReaderPersonalizedScheme(
+        val schemeId: String,
+    ) : SettingsIntent
+
+    data class SetBookReaderScheme(
+        val bookId: String,
+        val schemeId: String?,
     ) : SettingsIntent
 
     data class SetMaxResults(

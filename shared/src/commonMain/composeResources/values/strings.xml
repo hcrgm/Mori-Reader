@@ -17,6 +17,8 @@
     <string name="cd_close">Close</string>
     <string name="cd_back">Back</string>
     <string name="cd_appearance">Appearance</string>
+    <string name="cd_bookmarks">Bookmarks</string>
+    <string name="cd_bookmarks_secondary">Bookmarks alt</string>
     <string name="cd_table_of_contents">Table of contents</string>
     <string name="cd_clear_search">Clear search</string>
     <string name="cd_delete_source">Delete source</string>
@@ -28,6 +30,7 @@
     <string name="cd_previous">Previous</string>
     <string name="cd_next">Next</string>
     <string name="cd_play_pronunciation">Play pronunciation</string>
+    <string name="cd_reading_scheme">Reading scheme</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">Cancel</string>
@@ -82,6 +85,10 @@
     <string name="reader_no_chapter">No chapters to read</string>
     <string name="reader_chapter_sheet_title">Table of Contents</string>
     <string name="reader_chapter_sheet_empty">This book has no available table of contents</string>
+    <string name="reader_chapter_search_placeholder">Search chapters</string>
+    <string name="reader_chapter_search_bookmarks_placeholder">Search bookmarks</string>
+    <string name="reader_chapter_tab_chapters">Chapters</string>
+    <string name="reader_chapter_tab_bookmarks">Bookmarks</string>
     <string name="reader_chapter_jump">Jump to</string>
     <string name="reader_chapter_jump_title">Jump to</string>
     <string name="reader_chapter_jump_summary">Current: %1$d / %2$d</string>
@@ -89,6 +96,49 @@
     <string name="reader_chapter_jump_invalid_title">Invalid input</string>
     <string name="reader_chapter_jump_invalid_message">Please enter a valid integer greater than or equal to 0</string>
     <string name="reader_appearance_sheet_title">Appearance</string>
+    <string name="reader_bookmark_drawer_title">Bookmarks</string>
+    <string name="reader_bookmark_drawer_body">Experimental panel. Real bookmark actions and list content are not wired yet.</string>
+    <string name="reader_bookmarks_title">Bookmarks</string>
+    <string name="reader_bookmarks_add_current">Save current location</string>
+    <string name="reader_current_position_bookmarked">Current location saved</string>
+    <string name="reader_bookmarks_hint">Saved locations appear here. Tap one to jump back.</string>
+    <string name="reader_bookmarks_empty">No bookmarks yet. Save your current location to start.</string>
+    <string name="reader_bookmark_position">Position %1$d%%</string>
+    <string name="reader_reading_scheme_title">Reading scheme</string>
+    <string name="reader_reading_scheme_global_tab">Global</string>
+    <string name="reader_reading_scheme_personalized_tab">Personalized</string>
+    <string name="reader_reading_scheme_default_scheme">Default reading</string>
+    <string name="reader_reading_scheme_immersive_scheme">Language immersion</string>
+    <string name="reader_reading_scheme_night_scheme">Night reading</string>
+    <string name="reader_reading_scheme_font">Font</string>
+    <string name="reader_reading_scheme_font_system">System font</string>
+    <string name="reader_reading_scheme_font_system_tab">System fonts</string>
+    <string name="reader_reading_scheme_font_user_tab">User fonts</string>
+    <string name="reader_reading_scheme_font_user_placeholder">User fonts are not available yet.</string>
+    <string name="reader_reading_scheme_background">Background</string>
+    <string name="reader_reading_scheme_page_mode">Page mode</string>
+    <string name="reader_reading_scheme_page_mode_button">Paging</string>
+    <string name="reader_reading_scheme_page_mode_paginated">Paginated</string>
+    <string name="reader_reading_scheme_page_mode_continuous">Continuous</string>
+    <string name="reader_reading_scheme_margin">Margin</string>
+    <string name="reader_reading_scheme_line_height">Line height</string>
+    <string name="reader_reading_scheme_more">More settings</string>
+    <string name="reader_reading_scheme_direction_button">Direction</string>
+    <string name="reader_reading_scheme_advanced_button">Advanced</string>
+    <string name="reader_reading_scheme_manage">Manage schemes</string>
+    <string name="reader_reading_scheme_manage_title">Manage schemes</string>
+    <string name="reader_reading_scheme_create_title">Create reading scheme</string>
+    <string name="reader_reading_scheme_rename_title">Rename scheme</string>
+    <string name="reader_reading_scheme_name_label">Scheme name</string>
+    <string name="reader_reading_scheme_create_based_on_global">Based on global settings</string>
+    <string name="reader_reading_scheme_create_based_on_selected">Based on current scheme</string>
+    <string name="reader_reading_scheme_duplicate">Duplicate</string>
+    <string name="reader_reading_scheme_copy_suffix">Copy</string>
+    <string name="reader_reading_scheme_delete_title">Delete scheme</string>
+    <string name="reader_reading_scheme_delete_confirm">Delete "%s"?</string>
+    <string name="reader_reading_scheme_current_book">Used by this book</string>
+    <string name="reader_reading_scheme_in_use">Currently in use</string>
+    <string name="reader_reading_scheme_empty">No personalized schemes yet</string>
 
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">Settings</string>
@@ -106,7 +156,7 @@
     <string name="about_update_summary">Open the latest GitHub releases</string>
     <string name="licenses_title">Open source licenses</string>
     <string name="licenses_project_site">Project site</string>
-    <string name="reader_settings_display_title">Reading</string>
+    <string name="reader_settings_display_title">Reader interface</string>
     <string name="reader_settings_typography_title">Typography</string>
     <string name="reader_settings_popup_title">Dictionary popup</string>
 
@@ -148,6 +198,8 @@
     <string name="appearance_page_mode_summary">Paginated or continuous scroll</string>
     <string name="appearance_hide_furigana_title">Hide furigana</string>
     <string name="appearance_fullscreen_title">Fullscreen mode</string>
+    <string name="appearance_action_bar_pinned_title">Keep action bar visible</string>
+    <string name="appearance_show_reading_info_title">Show reading info</string>
     <string name="appearance_avoid_page_break_title">Avoid page breaks</string>
     <string name="appearance_avoid_page_break_on">Keep paragraphs on the same page</string>
     <string name="appearance_avoid_page_break_off">Allow paragraphs to split across pages</string>
@@ -168,6 +220,8 @@
     <string name="appearance_popup_width">Popup width</string>
     <string name="appearance_popup_height">Popup height</string>
     <string name="appearance_popup_swipe_threshold">Swipe threshold</string>
+    <string name="option_enabled">On</string>
+    <string name="option_disabled">Off</string>
 
     <!-- ===================== Audio Settings ===================== -->
     <string name="audio_title">Audio</string>

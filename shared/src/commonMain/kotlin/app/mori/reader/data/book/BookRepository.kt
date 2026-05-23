@@ -19,6 +19,22 @@ interface BookRepository {
         bookmark: ReaderBookmark,
     )
 
+    suspend fun saveReaderBookmarks(
+        bookId: String,
+        bookmarks: List<ReaderSavedBookmark>,
+    )
+
+    suspend fun setBookReaderScheme(
+        bookId: String,
+        schemeId: String?,
+    )
+
+    suspend fun repairBookReaderSchemes(
+        bookId: String,
+        readerSchemeId: String?,
+        lastReaderSchemeId: String?,
+    )
+
     suspend fun createCategory(name: String): BookCatalog
 
     suspend fun renameCategory(

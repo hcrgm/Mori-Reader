@@ -17,6 +17,8 @@
     <string name="cd_close">关闭</string>
     <string name="cd_back">返回</string>
     <string name="cd_appearance">外观</string>
+    <string name="cd_bookmarks">书签</string>
+    <string name="cd_bookmarks_secondary">书签二</string>
     <string name="cd_table_of_contents">目录</string>
     <string name="cd_clear_search">清除搜索内容</string>
     <string name="cd_delete_source">删除音源</string>
@@ -28,6 +30,7 @@
     <string name="cd_previous">上一个</string>
     <string name="cd_next">下一个</string>
     <string name="cd_play_pronunciation">播放发音</string>
+    <string name="cd_reading_scheme">阅读方案</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">取消</string>
@@ -82,6 +85,10 @@
     <string name="reader_no_chapter">没有可阅读章节</string>
     <string name="reader_chapter_sheet_title">目录</string>
     <string name="reader_chapter_sheet_empty">此书没有可用目录</string>
+    <string name="reader_chapter_search_placeholder">搜索章节</string>
+    <string name="reader_chapter_search_bookmarks_placeholder">搜索书签内容</string>
+    <string name="reader_chapter_tab_chapters">章节</string>
+    <string name="reader_chapter_tab_bookmarks">书签</string>
     <string name="reader_chapter_jump">跳转</string>
     <string name="reader_chapter_jump_title">跳转到</string>
     <string name="reader_chapter_jump_summary">当前：%1$d / %2$d</string>
@@ -89,6 +96,49 @@
     <string name="reader_chapter_jump_invalid_title">输入无效</string>
     <string name="reader_chapter_jump_invalid_message">请输入大于等于 0 的整数</string>
     <string name="reader_appearance_sheet_title">外观</string>
+    <string name="reader_bookmark_drawer_title">书签</string>
+    <string name="reader_bookmark_drawer_body">这是一个实验性面板，暂时只验证展开和收回动画，还没有接入真实书签列表和操作。</string>
+    <string name="reader_bookmarks_title">书签</string>
+    <string name="reader_bookmarks_add_current">收藏当前位置</string>
+    <string name="reader_current_position_bookmarked">已收藏当前位置</string>
+    <string name="reader_bookmarks_hint">已收藏的位置会显示在这里，点击即可回到对应位置。</string>
+    <string name="reader_bookmarks_empty">还没有书签，先收藏当前位置吧。</string>
+    <string name="reader_bookmark_position">位置 %1$d%%</string>
+    <string name="reader_reading_scheme_title">阅读方案</string>
+    <string name="reader_reading_scheme_global_tab">全局设置</string>
+    <string name="reader_reading_scheme_personalized_tab">个性化</string>
+    <string name="reader_reading_scheme_default_scheme">默认阅读</string>
+    <string name="reader_reading_scheme_immersive_scheme">语言沉浸</string>
+    <string name="reader_reading_scheme_night_scheme">夜读</string>
+    <string name="reader_reading_scheme_font">字体</string>
+    <string name="reader_reading_scheme_font_system">系统字体</string>
+    <string name="reader_reading_scheme_font_system_tab">系统字体</string>
+    <string name="reader_reading_scheme_font_user_tab">用户字体</string>
+    <string name="reader_reading_scheme_font_user_placeholder">用户字体暂未开放。</string>
+    <string name="reader_reading_scheme_background">背景</string>
+    <string name="reader_reading_scheme_page_mode">翻页方式</string>
+    <string name="reader_reading_scheme_page_mode_button">翻页</string>
+    <string name="reader_reading_scheme_page_mode_paginated">翻页</string>
+    <string name="reader_reading_scheme_page_mode_continuous">滚动</string>
+    <string name="reader_reading_scheme_margin">边距</string>
+    <string name="reader_reading_scheme_line_height">行距</string>
+    <string name="reader_reading_scheme_more">更多设置</string>
+    <string name="reader_reading_scheme_direction_button">方向</string>
+    <string name="reader_reading_scheme_advanced_button">高级</string>
+    <string name="reader_reading_scheme_manage">管理方案</string>
+    <string name="reader_reading_scheme_manage_title">管理方案</string>
+    <string name="reader_reading_scheme_create_title">新建阅读方案</string>
+    <string name="reader_reading_scheme_rename_title">重命名方案</string>
+    <string name="reader_reading_scheme_name_label">方案名称</string>
+    <string name="reader_reading_scheme_create_based_on_global">基于全局设置</string>
+    <string name="reader_reading_scheme_create_based_on_selected">基于当前方案</string>
+    <string name="reader_reading_scheme_duplicate">拷贝副本</string>
+    <string name="reader_reading_scheme_copy_suffix">副本</string>
+    <string name="reader_reading_scheme_delete_title">删除方案</string>
+    <string name="reader_reading_scheme_delete_confirm">确认删除「%s」吗？</string>
+    <string name="reader_reading_scheme_current_book">本书正在使用</string>
+    <string name="reader_reading_scheme_in_use">当前使用中</string>
+    <string name="reader_reading_scheme_empty">还没有个性化方案</string>
 
     <!-- ===================== Settings ===================== -->
     <string name="settings_title">设置</string>
@@ -106,7 +156,7 @@
     <string name="about_update_summary">打开 GitHub 最新 Releases</string>
     <string name="licenses_title">开源许可</string>
     <string name="licenses_project_site">项目主页</string>
-    <string name="reader_settings_display_title">阅读模式</string>
+    <string name="reader_settings_display_title">阅读界面</string>
     <string name="reader_settings_typography_title">排版</string>
     <string name="reader_settings_popup_title">词典弹窗</string>
 
@@ -148,6 +198,8 @@
     <string name="appearance_page_mode_summary">分页阅读或连续滚动</string>
     <string name="appearance_hide_furigana_title">隐藏振假名</string>
     <string name="appearance_fullscreen_title">全屏模式</string>
+    <string name="appearance_action_bar_pinned_title">操作栏常驻</string>
+    <string name="appearance_show_reading_info_title">显示阅读信息</string>
     <string name="appearance_avoid_page_break_title">避免段落内分页</string>
     <string name="appearance_avoid_page_break_on">段落尽量保持在同一页</string>
     <string name="appearance_avoid_page_break_off">允许段落跨页拆分</string>
@@ -168,6 +220,8 @@
     <string name="appearance_popup_width">弹窗宽度</string>
     <string name="appearance_popup_height">弹窗高度</string>
     <string name="appearance_popup_swipe_threshold">滑动阈值</string>
+    <string name="option_enabled">开启</string>
+    <string name="option_disabled">关闭</string>
 
     <!-- ===================== Audio Settings ===================== -->
     <string name="audio_title">音频</string>

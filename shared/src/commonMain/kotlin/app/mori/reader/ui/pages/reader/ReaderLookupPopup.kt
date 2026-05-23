@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.anki.buildReaderAnkiMiningContext
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.data.settings.effectiveReaderSettings
 import app.mori.reader.features.anki.presentation.AnkiIntent
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.reader.presentation.ReaderIntent
@@ -62,6 +63,7 @@ internal fun ReaderLookupPopup(
     viewportWidth: Dp,
     viewportHeight: Dp,
     readerTopPadding: Dp,
+    readerStartPadding: Dp,
     readerBottomPadding: Dp,
     blurEnabled: Boolean,
     backdrop: LayerBackdrop?,
@@ -71,38 +73,43 @@ internal fun ReaderLookupPopup(
     onSwipeDismiss: () -> Unit,
 ) {
     if (!lookup.visible) return
+    val readerSettings = settings.effectiveReaderSettings(reader.book?.info?.readerSchemeId)
 
     val layout =
         lookup.rect?.let { rect ->
+            val selectionLeft = readerStartPadding + rect.x.dp
             val selectionTop = if (popupIndex == 0) readerTopPadding + rect.y.dp else rect.y.dp
+            val selectionRight = selectionLeft + rect.width.dp
             val selectionBottom = selectionTop + rect.height.dp
             calculateLookupPopupLayout(
-                selectionLeft = rect.x.dp,
+                selectionLeft = selectionLeft,
                 selectionTop = selectionTop,
-                selectionRight = rect.x.dp + rect.width.dp,
+                selectionRight = selectionRight,
                 selectionBottom = selectionBottom,
                 screenWidth = viewportWidth,
                 screenHeight = viewportHeight,
-                maxWidth = settings.popup.width.dp,
-                maxHeight = settings.popup.height.dp,
+                maxWidth = readerSettings.popupWidth.dp,
+                maxHeight = readerSettings.popupHeight.dp,
                 isVertical = isVertical,
-                isFullWidth = popupIndex == 0 && settings.popup.fullWidth,
+                isFullWidth = popupIndex == 0 && readerSettings.popupFullWidth,
                 topInset = readerTopPadding,
                 bottomInset = readerBottomPadding,
+                leftInset = readerStartPadding,
             )
         } ?: calculateLookupPopupLayout(
-            selectionLeft = viewportWidth / 2f,
+            selectionLeft = readerStartPadding + (viewportWidth - readerStartPadding) / 2f,
             selectionTop = viewportHeight - readerBottomPadding - 1.dp,
-            selectionRight = viewportWidth / 2f,
+            selectionRight = readerStartPadding + (viewportWidth - readerStartPadding) / 2f,
             selectionBottom = viewportHeight - readerBottomPadding,
             screenWidth = viewportWidth,
             screenHeight = viewportHeight,
-            maxWidth = settings.popup.width.dp,
-            maxHeight = settings.popup.height.dp,
+            maxWidth = readerSettings.popupWidth.dp,
+            maxHeight = readerSettings.popupHeight.dp,
             isVertical = false,
-            isFullWidth = popupIndex == 0 && settings.popup.fullWidth,
+            isFullWidth = popupIndex == 0 && readerSettings.popupFullWidth,
             topInset = readerTopPadding,
             bottomInset = readerBottomPadding,
+            leftInset = readerStartPadding,
         )
 
     ReaderSheetTheme(
@@ -115,6 +122,7 @@ internal fun ReaderLookupPopup(
             lookup = lookup,
             layout = layout,
             settings = settings,
+            readerSettings = readerSettings,
             ankiDuplicateExpression = ankiDuplicateExpression,
             isDark = isDark,
             materialEInkMode = materialEInkMode,

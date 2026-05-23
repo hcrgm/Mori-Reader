@@ -27,6 +27,7 @@ import androidx.compose.ui.zIndex
 import app.mori.reader.data.anki.AnkiConnectionMode
 import app.mori.reader.data.anki.AnkiMiningContent
 import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.data.settings.ReaderSettings
 import app.mori.reader.features.lookup.presentation.ReaderLookupState
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
 import app.mori.reader.shared.generated.resources.Res
@@ -52,6 +53,7 @@ internal fun LookupPopupSurface(
     lookup: ReaderLookupState,
     layout: LookupPopupLayout,
     settings: AppSettings,
+    readerSettings: ReaderSettings,
     ankiDuplicateExpression: String?,
     isDark: Boolean,
     materialEInkMode: Boolean,
@@ -201,8 +203,8 @@ internal fun LookupPopupSurface(
                             audioPlaybackMode = settings.audio.playbackMode,
                             enableInternalPopup = false,
                             swipeDismissThreshold =
-                                if (settings.popup.swipeToDismiss) {
-                                    settings.popup.swipeThreshold
+                                if (readerSettings.popupSwipeToDismiss) {
+                                    readerSettings.popupSwipeThreshold
                                 } else {
                                     0
                                 },

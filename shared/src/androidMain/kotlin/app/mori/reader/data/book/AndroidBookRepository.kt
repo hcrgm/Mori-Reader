@@ -176,6 +176,71 @@ internal class AndroidBookRepository(
         }
     }
 
+    override suspend fun saveReaderBookmarks(
+        bookId: String,
+        bookmarks: List<ReaderSavedBookmark>,
+    ) {
+        withContext(Dispatchers.IO) {
+            val bookDir =
+                findBookDirectory(bookId)
+                    ?: return@withContext
+            saveSavedBookmarks(bookDir, bookmarks)
+        }
+    }
+
+    override suspend fun setBookReaderScheme(
+        bookId: String,
+        schemeId: String?,
+    ) {
+        withContext(Dispatchers.IO) {
+            val bookDir =
+                findBookDirectory(bookId)
+                    ?: return@withContext
+            val metadata =
+                loadBookMetadataStorage(bookDir)
+                    ?: return@withContext
+            saveBookMetadataStorage(
+                bookDir,
+                metadata.copy(
+                    readerSchemeId = schemeId?.takeIf { it.isNotBlank() },
+                    lastReaderSchemeId = schemeId?.takeIf { it.isNotBlank() } ?: metadata.lastReaderSchemeId,
+                ),
+            )
+            publishCatalog(buildCatalog())
+        }
+    }
+
+    override suspend fun repairBookReaderSchemes(
+        bookId: String,
+        readerSchemeId: String?,
+        lastReaderSchemeId: String?,
+    ) {
+        withContext(Dispatchers.IO) {
+            val bookDir =
+                findBookDirectory(bookId)
+                    ?: return@withContext
+            val metadata =
+                loadBookMetadataStorage(bookDir)
+                    ?: return@withContext
+            val normalizedReaderSchemeId = readerSchemeId?.takeIf { it.isNotBlank() }
+            val normalizedLastReaderSchemeId = lastReaderSchemeId?.takeIf { it.isNotBlank() }
+            if (
+                metadata.readerSchemeId == normalizedReaderSchemeId &&
+                metadata.lastReaderSchemeId == normalizedLastReaderSchemeId
+            ) {
+                return@withContext
+            }
+            saveBookMetadataStorage(
+                bookDir,
+                metadata.copy(
+                    readerSchemeId = normalizedReaderSchemeId,
+                    lastReaderSchemeId = normalizedLastReaderSchemeId,
+                ),
+            )
+            publishCatalog(buildCatalog())
+        }
+    }
+
     override suspend fun createCategory(name: String): BookCatalog =
         withContext(Dispatchers.IO) {
             val trimmed = name.trim()
@@ -558,6 +623,13 @@ internal class AndroidBookRepository(
                     )
                 }
                 ?: ReaderBookmark()
+        val savedBookmarks =
+            loadSavedBookmarks(bookDir)
+                .orEmpty()
+                .mapNotNull { bookmark ->
+                    if (bookmark.chapterIndex !in chapters.indices) return@mapNotNull null
+                    bookmark.copy(chapterProgress = bookmark.chapterProgress.coerceIn(0.0, 1.0))
+                }.sortedByDescending(ReaderSavedBookmark::createdAt)
         return ReaderBook(
             info = book,
             chapters = chapters,
@@ -573,6 +645,7 @@ internal class AndroidBookRepository(
                 },
             totalCharacterCount = readerInfo.characterCount,
             bookmark = bookmark,
+            savedBookmarks = savedBookmarks,
         )
     }
 
@@ -604,6 +677,8 @@ internal class AndroidBookRepository(
             title = metadata.title,
             author = metadata.author,
             coverPath = metadata.coverPath,
+            readerSchemeId = metadata.readerSchemeId,
+            lastReaderSchemeId = metadata.lastReaderSchemeId,
             categoryIds = categoryIds,
             progressPercent = progressPercent,
             currentChapterName = currentChapterName,
@@ -700,6 +775,26 @@ internal class AndroidBookRepository(
             json.encodeToString(
                 ReaderBookmark.serializer(),
                 bookmark,
+            ),
+        )
+    }
+
+    private fun loadSavedBookmarks(bookDir: File): List<ReaderSavedBookmark>? =
+        runCatching {
+            json.decodeFromString(
+                ListSerializer(ReaderSavedBookmark.serializer()),
+                File(bookDir, SAVED_BOOKMARKS_FILE).readText(),
+            )
+        }.getOrNull()
+
+    private fun saveSavedBookmarks(
+        bookDir: File,
+        bookmarks: List<ReaderSavedBookmark>,
+    ) {
+        File(bookDir, SAVED_BOOKMARKS_FILE).writeText(
+            json.encodeToString(
+                ListSerializer(ReaderSavedBookmark.serializer()),
+                bookmarks,
             ),
         )
     }
@@ -1031,6 +1126,8 @@ private data class BookMetadataStorage(
     val title: String,
     val author: String? = null,
     val coverPath: String? = null,
+    val readerSchemeId: String? = null,
+    val lastReaderSchemeId: String? = null,
     val importedAt: Long,
     val lastOpenedAt: Long? = null,
 )
@@ -1077,6 +1174,7 @@ private const val METADATA_FILE = "metadata.json"
 private const val BOOKINFO_FILE = "bookinfo.json"
 private const val TOC_FILE = "toc.json"
 private const val BOOKMARK_FILE = "bookmark.json"
+private const val SAVED_BOOKMARKS_FILE = "saved-bookmarks.json"
 private const val SOURCE_FILE_NAME = "source.epub"
 private const val DEFAULT_READING_CATEGORY_NAME = "在读"
 private const val EXTRACTED_EPUB_DIR = "content"

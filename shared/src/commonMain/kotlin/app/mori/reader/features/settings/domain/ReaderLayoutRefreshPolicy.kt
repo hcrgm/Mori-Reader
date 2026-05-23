@@ -1,19 +1,22 @@
 package app.mori.reader.features.settings.domain
 
-import app.mori.reader.data.settings.AppSettings
+import app.mori.reader.data.settings.ReaderSettings
+import app.mori.reader.data.settings.ReaderThemeMode
 
 fun shouldRefreshReaderLayout(
-    previous: AppSettings,
-    next: AppSettings,
+    previous: ReaderSettings,
+    next: ReaderSettings,
+    previousThemeMode: ReaderThemeMode,
+    nextThemeMode: ReaderThemeMode,
 ): Boolean =
-    previous.reader.fontSize != next.reader.fontSize ||
-        previous.reader.lineHeight != next.reader.lineHeight ||
-        previous.reader.horizontalPadding != next.reader.horizontalPadding ||
-        previous.reader.verticalPadding != next.reader.verticalPadding ||
-        previous.reader.avoidPageBreak != next.reader.avoidPageBreak ||
-        previous.reader.justifyText != next.reader.justifyText ||
-        previous.reader.layoutAdvanced != next.reader.layoutAdvanced ||
-        previous.reader.characterSpacing != next.reader.characterSpacing ||
-        previous.reader.continuousMode != next.reader.continuousMode ||
-        previous.reader.hideFurigana != next.reader.hideFurigana ||
-        previous.appearance.readerThemeMode != next.appearance.readerThemeMode
+    previous.fontSize != next.fontSize ||
+        previous.lineHeight != next.lineHeight ||
+        previous.horizontalPadding != next.horizontalPadding ||
+        previous.verticalPadding != next.verticalPadding ||
+        previous.avoidPageBreak != next.avoidPageBreak ||
+        previous.justifyText != next.justifyText ||
+        previous.layoutAdvanced != next.layoutAdvanced ||
+        previous.characterSpacing != next.characterSpacing ||
+        previous.continuousMode != next.continuousMode ||
+        previous.hideFurigana != next.hideFurigana ||
+        previousThemeMode != nextThemeMode

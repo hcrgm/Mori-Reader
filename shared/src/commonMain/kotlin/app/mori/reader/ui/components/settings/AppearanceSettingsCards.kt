@@ -29,6 +29,7 @@ import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_on
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_title
 import app.mori.reader.shared.generated.resources.appearance_blur_summary
 import app.mori.reader.shared.generated.resources.appearance_blur_title
+import app.mori.reader.shared.generated.resources.appearance_action_bar_pinned_title
 import app.mori.reader.shared.generated.resources.appearance_character_spacing
 import app.mori.reader.shared.generated.resources.appearance_font_size
 import app.mori.reader.shared.generated.resources.appearance_fullscreen_title
@@ -41,8 +42,6 @@ import app.mori.reader.shared.generated.resources.appearance_line_height
 import app.mori.reader.shared.generated.resources.appearance_monet_key_color_title
 import app.mori.reader.shared.generated.resources.appearance_monet_summary
 import app.mori.reader.shared.generated.resources.appearance_monet_title
-import app.mori.reader.shared.generated.resources.appearance_ui_scale_summary
-import app.mori.reader.shared.generated.resources.appearance_ui_scale_title
 import app.mori.reader.shared.generated.resources.appearance_page_mode_summary
 import app.mori.reader.shared.generated.resources.appearance_page_mode_title
 import app.mori.reader.shared.generated.resources.appearance_popup_full_width_off
@@ -58,10 +57,13 @@ import app.mori.reader.shared.generated.resources.appearance_popup_width
 import app.mori.reader.shared.generated.resources.appearance_reader_theme_title
 import app.mori.reader.shared.generated.resources.appearance_reading_continuous
 import app.mori.reader.shared.generated.resources.appearance_reading_pagination
+import app.mori.reader.shared.generated.resources.appearance_show_reading_info_title
 import app.mori.reader.shared.generated.resources.appearance_theme_title
 import app.mori.reader.shared.generated.resources.appearance_typography
 import app.mori.reader.shared.generated.resources.appearance_ui_engine_summary
 import app.mori.reader.shared.generated.resources.appearance_ui_engine_title
+import app.mori.reader.shared.generated.resources.appearance_ui_scale_summary
+import app.mori.reader.shared.generated.resources.appearance_ui_scale_title
 import app.mori.reader.shared.generated.resources.appearance_vertical_margin
 import app.mori.reader.shared.generated.resources.appearance_writing_direction_summary
 import app.mori.reader.shared.generated.resources.appearance_writing_direction_title
@@ -244,10 +246,12 @@ private fun monetKeyColorItems(): List<SpinnerEntry> =
 @Composable
 fun ReaderAppearanceSettingsCard(
     readerThemeMode: ReaderThemeMode,
+    fullscreen: Boolean,
+    actionBarPinned: Boolean,
+    showReadingInfo: Boolean,
     verticalWriting: Boolean,
     continuousMode: Boolean,
     hideFurigana: Boolean,
-    fullscreen: Boolean,
     fontSize: Int,
     lineHeight: Double,
     horizontalPadding: Int,
@@ -262,10 +266,12 @@ fun ReaderAppearanceSettingsCard(
     popupSwipeThreshold: Int,
     modifier: Modifier = Modifier,
     onReaderThemeModeSelected: (ReaderThemeMode) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleActionBarPinned: () -> Unit,
+    onToggleShowReadingInfo: () -> Unit,
     onToggleWritingMode: () -> Unit,
     onToggleContinuousMode: () -> Unit,
     onToggleHideFurigana: () -> Unit,
-    onFullscreenChanged: (Boolean) -> Unit,
     onFontSizeChanged: (Int) -> Unit,
     onLineHeightChanged: (Double) -> Unit,
     onHorizontalPaddingChanged: (Int) -> Unit,
@@ -282,10 +288,12 @@ fun ReaderAppearanceSettingsCard(
     Card(modifier = modifier.fillMaxWidth()) {
         ReaderAppearanceSettingsGroup(
             readerThemeMode = readerThemeMode,
+            fullscreen = fullscreen,
+            actionBarPinned = actionBarPinned,
+            showReadingInfo = showReadingInfo,
             verticalWriting = verticalWriting,
             continuousMode = continuousMode,
             hideFurigana = hideFurigana,
-            fullscreen = fullscreen,
             fontSize = fontSize,
             lineHeight = lineHeight,
             horizontalPadding = horizontalPadding,
@@ -299,10 +307,12 @@ fun ReaderAppearanceSettingsCard(
             popupSwipeToDismiss = popupSwipeToDismiss,
             popupSwipeThreshold = popupSwipeThreshold,
             onReaderThemeModeSelected = onReaderThemeModeSelected,
+            onToggleFullscreen = onToggleFullscreen,
+            onToggleActionBarPinned = onToggleActionBarPinned,
+            onToggleShowReadingInfo = onToggleShowReadingInfo,
             onToggleWritingMode = onToggleWritingMode,
             onToggleContinuousMode = onToggleContinuousMode,
             onToggleHideFurigana = onToggleHideFurigana,
-            onFullscreenChanged = onFullscreenChanged,
             onFontSizeChanged = onFontSizeChanged,
             onLineHeightChanged = onLineHeightChanged,
             onHorizontalPaddingChanged = onHorizontalPaddingChanged,
@@ -322,10 +332,12 @@ fun ReaderAppearanceSettingsCard(
 @Composable
 internal fun ReaderAppearanceSettingsGroup(
     readerThemeMode: ReaderThemeMode,
+    fullscreen: Boolean,
+    actionBarPinned: Boolean,
+    showReadingInfo: Boolean,
     verticalWriting: Boolean,
     continuousMode: Boolean,
     hideFurigana: Boolean,
-    fullscreen: Boolean,
     fontSize: Int,
     lineHeight: Double,
     horizontalPadding: Int,
@@ -339,10 +351,12 @@ internal fun ReaderAppearanceSettingsGroup(
     popupSwipeToDismiss: Boolean,
     popupSwipeThreshold: Int,
     onReaderThemeModeSelected: (ReaderThemeMode) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleActionBarPinned: () -> Unit,
+    onToggleShowReadingInfo: () -> Unit,
     onToggleWritingMode: () -> Unit,
     onToggleContinuousMode: () -> Unit,
     onToggleHideFurigana: () -> Unit,
-    onFullscreenChanged: (Boolean) -> Unit,
     onFontSizeChanged: (Int) -> Unit,
     onLineHeightChanged: (Double) -> Unit,
     onHorizontalPaddingChanged: (Int) -> Unit,
@@ -358,19 +372,19 @@ internal fun ReaderAppearanceSettingsGroup(
 ) {
     ReaderDisplaySettingsGroup(
         readerThemeMode = readerThemeMode,
+        fullscreen = fullscreen,
+        actionBarPinned = actionBarPinned,
+        showReadingInfo = showReadingInfo,
         verticalWriting = verticalWriting,
         continuousMode = continuousMode,
         hideFurigana = hideFurigana,
-        fullscreen = fullscreen,
-        avoidPageBreak = avoidPageBreak,
-        justifyText = justifyText,
         onReaderThemeModeSelected = onReaderThemeModeSelected,
+        onToggleFullscreen = onToggleFullscreen,
+        onToggleActionBarPinned = onToggleActionBarPinned,
+        onToggleShowReadingInfo = onToggleShowReadingInfo,
         onToggleWritingMode = onToggleWritingMode,
         onToggleContinuousMode = onToggleContinuousMode,
         onToggleHideFurigana = onToggleHideFurigana,
-        onFullscreenChanged = onFullscreenChanged,
-        onAvoidPageBreakChanged = onAvoidPageBreakChanged,
-        onJustifyTextChanged = onJustifyTextChanged,
     )
     HorizontalDivider(modifier = Modifier.padding(start = 20.dp))
     SmallTitle(
@@ -382,11 +396,15 @@ internal fun ReaderAppearanceSettingsGroup(
         lineHeight = lineHeight,
         horizontalPadding = horizontalPadding,
         verticalPadding = verticalPadding,
+        avoidPageBreak = avoidPageBreak,
+        justifyText = justifyText,
         characterSpacing = characterSpacing,
         onFontSizeChanged = onFontSizeChanged,
         onLineHeightChanged = onLineHeightChanged,
         onHorizontalPaddingChanged = onHorizontalPaddingChanged,
         onVerticalPaddingChanged = onVerticalPaddingChanged,
+        onAvoidPageBreakChanged = onAvoidPageBreakChanged,
+        onJustifyTextChanged = onJustifyTextChanged,
         onCharacterSpacingChanged = onCharacterSpacingChanged,
     )
     HorizontalDivider(modifier = Modifier.padding(start = 20.dp))
@@ -411,19 +429,19 @@ internal fun ReaderAppearanceSettingsGroup(
 @Composable
 internal fun ReaderDisplaySettingsGroup(
     readerThemeMode: ReaderThemeMode,
+    fullscreen: Boolean,
+    actionBarPinned: Boolean,
+    showReadingInfo: Boolean,
     verticalWriting: Boolean,
     continuousMode: Boolean,
     hideFurigana: Boolean,
-    fullscreen: Boolean,
-    avoidPageBreak: Boolean,
-    justifyText: Boolean,
     onReaderThemeModeSelected: (ReaderThemeMode) -> Unit,
+    onToggleFullscreen: () -> Unit,
+    onToggleActionBarPinned: () -> Unit,
+    onToggleShowReadingInfo: () -> Unit,
     onToggleWritingMode: () -> Unit,
     onToggleContinuousMode: () -> Unit,
     onToggleHideFurigana: () -> Unit,
-    onFullscreenChanged: (Boolean) -> Unit,
-    onAvoidPageBreakChanged: (Boolean) -> Unit,
-    onJustifyTextChanged: (Boolean) -> Unit,
 ) {
     val readerThemeModes = remember { ReaderThemeMode.entries.toList() }
     val readerThemeModeItems = readerThemeModes.map { SpinnerEntry(title = it.localizedLabel()) }
@@ -446,6 +464,21 @@ internal fun ReaderDisplaySettingsGroup(
             )
         }
 
+    SwitchPreference(
+        checked = fullscreen,
+        onCheckedChange = { onToggleFullscreen() },
+        title = stringResource(Res.string.appearance_fullscreen_title),
+    )
+    SwitchPreference(
+        checked = actionBarPinned,
+        onCheckedChange = { onToggleActionBarPinned() },
+        title = stringResource(Res.string.appearance_action_bar_pinned_title),
+    )
+    SwitchPreference(
+        checked = showReadingInfo,
+        onCheckedChange = { onToggleShowReadingInfo() },
+        title = stringResource(Res.string.appearance_show_reading_info_title),
+    )
     WindowSpinnerPreference(
         items = readerThemeModeItems,
         selectedIndex = readerThemeModes.indexOf(readerThemeMode).coerceAtLeast(0),
@@ -479,29 +512,6 @@ internal fun ReaderDisplaySettingsGroup(
         onCheckedChange = { onToggleHideFurigana() },
         title = stringResource(Res.string.appearance_hide_furigana_title),
     )
-    SwitchPreference(
-        checked = fullscreen,
-        onCheckedChange = onFullscreenChanged,
-        title = stringResource(Res.string.appearance_fullscreen_title),
-    )
-    SwitchPreference(
-        checked = avoidPageBreak,
-        onCheckedChange = onAvoidPageBreakChanged,
-        title = stringResource(Res.string.appearance_avoid_page_break_title),
-        summary =
-            if (avoidPageBreak) {
-                stringResource(Res.string.appearance_avoid_page_break_on)
-            } else {
-                stringResource(
-                    Res.string.appearance_avoid_page_break_off,
-                )
-            },
-    )
-    SwitchPreference(
-        checked = justifyText,
-        onCheckedChange = onJustifyTextChanged,
-        title = stringResource(Res.string.appearance_justify_title),
-    )
 }
 
 @Composable
@@ -510,11 +520,15 @@ internal fun ReaderTypographySettingsGroup(
     lineHeight: Double,
     horizontalPadding: Int,
     verticalPadding: Int,
+    avoidPageBreak: Boolean,
+    justifyText: Boolean,
     characterSpacing: Double,
     onFontSizeChanged: (Int) -> Unit,
     onLineHeightChanged: (Double) -> Unit,
     onHorizontalPaddingChanged: (Int) -> Unit,
     onVerticalPaddingChanged: (Int) -> Unit,
+    onAvoidPageBreakChanged: (Boolean) -> Unit,
+    onJustifyTextChanged: (Boolean) -> Unit,
     onCharacterSpacingChanged: (Double) -> Unit,
 ) {
     Column(
@@ -564,6 +578,24 @@ internal fun ReaderTypographySettingsGroup(
             onCommit = { onCharacterSpacingChanged(it.roundToInt().toDouble()) },
         )
     }
+    SwitchPreference(
+        checked = avoidPageBreak,
+        onCheckedChange = onAvoidPageBreakChanged,
+        title = stringResource(Res.string.appearance_avoid_page_break_title),
+        summary =
+            if (avoidPageBreak) {
+                stringResource(Res.string.appearance_avoid_page_break_on)
+            } else {
+                stringResource(
+                    Res.string.appearance_avoid_page_break_off,
+                )
+            },
+    )
+    SwitchPreference(
+        checked = justifyText,
+        onCheckedChange = onJustifyTextChanged,
+        title = stringResource(Res.string.appearance_justify_title),
+    )
 }
 
 @Composable

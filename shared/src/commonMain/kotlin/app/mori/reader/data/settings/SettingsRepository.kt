@@ -82,11 +82,14 @@ class SettingsRepository(
                             monetKeyColor = preferences[Keys.MonetKeyColor] ?: 0L,
                             materialEInkMode = preferences[Keys.MaterialEInkMode] ?: false,
                             blurEnabled = preferences[Keys.BlurEnabled] ?: true,
-                            readerFullscreen = preferences[Keys.ReaderFullscreen] ?: false,
                         ),
                     reader =
                         ReaderSettings(
+                            fullscreen = preferences[Keys.ReaderFullscreen] ?: true,
+                            actionBarPinned = preferences[Keys.ReaderActionBarPinned] ?: false,
+                            showReadingInfo = preferences[Keys.ReaderShowReadingInfo] ?: true,
                             verticalWriting = preferences[Keys.ReaderVerticalWriting] ?: true,
+                            fontFamily = preferences[Keys.ReaderFontFamily],
                             fontSize = (preferences[Keys.ReaderFontSize] ?: 22).coerceIn(16, 40),
                             lineHeight =
                                 (preferences[Keys.ReaderLineHeight] ?: "1.65")
@@ -111,19 +114,17 @@ class SettingsRepository(
                                     ?.coerceIn(-10.0, 10.0) ?: 0.0,
                             continuousMode = preferences[Keys.ReaderContinuousMode] ?: false,
                             hideFurigana = preferences[Keys.ReaderHideFurigana] ?: false,
+                            popupWidth = (preferences[Keys.PopupWidth] ?: 320).coerceIn(100, 700),
+                            popupHeight = (preferences[Keys.PopupHeight] ?: 250).coerceIn(100, 500),
+                            popupFullWidth = preferences[Keys.PopupFullWidth] ?: false,
+                            popupSwipeToDismiss = preferences[Keys.PopupSwipeToDismiss] ?: false,
+                            popupSwipeThreshold =
+                                (preferences[Keys.PopupSwipeThreshold] ?: 40).coerceIn(20, 80),
                         ),
-                    popup =
-                        PopupSettings(
-                            width = (preferences[Keys.PopupWidth] ?: 320).coerceIn(100, 700),
-                            height = (preferences[Keys.PopupHeight] ?: 250).coerceIn(100, 500),
-                            fullWidth = preferences[Keys.PopupFullWidth] ?: false,
-                            swipeToDismiss = preferences[Keys.PopupSwipeToDismiss] ?: false,
-                            swipeThreshold =
-                                (preferences[Keys.PopupSwipeThreshold] ?: 40).coerceIn(
-                                    20,
-                                    80,
-                                ),
-                        ),
+                    readerPersonalizedSchemes =
+                        preferences[Keys.ReaderPersonalizedSchemes]
+                            ?.toReaderPersonalizedSchemes(json)
+                            .orEmpty(),
                     dictionary =
                         DictionarySettings(
                             maxResults = (preferences[Keys.MaxResults] ?: 16).coerceIn(1, 50),
@@ -222,6 +223,35 @@ class SettingsRepository(
         dataStore.edit { it[Keys.ReaderVerticalWriting] = enabled }
     }
 
+    suspend fun setReaderSettings(settings: ReaderSettings) {
+        dataStore.edit {
+            it[Keys.ReaderFullscreen] = settings.fullscreen
+            it[Keys.ReaderActionBarPinned] = settings.actionBarPinned
+            it[Keys.ReaderShowReadingInfo] = settings.showReadingInfo
+            it[Keys.ReaderVerticalWriting] = settings.verticalWriting
+            settings.fontFamily
+                ?.trim()
+                ?.takeIf { fontFamily -> fontFamily.isNotBlank() }
+                ?.let { fontFamily -> it[Keys.ReaderFontFamily] = fontFamily }
+                ?: it.remove(Keys.ReaderFontFamily)
+            it[Keys.ReaderFontSize] = settings.fontSize.coerceIn(16, 40)
+            it[Keys.ReaderLineHeight] = settings.lineHeight.coerceIn(1.0, 2.5).toString()
+            it[Keys.ReaderHorizontalPadding] = settings.horizontalPadding.coerceIn(0, 50)
+            it[Keys.ReaderVerticalPadding] = settings.verticalPadding.coerceIn(0, 50)
+            it[Keys.ReaderAvoidPageBreak] = settings.avoidPageBreak
+            it[Keys.ReaderJustifyText] = settings.justifyText
+            it[Keys.ReaderLayoutAdvanced] = settings.layoutAdvanced
+            it[Keys.ReaderCharacterSpacing] = settings.characterSpacing.coerceIn(-10.0, 10.0).toString()
+            it[Keys.ReaderContinuousMode] = settings.continuousMode
+            it[Keys.ReaderHideFurigana] = settings.hideFurigana
+            it[Keys.PopupWidth] = settings.popupWidth.coerceIn(100, 700)
+            it[Keys.PopupHeight] = settings.popupHeight.coerceIn(100, 500)
+            it[Keys.PopupFullWidth] = settings.popupFullWidth
+            it[Keys.PopupSwipeToDismiss] = settings.popupSwipeToDismiss
+            it[Keys.PopupSwipeThreshold] = settings.popupSwipeThreshold.coerceIn(20, 80)
+        }
+    }
+
     suspend fun setReaderLineHeight(value: Double) {
         dataStore.edit { it[Keys.ReaderLineHeight] = value.coerceIn(1.0, 2.5).toString() }
     }
@@ -262,24 +292,70 @@ class SettingsRepository(
         dataStore.edit { it[Keys.ReaderFullscreen] = enabled }
     }
 
-    suspend fun setPopupWidth(value: Int) {
-        dataStore.edit { it[Keys.PopupWidth] = value.coerceIn(100, 700) }
+    suspend fun setReaderActionBarPinned(enabled: Boolean) {
+        dataStore.edit { it[Keys.ReaderActionBarPinned] = enabled }
     }
 
-    suspend fun setPopupHeight(value: Int) {
-        dataStore.edit { it[Keys.PopupHeight] = value.coerceIn(100, 500) }
+    suspend fun setReaderShowReadingInfo(enabled: Boolean) {
+        dataStore.edit { it[Keys.ReaderShowReadingInfo] = enabled }
     }
 
-    suspend fun setPopupFullWidth(enabled: Boolean) {
-        dataStore.edit { it[Keys.PopupFullWidth] = enabled }
+    suspend fun createReaderPersonalizedScheme(scheme: ReaderPersonalizedScheme): ReaderPersonalizedScheme {
+        val normalizedScheme =
+            scheme.copy(
+                name = scheme.name.trim().ifBlank { "未命名方案" },
+            )
+        dataStore.edit { preferences ->
+            val current = preferences[Keys.ReaderPersonalizedSchemes]?.toReaderPersonalizedSchemes(json).orEmpty()
+            preferences[Keys.ReaderPersonalizedSchemes] = (current + normalizedScheme).toReaderPersonalizedSchemesJson(json)
+        }
+        return normalizedScheme
     }
 
-    suspend fun setPopupSwipeToDismiss(enabled: Boolean) {
-        dataStore.edit { it[Keys.PopupSwipeToDismiss] = enabled }
+    suspend fun renameReaderPersonalizedScheme(
+        schemeId: String,
+        name: String,
+    ) {
+        dataStore.edit { preferences ->
+            val current = preferences[Keys.ReaderPersonalizedSchemes]?.toReaderPersonalizedSchemes(json).orEmpty()
+            preferences[Keys.ReaderPersonalizedSchemes] =
+                current
+                    .map { scheme ->
+                        if (scheme.id == schemeId) {
+                            scheme.copy(name = name.trim().ifBlank { "未命名方案" })
+                        } else {
+                            scheme
+                        }
+                    }.toReaderPersonalizedSchemesJson(json)
+        }
     }
 
-    suspend fun setPopupSwipeThreshold(value: Int) {
-        dataStore.edit { it[Keys.PopupSwipeThreshold] = value.coerceIn(20, 80) }
+    suspend fun updateReaderPersonalizedSchemeSettings(
+        schemeId: String,
+        settings: ReaderSettings,
+    ) {
+        dataStore.edit { preferences ->
+            val current = preferences[Keys.ReaderPersonalizedSchemes]?.toReaderPersonalizedSchemes(json).orEmpty()
+            preferences[Keys.ReaderPersonalizedSchemes] =
+                current
+                    .map { scheme ->
+                        if (scheme.id == schemeId) {
+                            scheme.copy(settings = settings)
+                        } else {
+                            scheme
+                        }
+                    }.toReaderPersonalizedSchemesJson(json)
+        }
+    }
+
+    suspend fun deleteReaderPersonalizedScheme(schemeId: String) {
+        dataStore.edit { preferences ->
+            val current = preferences[Keys.ReaderPersonalizedSchemes]?.toReaderPersonalizedSchemes(json).orEmpty()
+            preferences[Keys.ReaderPersonalizedSchemes] =
+                current
+                    .filterNot { it.id == schemeId }
+                    .toReaderPersonalizedSchemesJson(json)
+        }
     }
 
     suspend fun setCollapseDictionaries(enabled: Boolean) {
@@ -469,7 +545,11 @@ private object Keys {
     val BlurEnabled = booleanPreferencesKey("blur_enabled")
     val MaxResults = intPreferencesKey("dictionary_max_results")
     val ScanLength = intPreferencesKey("dictionary_scan_length")
+    val ReaderFullscreen = booleanPreferencesKey("reader_fullscreen")
+    val ReaderActionBarPinned = booleanPreferencesKey("reader_action_bar_pinned")
+    val ReaderShowReadingInfo = booleanPreferencesKey("reader_show_reading_info")
     val ReaderVerticalWriting = booleanPreferencesKey("reader_vertical_writing")
+    val ReaderFontFamily = stringPreferencesKey("reader_font_family")
     val ReaderFontSize = intPreferencesKey("reader_font_size")
     val ReaderLineHeight = stringPreferencesKey("reader_line_height")
     val ReaderHorizontalPadding = intPreferencesKey("reader_horizontal_padding")
@@ -480,7 +560,7 @@ private object Keys {
     val ReaderCharacterSpacing = stringPreferencesKey("reader_character_spacing")
     val ReaderContinuousMode = booleanPreferencesKey("reader_continuous_mode")
     val ReaderHideFurigana = booleanPreferencesKey("reader_hide_furigana")
-    val ReaderFullscreen = booleanPreferencesKey("reader_fullscreen")
+    val ReaderPersonalizedSchemes = stringPreferencesKey("reader_personalized_schemes")
     val PopupWidth = intPreferencesKey("popup_width")
     val PopupHeight = intPreferencesKey("popup_height")
     val PopupFullWidth = booleanPreferencesKey("popup_full_width")
@@ -533,9 +613,17 @@ private fun String.toAudioSources(json: Json): List<AudioSource> =
         json.decodeFromString(ListSerializer(AudioSource.serializer()), this)
     }.getOrDefault(listOf(AudioSource.Default))
 
+private fun String.toReaderPersonalizedSchemes(json: Json): List<ReaderPersonalizedScheme> =
+    runCatching {
+        json.decodeFromString(ListSerializer(ReaderPersonalizedScheme.serializer()), this)
+    }.getOrDefault(emptyList())
+
 private fun normalizeUiScalePercent(value: Int): Int = ((value.coerceIn(80, 150) + 5) / 10) * 10
 
 private fun List<AudioSource>.toAudioSourcesJson(json: Json): String = json.encodeToString(ListSerializer(AudioSource.serializer()), this)
+
+private fun List<ReaderPersonalizedScheme>.toReaderPersonalizedSchemesJson(json: Json): String =
+    json.encodeToString(ListSerializer(ReaderPersonalizedScheme.serializer()), this)
 
 private fun String.toAnkiSettings(json: Json): AnkiSettings =
     runCatching {

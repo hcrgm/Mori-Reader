@@ -8,6 +8,8 @@ data class BookInfo(
     val title: String,
     val author: String? = null,
     val coverPath: String? = null,
+    val readerSchemeId: String? = null,
+    val lastReaderSchemeId: String? = null,
     val categoryIds: List<String> = emptyList(),
     val progressPercent: Int = 0,
     val currentChapterName: String? = null,
@@ -21,6 +23,16 @@ data class ReaderBookmark(
     val chapterProgress: Double = 0.0,
     val characterCount: Int = 0,
     val lastModifiedAt: Long? = null,
+)
+
+@Serializable
+data class ReaderSavedBookmark(
+    val id: String,
+    val chapterIndex: Int,
+    val chapterProgress: Double,
+    val characterCount: Int,
+    val snippet: String = "",
+    val createdAt: Long,
 )
 
 @Serializable
@@ -50,6 +62,7 @@ data class ReaderBook(
     val tableOfContents: List<ReaderTocItem>,
     val totalCharacterCount: Int,
     val bookmark: ReaderBookmark = ReaderBookmark(),
+    val savedBookmarks: List<ReaderSavedBookmark> = emptyList(),
 ) {
     val currentChapter: ReaderChapter?
         get() = chapters.getOrNull(bookmark.chapterIndex.coerceIn(chapters.indices))

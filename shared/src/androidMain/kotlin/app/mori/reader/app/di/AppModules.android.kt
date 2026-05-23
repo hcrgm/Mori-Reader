@@ -80,6 +80,7 @@ private val settingsModule =
                 settingsRepository = get(),
                 dictionaryRepository = get(),
                 audioRepository = get(),
+                bookRepository = get(),
             )
         }
     }

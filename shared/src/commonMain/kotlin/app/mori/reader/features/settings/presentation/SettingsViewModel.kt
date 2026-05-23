@@ -3,6 +3,7 @@ package app.mori.reader.features.settings.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.mori.reader.data.audio.AudioRepository
+import app.mori.reader.data.book.BookRepository
 import app.mori.reader.data.dictionary.DictionaryCatalog
 import app.mori.reader.data.dictionary.DictionaryImportResult
 import app.mori.reader.data.dictionary.DictionaryRepository
@@ -38,6 +39,7 @@ class SettingsViewModel(
     private val settingsRepository: SettingsRepository,
     private val dictionaryRepository: DictionaryRepository,
     private val audioRepository: AudioRepository,
+    private val bookRepository: BookRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(SettingsUiState())
     val state = _state.asStateFlow()
@@ -68,6 +70,18 @@ class SettingsViewModel(
 
             is SettingsIntent.SetReaderVerticalWriting -> {
                 viewModelScope.launch { settingsRepository.setReaderVerticalWriting(intent.enabled) }
+            }
+
+            is SettingsIntent.SetReaderFullscreen -> {
+                viewModelScope.launch { settingsRepository.setReaderFullscreen(intent.enabled) }
+            }
+
+            is SettingsIntent.SetReaderActionBarPinned -> {
+                viewModelScope.launch { settingsRepository.setReaderActionBarPinned(intent.enabled) }
+            }
+
+            is SettingsIntent.SetReaderShowReadingInfo -> {
+                viewModelScope.launch { settingsRepository.setReaderShowReadingInfo(intent.enabled) }
             }
 
             is SettingsIntent.SetReaderLineHeight -> {
@@ -110,31 +124,44 @@ class SettingsViewModel(
                 viewModelScope.launch { settingsRepository.setReaderHideFurigana(intent.enabled) }
             }
 
-            is SettingsIntent.SetReaderFullscreen -> {
-                viewModelScope.launch { settingsRepository.setReaderFullscreen(intent.enabled) }
+            is SettingsIntent.UpdateGlobalReaderSettings -> {
+                viewModelScope.launch { settingsRepository.setReaderSettings(intent.settings) }
             }
 
-            is SettingsIntent.SetPopupWidth -> {
-                val value = intent.value.coerceIn(100, 700)
-                viewModelScope.launch { settingsRepository.setPopupWidth(value) }
+            is SettingsIntent.CreateReaderPersonalizedScheme -> {
+                viewModelScope.launch {
+                    settingsRepository.createReaderPersonalizedScheme(intent.scheme)
+                }
             }
 
-            is SettingsIntent.SetPopupHeight -> {
-                val value = intent.value.coerceIn(100, 500)
-                viewModelScope.launch { settingsRepository.setPopupHeight(value) }
+            is SettingsIntent.RenameReaderPersonalizedScheme -> {
+                viewModelScope.launch {
+                    settingsRepository.renameReaderPersonalizedScheme(
+                        schemeId = intent.schemeId,
+                        name = intent.name,
+                    )
+                }
             }
 
-            is SettingsIntent.SetPopupFullWidth -> {
-                viewModelScope.launch { settingsRepository.setPopupFullWidth(intent.enabled) }
+            is SettingsIntent.UpdateReaderPersonalizedSchemeSettings -> {
+                viewModelScope.launch {
+                    settingsRepository.updateReaderPersonalizedSchemeSettings(
+                        schemeId = intent.schemeId,
+                        settings = intent.settings,
+                    )
+                }
             }
 
-            is SettingsIntent.SetPopupSwipeToDismiss -> {
-                viewModelScope.launch { settingsRepository.setPopupSwipeToDismiss(intent.enabled) }
+            is SettingsIntent.DeleteReaderPersonalizedScheme -> {
+                viewModelScope.launch {
+                    settingsRepository.deleteReaderPersonalizedScheme(intent.schemeId)
+                }
             }
 
-            is SettingsIntent.SetPopupSwipeThreshold -> {
-                val value = intent.value.coerceIn(20, 80)
-                viewModelScope.launch { settingsRepository.setPopupSwipeThreshold(value) }
+            is SettingsIntent.SetBookReaderScheme -> {
+                viewModelScope.launch {
+                    bookRepository.setBookReaderScheme(intent.bookId, intent.schemeId)
+                }
             }
 
             is SettingsIntent.SetThemeMode -> {
