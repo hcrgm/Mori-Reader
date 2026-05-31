@@ -67,7 +67,7 @@ class SettingsRepository(
                                     ?: ThemeMode.System,
                             uiThemeEngine =
                                 preferences[Keys.UiThemeEngine]?.toUiThemeEngine()
-                                    ?: UiThemeEngine.Miuix,
+                                    ?: UiThemeEngine.Material,
                             uiScalePercent =
                                 normalizeUiScalePercent(
                                     preferences[Keys.UiScalePercent] ?: 100,
@@ -589,7 +589,7 @@ private fun String.toThemeMode(): ThemeMode = ThemeMode.entries.firstOrNull { it
 
 private fun String.toUiThemeEngine(): UiThemeEngine =
     UiThemeEngine.entries.firstOrNull { it.name == this }
-        ?: UiThemeEngine.Miuix
+        ?: UiThemeEngine.Material
 
 private fun String.toLanguageMode(): LanguageMode = LanguageMode.entries.firstOrNull { it.name == this } ?: LanguageMode.System
 

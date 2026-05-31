@@ -38,6 +38,7 @@ actual fun ReaderWebView(
     val navigationVersion = state.navigationVersion
     val fragment = state.fragment
     val capturePageTextRequestKey = state.capturePageTextRequestKey
+    val selectionActive = state.selectionActive
     val selectionHighlightLength = state.selectionHighlightLength
     val sasayakiCues = state.sasayakiCues
     val highlightedSasayakiCueId = state.highlightedSasayakiCueId
@@ -277,6 +278,7 @@ actual fun ReaderWebView(
                 webView.appliedSasayakiCueSignature = sasayakiCueSignature
                 bridge.appliedHighlightedSasayakiCueId = highlightedSasayakiCueId
                 bridge.isRestoring = true
+                bridge.appliedSelectionActive = false
                 bridge.appliedSelectionHighlightLength = null
                 webView.alpha = 0f
                 webView.loadUrl(sourceUrl)
@@ -290,6 +292,18 @@ actual fun ReaderWebView(
                     sasayakiCueUpdateScript(sasayakiCues, highlightedSasayakiCueId),
                     null,
                 )
+            } else if (bridge.appliedSelectionActive != selectionActive) {
+                bridge.appliedSelectionActive = selectionActive
+                if (!selectionActive) {
+                    bridge.appliedSelectionHighlightLength = null
+                    webView.evaluateJavascript("window.moriSelection && window.moriSelection.clearSelection()", null)
+                } else {
+                    bridge.appliedSelectionHighlightLength = selectionHighlightLength
+                    selectionHighlightLength
+                        ?.takeIf { it > 0 }
+                        ?.let { "window.moriSelection && window.moriSelection.highlightSelection($it)" }
+                        ?.let { script -> webView.evaluateJavascript(script, null) }
+                }
             } else if (bridge.appliedSelectionHighlightLength != selectionHighlightLength) {
                 bridge.appliedSelectionHighlightLength = selectionHighlightLength
                 val script =
@@ -380,7 +394,6 @@ private class MoriReaderWebView(
             }
         }
     }
-
 }
 
 private class ReaderGestureTouchListener(
@@ -474,7 +487,7 @@ private data class SasayakiConfigKey(
               activeBackground: ${activeBackground.jsString()},
               activeOutline: ${activeOutline.jsString()}
             })
-        """.trimIndent()
+            """.trimIndent()
     }
 }
 
@@ -508,7 +521,7 @@ private fun sasayakiCueUpdateScript(
             window.moriSasayaki.clearSasayakiCue();
           }
         })()
-    """.trimIndent()
+        """.trimIndent()
 }
 
 private fun handleTapSelection(
@@ -602,6 +615,7 @@ private class ReaderBridge {
     var sasayakiHighlightEnabled: Boolean = true
     var sasayakiHighlightColor: String = "#FFC0485C"
     var appliedHighlightedSasayakiCueId: String? = null
+    var appliedSelectionActive: Boolean = false
     var appliedSelectionHighlightLength: Int? = null
     var isRestoring: Boolean = true
     var webView: WebView? = null

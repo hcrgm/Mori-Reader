@@ -3,11 +3,16 @@ package app.mori.reader.ui.pages.home
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -23,12 +28,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.book.BookCategory
 import app.mori.reader.data.book.BookInfo
-import app.mori.reader.ui.components.material.MaterialModalBottomSheet
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_confirm
+import app.mori.reader.shared.generated.resources.cd_add_category
 import app.mori.reader.shared.generated.resources.home_adjust_category
 import app.mori.reader.shared.generated.resources.home_no_categories_available
+import app.mori.reader.ui.components.material.MaterialModalBottomSheet
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,6 +43,7 @@ internal fun MaterialEditBookCategoriesSheet(
     book: BookInfo?,
     categories: List<BookCategory>,
     onDismiss: () -> Unit,
+    onCreate: () -> Unit,
     onConfirm: (BookInfo, List<String>) -> Unit,
 ) {
     val current = book ?: return
@@ -94,14 +101,23 @@ internal fun MaterialEditBookCategoriesSheet(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 TextButton(
+                    onClick = onCreate,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Add,
+                        contentDescription = null,
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(Res.string.cd_add_category))
+                }
+                Spacer(modifier = Modifier.weight(1f))
+                TextButton(
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
                 ) {
                     Text(text = stringResource(Res.string.btn_cancel))
                 }
                 Button(
                     onClick = { onConfirm(current, selectedCategoryIds.toList()) },
-                    modifier = Modifier.weight(1f),
                 ) {
                     Text(text = stringResource(Res.string.btn_confirm))
                 }

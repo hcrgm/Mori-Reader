@@ -9,9 +9,7 @@ import androidx.compose.ui.unit.dp
 import app.mori.reader.ui.theme.MoriTheme
 
 @Composable
-internal fun materialCardContainerColor(
-    defaultColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp),
-): Color =
+internal fun materialCardContainerColor(defaultColor: Color = MaterialTheme.colorScheme.surfaceColorAtElevation(1.dp)): Color =
     if (MoriTheme.materialEInkMode) {
         MaterialTheme.colorScheme.surface
     } else {

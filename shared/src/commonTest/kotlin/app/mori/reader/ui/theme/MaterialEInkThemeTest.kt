@@ -1,7 +1,7 @@
 package app.mori.reader.ui.theme
 
-import app.mori.reader.data.settings.AppearanceSettings
 import androidx.compose.ui.graphics.Color
+import app.mori.reader.data.settings.AppearanceSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse

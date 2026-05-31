@@ -38,9 +38,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SmallExtendedFloatingActionButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,9 +67,9 @@ import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.features.settings.presentation.DictionaryManagementState
 import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.shared.generated.resources.Res
-import app.mori.reader.shared.generated.resources.btn_import
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_delete
+import app.mori.reader.shared.generated.resources.btn_import
 import app.mori.reader.shared.generated.resources.cd_back
 import app.mori.reader.shared.generated.resources.cd_close
 import app.mori.reader.shared.generated.resources.cd_delete_dictionary

@@ -74,18 +74,18 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_confirm
 import app.mori.reader.shared.generated.resources.cd_table_of_contents
+import app.mori.reader.shared.generated.resources.reader_bookmarks_empty
 import app.mori.reader.shared.generated.resources.reader_chapter_jump
 import app.mori.reader.shared.generated.resources.reader_chapter_jump_invalid_message
 import app.mori.reader.shared.generated.resources.reader_chapter_jump_invalid_title
 import app.mori.reader.shared.generated.resources.reader_chapter_jump_label
 import app.mori.reader.shared.generated.resources.reader_chapter_jump_summary
-import app.mori.reader.shared.generated.resources.reader_chapter_search_bookmarks_placeholder
 import app.mori.reader.shared.generated.resources.reader_chapter_jump_title
+import app.mori.reader.shared.generated.resources.reader_chapter_search_bookmarks_placeholder
 import app.mori.reader.shared.generated.resources.reader_chapter_search_placeholder
-import app.mori.reader.shared.generated.resources.reader_chapter_tab_bookmarks
 import app.mori.reader.shared.generated.resources.reader_chapter_sheet_empty
+import app.mori.reader.shared.generated.resources.reader_chapter_tab_bookmarks
 import app.mori.reader.shared.generated.resources.reader_chapter_tab_chapters
-import app.mori.reader.shared.generated.resources.reader_bookmarks_empty
 import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)

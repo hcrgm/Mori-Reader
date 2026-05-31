@@ -57,11 +57,13 @@ internal fun calculateLookupPopupLayout(
             } else {
                 selectionLeft - popupPadding - width / 2f
             }
-        centerX = unclampedX.coerceIn(width / 2f, screenWidth - width / 2f)
-            .coerceIn(
-                width / 2f + leftInset + screenBorderPadding,
-                screenWidth - rightInset - width / 2f - screenBorderPadding,
-            )
+        centerX =
+            unclampedX
+                .coerceIn(width / 2f, screenWidth - width / 2f)
+                .coerceIn(
+                    width / 2f + leftInset + screenBorderPadding,
+                    screenWidth - rightInset - width / 2f - screenBorderPadding,
+                )
         val unclampedY = selectionTop + height / 2f
         centerY =
             unclampedY.coerceIn(

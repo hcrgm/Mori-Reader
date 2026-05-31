@@ -10,8 +10,8 @@ import app.mori.reader.data.book.ReaderBook
 import app.mori.reader.data.book.ReaderBookmark
 import app.mori.reader.data.book.ReaderSavedBookmark
 import app.mori.reader.data.settings.AppSettings
-import app.mori.reader.data.settings.effectiveReaderSettings
 import app.mori.reader.data.settings.SettingsRepository
+import app.mori.reader.data.settings.effectiveReaderSettings
 import app.mori.reader.features.dictionary.domain.DictionaryLookupUseCase
 import app.mori.reader.features.lookup.presentation.ReaderSelectionRect
 import app.mori.reader.features.lookup.presentation.createLookupStackEntry
@@ -73,6 +73,10 @@ class ReaderViewModel(
 
             is ReaderIntent.JumpToCharacter -> {
                 jumpReaderToCharacter(intent.characterCount)
+            }
+
+            is ReaderIntent.JumpToSasayakiCue -> {
+                jumpReaderToSasayakiCue(intent.cueId)
             }
 
             ReaderIntent.CloseBook -> {
@@ -219,8 +223,18 @@ class ReaderViewModel(
                     previous != null &&
                     _state.value.book != null &&
                     shouldRefreshReaderLayout(
-                        previous = previous.effectiveReaderSettings(_state.value.book?.info?.readerSchemeId),
-                        next = settings.effectiveReaderSettings(_state.value.book?.info?.readerSchemeId),
+                        previous =
+                            previous.effectiveReaderSettings(
+                                _state.value.book
+                                    ?.info
+                                    ?.readerSchemeId,
+                            ),
+                        next =
+                            settings.effectiveReaderSettings(
+                                _state.value.book
+                                    ?.info
+                                    ?.readerSchemeId,
+                            ),
                         previousThemeMode = previous.appearance.readerThemeMode,
                         nextThemeMode = settings.appearance.readerThemeMode,
                     )
@@ -279,7 +293,12 @@ class ReaderViewModel(
         val currentInfo = book.info
         val normalizedInfo =
             currentInfo.normalizeReaderSchemes(
-                validSchemeIds = settings?.readerPersonalizedSchemes.orEmpty().map { it.id }.toSet(),
+                validSchemeIds =
+                    settings
+                        ?.readerPersonalizedSchemes
+                        .orEmpty()
+                        .map { it.id }
+                        .toSet(),
             )
         if (normalizedInfo == currentInfo) return book
         viewModelScope.launch {
@@ -446,6 +465,14 @@ class ReaderViewModel(
                 ).copy(lookupStack = emptyList())
         }
         persistReaderProgress(targetChapter.index, progress)
+    }
+
+    private fun jumpReaderToSasayakiCue(cueId: String) {
+        val reader = _state.value
+        val book = reader.book ?: return
+        val cue = reader.sasayakiMatches.firstOrNull { it.id == cueId } ?: return
+        val chapter = book.chapters.getOrNull(cue.chapterIndex) ?: return
+        jumpReaderToCharacter(chapter.characterStart + cue.start)
     }
 
     private fun openReaderAdjacentChapter(delta: Int) {

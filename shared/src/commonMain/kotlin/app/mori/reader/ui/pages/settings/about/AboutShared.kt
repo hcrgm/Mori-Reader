@@ -1,8 +1,8 @@
 package app.mori.reader.ui.pages.settings.about
 
 import androidx.compose.runtime.Composable
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.basic.Text
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 internal const val SOURCE_URL = "https://github.com/hcrgm/Mori-Reader"
 internal const val RELEASES_URL = "https://github.com/hcrgm/Mori-Reader/releases/latest"

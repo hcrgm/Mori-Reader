@@ -10,6 +10,7 @@ data class ReaderWebViewState(
     val navigationVersion: Int = 0,
     val fragment: String? = null,
     val capturePageTextRequestKey: Int = 0,
+    val selectionActive: Boolean = false,
     val selectionHighlightLength: Int? = null,
     val sasayakiCues: List<SasayakiCueRange> = emptyList(),
     val highlightedSasayakiCueId: String? = null,

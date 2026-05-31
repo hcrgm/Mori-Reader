@@ -285,6 +285,7 @@ private fun MainTabsPager(
                     settings = settings,
                     ankiState = ankiState,
                     fixedPadding = fixedPadding,
+                    active = pagerState.currentPage == page,
                     onDictionaryIntent = onDictionaryIntent,
                     onAnkiIntent = onAnkiIntent,
                     onWebViewVerticalScrollActiveChange = onWebViewVerticalScrollActiveChange,

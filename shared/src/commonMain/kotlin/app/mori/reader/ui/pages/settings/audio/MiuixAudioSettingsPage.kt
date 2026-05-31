@@ -54,7 +54,7 @@ internal fun MiuixAudioSettingsPage(
                     Modifier
                         .fillMaxSize()
                         .overScrollVertical(),
-            contentPadding =
+                contentPadding =
                     PaddingValues(
                         top = paddingValues.calculateTopPadding(),
                         bottom = paddingValues.calculateBottomPadding() + 24.dp,

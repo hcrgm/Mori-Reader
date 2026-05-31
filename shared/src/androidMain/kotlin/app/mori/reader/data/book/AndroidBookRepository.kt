@@ -410,11 +410,12 @@ internal class AndroidBookRepository(
     private fun findBookDirectory(bookId: String): File? =
         bookDirectoryCache[bookId]
             ?.takeIf { it.isDirectory }
-            ?: listBookDirectories().firstOrNull { directory ->
-                loadBookMetadataStorage(directory)?.id == bookId
-            }?.also { directory ->
-                bookDirectoryCache[bookId] = directory
-            }
+            ?: listBookDirectories()
+                .firstOrNull { directory ->
+                    loadBookMetadataStorage(directory)?.id == bookId
+                }?.also { directory ->
+                    bookDirectoryCache[bookId] = directory
+                }
 
     private fun copyUriToFile(
         uri: Uri,

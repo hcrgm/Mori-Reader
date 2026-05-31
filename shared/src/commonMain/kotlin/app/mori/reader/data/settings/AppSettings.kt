@@ -10,7 +10,7 @@ data class BookshelfSettings(
 
 data class AppearanceSettings(
     val themeMode: ThemeMode = ThemeMode.System,
-    val uiThemeEngine: UiThemeEngine = UiThemeEngine.Miuix,
+    val uiThemeEngine: UiThemeEngine = UiThemeEngine.Material,
     val uiScalePercent: Int = 100,
     val languageMode: LanguageMode = LanguageMode.System,
     val readerThemeMode: ReaderThemeMode = ReaderThemeMode.FollowApp,
@@ -97,8 +97,7 @@ data class AppSettings(
 fun AppSettings.findReaderScheme(schemeId: String?): ReaderPersonalizedScheme? =
     schemeId?.let { targetId -> readerPersonalizedSchemes.firstOrNull { it.id == targetId } }
 
-fun AppSettings.effectiveReaderSettings(schemeId: String?): ReaderSettings =
-    findReaderScheme(schemeId)?.settings ?: reader
+fun AppSettings.effectiveReaderSettings(schemeId: String?): ReaderSettings = findReaderScheme(schemeId)?.settings ?: reader
 
 enum class BookshelfSortMode(
     val wireName: String,

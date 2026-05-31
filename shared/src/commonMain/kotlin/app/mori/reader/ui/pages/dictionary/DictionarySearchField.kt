@@ -12,6 +12,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,12 +47,20 @@ internal fun DictionarySearchField(
     backdrop: LayerBackdrop?,
     blurEnabled: Boolean,
     materialEInkMode: Boolean,
+    active: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onClear: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val focusManager = LocalFocusManager.current
+
+    // When leaving dictionary lookup page, clear the focus state
+    LaunchedEffect(active) {
+        if (!active) {
+            focusManager.clearFocus(force = true)
+        }
+    }
 
     Row(
         modifier =
@@ -106,6 +115,7 @@ internal fun DictionarySearchField(
             value = query,
             onValueChange = onQueryChange,
             modifier = Modifier.weight(1f),
+            enabled = active,
             singleLine = true,
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             keyboardActions =

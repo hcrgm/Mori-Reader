@@ -121,7 +121,7 @@ internal fun DictionaryManagementPage(
             Modifier
                 .fillMaxSize()
                 .overScrollVertical(),
-            contentPadding =
+        contentPadding =
             PaddingValues(
                 top = 14.dp,
                 bottom = paddingValues.calculateBottomPadding() + 96.dp,
@@ -209,7 +209,7 @@ internal fun DictionaryLookupSettingsPage(
             Modifier
                 .fillMaxSize()
                 .overScrollVertical(),
-            contentPadding =
+        contentPadding =
             PaddingValues(
                 bottom = paddingValues.calculateBottomPadding() + 96.dp,
             ),

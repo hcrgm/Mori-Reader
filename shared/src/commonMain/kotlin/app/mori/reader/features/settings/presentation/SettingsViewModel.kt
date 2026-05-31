@@ -509,33 +509,33 @@ class SettingsViewModel(
                     }
                 }
             }.onSuccess { result ->
-                    updateDictionaryCatalog(result.catalog) {
-                        it.copy(
-                            isImporting = false,
-                            importProgress = null,
-                            statusText = null,
-                            importSummary = result.toUiSummary(),
-                        )
-                    }
-                    _effects.trySend(
-                        AppEffect.ShowMessage(
-                            uiText(
-                                Res.string.dict_import_complete,
-                                result.successCount,
-                                result.failures.size,
-                            ),
-                        ),
+                updateDictionaryCatalog(result.catalog) {
+                    it.copy(
+                        isImporting = false,
+                        importProgress = null,
+                        statusText = null,
+                        importSummary = result.toUiSummary(),
                     )
-                }.onFailure { throwable ->
-                    updateDictionaryManagement {
-                        it.copy(
-                            isImporting = false,
-                            importProgress = null,
-                            statusText = null,
-                            errorMessage = throwable.uiTextOr(Res.string.toast_dict_import_failed),
-                        )
-                    }
                 }
+                _effects.trySend(
+                    AppEffect.ShowMessage(
+                        uiText(
+                            Res.string.dict_import_complete,
+                            result.successCount,
+                            result.failures.size,
+                        ),
+                    ),
+                )
+            }.onFailure { throwable ->
+                updateDictionaryManagement {
+                    it.copy(
+                        isImporting = false,
+                        importProgress = null,
+                        statusText = null,
+                        errorMessage = throwable.uiTextOr(Res.string.toast_dict_import_failed),
+                    )
+                }
+            }
         }
     }
 

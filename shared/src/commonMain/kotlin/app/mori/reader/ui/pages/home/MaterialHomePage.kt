@@ -59,6 +59,8 @@ internal fun MaterialHomePageScaffold(
 
     MoriPageScaffold(
         title = title,
+        useSmallTopBar = true,
+        revealTopBarOnReverseScroll = true,
         blurEnabled = blurEnabled,
         fixedPadding = fixedPadding,
         navigationIcon = {

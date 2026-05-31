@@ -3,18 +3,37 @@ package app.mori.reader.ui.pages.reader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,11 +44,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.audiobook.SasayakiPlayerSnapshot
 import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.audiobook_reading_title
 import app.mori.reader.shared.generated.resources.cd_pause
 import app.mori.reader.shared.generated.resources.cd_play
 import app.mori.reader.shared.generated.resources.sasayaki_auto_pause_lookup
@@ -42,22 +62,12 @@ import app.mori.reader.shared.generated.resources.sasayaki_previous
 import app.mori.reader.shared.generated.resources.sasayaki_ready
 import app.mori.reader.shared.generated.resources.sasayaki_show_highlight
 import app.mori.reader.shared.generated.resources.sasayaki_speed
+import app.mori.reader.ui.components.material.MaterialModalBottomSheet
 import org.jetbrains.compose.resources.stringResource
-import top.yukonga.miuix.kmp.basic.Card
-import top.yukonga.miuix.kmp.basic.CardDefaults
-import top.yukonga.miuix.kmp.basic.Icon
-import top.yukonga.miuix.kmp.basic.Slider
-import top.yukonga.miuix.kmp.basic.Switch
-import top.yukonga.miuix.kmp.basic.Text
-import top.yukonga.miuix.kmp.basic.TextButton
-import top.yukonga.miuix.kmp.icon.MiuixIcons
-import top.yukonga.miuix.kmp.icon.extended.Pause
-import top.yukonga.miuix.kmp.icon.extended.Play
-import top.yukonga.miuix.kmp.theme.MiuixTheme
-import top.yukonga.miuix.kmp.window.WindowBottomSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun MiuixReaderSasayakiSheet(
+internal fun ReaderSasayakiSheet(
     show: Boolean,
     isDark: Boolean,
     materialEInkMode: Boolean,
@@ -82,6 +92,8 @@ internal fun MiuixReaderSasayakiSheet(
     onHighlightEnabled: (Boolean) -> Unit,
     onHighlightColor: (String) -> Unit,
 ) {
+    if (!show) return
+
     var seekValue by remember(show, player.durationMs) { mutableStateOf(player.positionMs.toFloat()) }
     var isSeeking by remember(show) { mutableStateOf(false) }
     var delayValue by remember(player.delayMs) { mutableStateOf(player.delayMs.toFloat()) }
@@ -94,6 +106,7 @@ internal fun MiuixReaderSasayakiSheet(
             } else {
                 stringResource(Res.string.sasayaki_import_required)
             }
+
     LaunchedEffect(player.positionMs, player.durationMs, isSeeking) {
         if (!isSeeking) {
             seekValue =
@@ -102,108 +115,100 @@ internal fun MiuixReaderSasayakiSheet(
                     .toFloat()
         }
     }
-    ReaderSheetTheme(
+
+    ReaderMaterialTheme(
         isDark = isDark,
         materialEInkMode = materialEInkMode,
         monetEnabled = monetEnabled,
         monetKeyColor = monetKeyColor,
     ) {
-        WindowBottomSheet(
-            show = show,
-            title = "Sasayaki",
-            onDismissRequest = onDismiss,
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                SasayakiSectionCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        MaterialModalBottomSheet(onDismissRequest = onDismiss) {
+            CompositionLocalProvider(LocalOverscrollFactory provides null) {
+                Column(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.7f)
+                            .verticalScroll(rememberScrollState())
+                            .padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = stringResource(Res.string.audiobook_reading_title),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                    MaterialAudiobookSectionCard {
                         Text(
                             text = statusText,
-                            color = if (enabled) MiuixTheme.colorScheme.onSurface else MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                            fontWeight = FontWeight.Medium,
-                            minLines = 2,
+                            color =
+                                if (enabled) {
+                                    MaterialTheme.colorScheme.onSurface
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                            ) {
-                                Text(
-                                    text = formatPlaybackTime(player.positionMs),
-                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                                )
-                                Text(
-                                    text = formatPlaybackTime(player.durationMs),
-                                    color = MiuixTheme.colorScheme.onSurfaceVariantSummary,
-                                )
-                            }
-                            Slider(
-                                value =
-                                    seekValue.coerceIn(
-                                        0f,
-                                        player.durationMs.coerceAtLeast(1L).toFloat(),
-                                    ),
-                                onValueChange = {
-                                    isSeeking = true
-                                    seekValue = it
-                                },
-                                valueRange = 0f..player.durationMs.coerceAtLeast(1L).toFloat(),
-                                enabled = playerEnabled,
-                                onValueChangeFinished = {
-                                    isSeeking = false
-                                    onSeek(seekValue.toLong())
-                                },
-                            )
-                        }
+                        MaterialAudiobookPlaybackSlider(
+                            durationMs = player.durationMs,
+                            seekValue = seekValue,
+                            enabled = playerEnabled,
+                            onValueChange = {
+                                isSeeking = true
+                                seekValue = it
+                            },
+                            onValueChangeFinished = {
+                                isSeeking = false
+                                onSeek(seekValue.toLong())
+                            },
+                        )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            TextButton(
-                                text = stringResource(Res.string.sasayaki_previous),
+                            IconButton(
                                 enabled = playerEnabled,
                                 onClick = onPrevious,
-                            )
-                            Spacer(Modifier.width(14.dp))
-                            FloatingReaderButton(
-                                isDark = isDark,
-                                materialEInkMode = materialEInkMode,
-                                onClick = onPlayPause,
-                                enabled = playerEnabled,
+                                modifier = Modifier.size(44.dp),
                             ) {
                                 Icon(
-                                    imageVector = if (player.isPlaying) MiuixIcons.Pause else MiuixIcons.Play,
+                                    imageVector = Icons.Rounded.FastRewind,
+                                    contentDescription = stringResource(Res.string.sasayaki_previous),
+                                )
+                            }
+                            FilledTonalIconButton(
+                                enabled = playerEnabled,
+                                onClick = onPlayPause,
+                                modifier = Modifier.size(44.dp),
+                            ) {
+                                Icon(
+                                    imageVector = if (player.isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                                     contentDescription =
                                         if (player.isPlaying) {
                                             stringResource(Res.string.cd_pause)
                                         } else {
                                             stringResource(Res.string.cd_play)
-                                        },
-                                    tint =
-                                        if (playerEnabled) {
-                                            MiuixTheme.colorScheme.onSurface
-                                        } else {
-                                            MiuixTheme.colorScheme.onSurfaceVariantSummary
-                                        },
+                                    },
                                 )
                             }
-                            Spacer(Modifier.width(14.dp))
-                            TextButton(
-                                text = stringResource(Res.string.sasayaki_next),
+                            IconButton(
                                 enabled = playerEnabled,
                                 onClick = onNext,
-                            )
+                                modifier = Modifier.size(44.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.FastForward,
+                                    contentDescription = stringResource(Res.string.sasayaki_next),
+                                )
+                            }
                         }
                     }
-                }
-                SasayakiSectionCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        SasayakiSliderControl(
+                    MaterialAudiobookSectionCard {
+                        MaterialAudiobookSliderControl(
                             title = stringResource(Res.string.sasayaki_delay),
                             valueText = "${delayValue.toInt()} ms",
                             enabled = enabled,
@@ -216,7 +221,7 @@ internal fun MiuixReaderSasayakiSheet(
                                 onValueChangeFinished = { onDelay(delayValue.toLong()) },
                             )
                         }
-                        SasayakiSliderControl(
+                        MaterialAudiobookSliderControl(
                             title = stringResource(Res.string.sasayaki_speed),
                             valueText = "${(rateValue * 100).toInt()}%",
                             enabled = enabled,
@@ -230,28 +235,26 @@ internal fun MiuixReaderSasayakiSheet(
                             )
                         }
                     }
-                }
-                SasayakiSectionCard {
-                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                        SasayakiSwitchRow(
+                    MaterialAudiobookSectionCard {
+                        MaterialAudiobookSwitchRow(
                             title = stringResource(Res.string.sasayaki_auto_scroll),
                             checked = autoScroll,
                             enabled = enabled,
                             onCheckedChange = onAutoScroll,
                         )
-                        SasayakiSwitchRow(
+                        MaterialAudiobookSwitchRow(
                             title = stringResource(Res.string.sasayaki_auto_pause_lookup),
                             checked = autoPauseOnLookup,
                             enabled = enabled,
                             onCheckedChange = onAutoPauseOnLookup,
                         )
-                        SasayakiSwitchRow(
+                        MaterialAudiobookSwitchRow(
                             title = stringResource(Res.string.sasayaki_show_highlight),
                             checked = highlightEnabled,
                             enabled = enabled,
                             onCheckedChange = onHighlightEnabled,
                         )
-                        SasayakiColorRow(
+                        MaterialAudiobookColorRow(
                             selected = highlightColor,
                             enabled = enabled && highlightEnabled,
                             onSelect = onHighlightColor,
@@ -264,44 +267,93 @@ internal fun MiuixReaderSasayakiSheet(
 }
 
 @Composable
-private fun SasayakiSectionCard(content: @Composable () -> Unit) {
-    Card(
+@OptIn(ExperimentalMaterial3Api::class)
+private fun MaterialAudiobookPlaybackSlider(
+    durationMs: Long,
+    seekValue: Float,
+    enabled: Boolean,
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit,
+) {
+    val maxValue = durationMs.coerceAtLeast(1L).toFloat()
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        insideMargin = PaddingValues(16.dp),
-        colors =
-            CardDefaults.defaultColors(
-                color = MiuixTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MiuixTheme.colorScheme.onSurface,
-            ),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        content()
+        MaterialAudiobookSupportingText(formatPlaybackTime(seekValue.toLong()))
+        Slider(
+            value = seekValue.coerceIn(0f, maxValue),
+            onValueChange = onValueChange,
+            valueRange = 0f..maxValue,
+            enabled = enabled,
+            onValueChangeFinished = onValueChangeFinished,
+            thumb = {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(width = 3.dp, height = 20.dp)
+                            .clip(CircleShape)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(
+                                    alpha = if (enabled) 1f else 0.38f,
+                                ),
+                            ),
+                )
+            },
+            track = { sliderState ->
+                SliderDefaults.Track(
+                    sliderState = sliderState,
+                    modifier = Modifier.height(4.dp),
+                    enabled = enabled,
+                    drawStopIndicator = null,
+                    thumbTrackGapSize = 0.dp,
+                    trackInsideCornerSize = 2.dp,
+                )
+            },
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .padding(horizontal = 8.dp),
+        )
+        MaterialAudiobookSupportingText(formatPlaybackTime(durationMs))
     }
 }
 
 @Composable
-private fun SasayakiSliderControl(
+private fun MaterialAudiobookSectionCard(content: @Composable () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            ),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun MaterialAudiobookSliderControl(
     title: String,
     valueText: String,
     enabled: Boolean,
     content: @Composable () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(
-                text = title,
-                color = MiuixTheme.colorScheme.onSurface,
-            )
-            Text(
+            Text(text = title, style = MaterialTheme.typography.bodyLarge)
+            MaterialAudiobookSupportingText(
                 text = valueText,
-                color =
-                    if (enabled) {
-                        MiuixTheme.colorScheme.onSurfaceVariantSummary
-                    } else {
-                        MiuixTheme.colorScheme.disabledOnSecondaryVariant
-                    },
+                enabled = enabled,
             )
         }
         content()
@@ -309,7 +361,7 @@ private fun SasayakiSliderControl(
 }
 
 @Composable
-private fun SasayakiSwitchRow(
+private fun MaterialAudiobookSwitchRow(
     title: String,
     checked: Boolean,
     enabled: Boolean,
@@ -320,7 +372,11 @@ private fun SasayakiSwitchRow(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(text = title, color = MiuixTheme.colorScheme.onSurface)
+        Text(
+            text = title,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+        )
         Switch(
             checked = checked,
             enabled = enabled,
@@ -330,7 +386,7 @@ private fun SasayakiSwitchRow(
 }
 
 @Composable
-private fun SasayakiColorRow(
+private fun MaterialAudiobookColorRow(
     selected: String,
     enabled: Boolean,
     onSelect: (String) -> Unit,
@@ -349,14 +405,13 @@ private fun SasayakiColorRow(
     ) {
         Text(
             text = stringResource(Res.string.sasayaki_highlight_color),
-            color = MiuixTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyLarge,
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             colors.forEach { value ->
-                val isSelected = value == selected
-                SasayakiColorSwatch(
+                MaterialAudiobookColorSwatch(
                     value = value,
-                    selected = isSelected,
+                    selected = value == selected,
                     enabled = enabled,
                     onClick = { onSelect(value) },
                 )
@@ -366,33 +421,28 @@ private fun SasayakiColorRow(
 }
 
 @Composable
-private fun SasayakiColorSwatch(
+private fun MaterialAudiobookColorSwatch(
     value: String,
     selected: Boolean,
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
-    val color = Color(parseCssHexColor(value))
+    val color = Color(parseMaterialAudiobookCssHexColor(value))
     val ringColor =
         if (selected) {
-            MiuixTheme.colorScheme.primary
+            MaterialTheme.colorScheme.primary
         } else {
             Color.Transparent
         }
     Box(
         modifier =
             Modifier
-                .size(30.dp)
+                .size(32.dp)
                 .clip(CircleShape)
-                .border(width = 1.5.dp, color = ringColor, shape = CircleShape)
-                .then(
-                    if (enabled) {
-                        Modifier.clickable(onClick = onClick)
-                    } else {
-                        Modifier
-                    },
-                ).padding(3.dp)
-                .alpha(if (enabled) 1f else 0.42f),
+                .border(width = 2.dp, color = ringColor, shape = CircleShape)
+                .clickable(enabled = enabled, onClick = onClick)
+                .padding(4.dp)
+                .alpha(if (enabled) 1f else 0.38f),
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -405,7 +455,22 @@ private fun SasayakiColorSwatch(
     }
 }
 
-private fun parseCssHexColor(value: String): Long {
+@Composable
+private fun MaterialAudiobookSupportingText(
+    text: String,
+    enabled: Boolean = true,
+) {
+    Text(
+        text = text,
+        color =
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                alpha = if (enabled) 1f else 0.38f,
+            ),
+        style = MaterialTheme.typography.bodySmall,
+    )
+}
+
+private fun parseMaterialAudiobookCssHexColor(value: String): Long {
     val hex = value.removePrefix("#")
     if (hex.length != 8) return parseHexColor(value)
     val raw = hex.toLongOrNull(16) ?: return parseHexColor(value)

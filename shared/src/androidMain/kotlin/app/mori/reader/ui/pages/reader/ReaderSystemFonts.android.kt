@@ -2,9 +2,9 @@ package app.mori.reader.ui.pages.reader
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import java.io.File
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserFactory
+import java.io.File
 
 @Composable
 actual fun rememberReaderSystemFonts(): List<ReaderSystemFont> =

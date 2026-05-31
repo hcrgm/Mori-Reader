@@ -117,9 +117,8 @@ internal fun LookupPopupSurface(
                             )
                         } else {
                             Modifier
-                        }
-                    )
-                    .clickable(
+                        },
+                    ).clickable(
                         interactionSource = popupInteractionSource,
                         indication = null,
                         onClick = {},

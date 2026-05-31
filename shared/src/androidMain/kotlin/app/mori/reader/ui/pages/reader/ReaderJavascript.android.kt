@@ -33,7 +33,14 @@ internal fun readerBootstrapScript(
             eInkMode -> "#ffffff"
             else -> "#fbfaf7"
         }
-    val foreground = if (isDark) "#ffffff" else if (eInkMode) "#000000" else "#1b1b1b"
+    val foreground =
+        if (isDark) {
+            "#ffffff"
+        } else if (eInkMode) {
+            "#000000"
+        } else {
+            "#1b1b1b"
+        }
     val linkColor = if (eInkMode) "#000000" else "rgba(66, 108, 245, 1)"
     val selectionColor = if (eInkMode) "rgba(0, 0, 0, 0.18)" else "rgba(120, 150, 255, 0.35)"
     val safeFontSize = fontSize.coerceIn(16, 40)
@@ -1273,5 +1280,4 @@ internal fun String.jsString(): String =
         append('\'')
     }
 
-private fun String.cssFamilyString(): String =
-    "'${replace("\\", "\\\\").replace("'", "\\'")}'"
+private fun String.cssFamilyString(): String = "'${replace("\\", "\\\\").replace("'", "\\'")}'"

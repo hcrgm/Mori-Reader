@@ -40,7 +40,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.mori.reader.data.book.BookCategory
-import app.mori.reader.ui.components.material.MaterialModalBottomSheet
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_confirm
@@ -54,6 +53,7 @@ import app.mori.reader.shared.generated.resources.home_delete_category
 import app.mori.reader.shared.generated.resources.home_delete_category_confirm
 import app.mori.reader.shared.generated.resources.home_no_categories
 import app.mori.reader.shared.generated.resources.home_rename_category
+import app.mori.reader.ui.components.material.MaterialModalBottomSheet
 import org.jetbrains.compose.resources.stringResource
 import sh.calvin.reorderable.ReorderableItem
 

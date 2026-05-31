@@ -1,7 +1,7 @@
 package app.mori.reader.features.settings.presentation
 
-import app.mori.reader.data.dictionary.DictionaryInfo
 import app.mori.reader.data.dictionary.DictionaryImportFailureReason
+import app.mori.reader.data.dictionary.DictionaryInfo
 import app.mori.reader.data.dictionary.DictionaryType
 import app.mori.reader.ui.text.UiText
 

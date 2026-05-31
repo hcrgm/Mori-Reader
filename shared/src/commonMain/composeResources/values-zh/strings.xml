@@ -31,6 +31,9 @@
     <string name="cd_next">下一个</string>
     <string name="cd_play_pronunciation">播放发音</string>
     <string name="cd_reading_scheme">阅读方案</string>
+    <string name="cd_more_reader_actions">更多阅读操作</string>
+    <string name="cd_back_to_audiobook_controls">返回有声书控制</string>
+    <string name="cd_jump_to_current_audiobook_sentence">跳转到当前朗读句子</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">取消</string>
@@ -293,6 +296,7 @@
     <!-- ===================== Audiobook Import ===================== -->
     <string name="cd_open_audiobook">打开有声书</string>
     <string name="audiobook_title">有声书</string>
+    <string name="audiobook_reading_title">有声书朗读</string>
     <string name="audiobook_import_title">导入有声书</string>
     <string name="audiobook_storage_title">音频存储方式</string>
     <string name="audiobook_storage_copy">复制到本地</string>

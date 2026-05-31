@@ -5,10 +5,10 @@ import app.mori.reader.data.settings.AppSettings
 import app.mori.reader.data.settings.ReaderThemeMode
 import app.mori.reader.features.settings.presentation.SettingsIntent
 import app.mori.reader.shared.generated.resources.Res
+import app.mori.reader.shared.generated.resources.appearance_action_bar_pinned_title
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_off
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_on
 import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_title
-import app.mori.reader.shared.generated.resources.appearance_action_bar_pinned_title
 import app.mori.reader.shared.generated.resources.appearance_character_spacing
 import app.mori.reader.shared.generated.resources.appearance_font_size
 import app.mori.reader.shared.generated.resources.appearance_fullscreen_title

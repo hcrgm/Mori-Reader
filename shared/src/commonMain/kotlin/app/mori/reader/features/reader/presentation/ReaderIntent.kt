@@ -20,6 +20,10 @@ sealed interface ReaderIntent {
         val characterCount: Int,
     ) : ReaderIntent
 
+    data class JumpToSasayakiCue(
+        val cueId: String,
+    ) : ReaderIntent
+
     data class TextSelected(
         val text: String,
         val sentence: String,

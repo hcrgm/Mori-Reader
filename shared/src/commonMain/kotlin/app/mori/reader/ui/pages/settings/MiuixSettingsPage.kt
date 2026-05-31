@@ -16,9 +16,9 @@ import app.mori.reader.ui.components.scaffold.MoriPageScaffold
 import app.mori.reader.ui.components.settings.MoriIconArrowPreference
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.Card
+import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.basic.Icon as MiuixIcon
-import top.yukonga.miuix.kmp.theme.MiuixTheme
 
 @Composable
 internal fun MiuixSettingsPage(

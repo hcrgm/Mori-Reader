@@ -143,25 +143,25 @@ class BookshelfViewModel(
             runCatching {
                 bookRepository.importBooks(uriStrings, ::onImportProgress)
             }.onSuccess { result ->
-                    _state.update { state ->
-                        state.withCatalog(
-                            books = result.catalog.books,
-                            categories = result.catalog.categories,
-                            isImporting = false,
-                            importProgress = null,
-                            importSummary = result.toUiSummary(),
-                            errorMessage = null,
-                        )
-                    }
-                }.onFailure { throwable ->
-                    _state.update {
-                        it.copy(
-                            isImporting = false,
-                            importProgress = null,
-                            errorMessage = throwable.uiTextOr(Res.string.error_book_import_failed),
-                        )
-                    }
+                _state.update { state ->
+                    state.withCatalog(
+                        books = result.catalog.books,
+                        categories = result.catalog.categories,
+                        isImporting = false,
+                        importProgress = null,
+                        importSummary = result.toUiSummary(),
+                        errorMessage = null,
+                    )
                 }
+            }.onFailure { throwable ->
+                _state.update {
+                    it.copy(
+                        isImporting = false,
+                        importProgress = null,
+                        errorMessage = throwable.uiTextOr(Res.string.error_book_import_failed),
+                    )
+                }
+            }
         }
     }
 
@@ -189,8 +189,7 @@ class BookshelfViewModel(
                 )
             }
 
-    private fun BookImportFailureItem.toUiItem(): BookImportFailureUiItem =
-        BookImportFailureUiItem(fileName = fileName)
+    private fun BookImportFailureItem.toUiItem(): BookImportFailureUiItem = BookImportFailureUiItem(fileName = fileName)
 
     private fun mutateBookCatalog(block: suspend () -> BookCatalog) {
         viewModelScope.launch {

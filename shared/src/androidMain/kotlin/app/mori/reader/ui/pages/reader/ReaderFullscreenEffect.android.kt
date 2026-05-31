@@ -11,9 +11,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 
 @Composable
-actual fun ReaderFullscreenEffect(
-    enabled: Boolean,
-) {
+actual fun ReaderFullscreenEffect(enabled: Boolean) {
     val view = LocalView.current
     val activity = view.context.findActivity() ?: return
 

@@ -21,6 +21,7 @@ import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_cancel
 import app.mori.reader.shared.generated.resources.btn_confirm
 import app.mori.reader.shared.generated.resources.btn_delete
+import app.mori.reader.shared.generated.resources.cd_add_category
 import app.mori.reader.shared.generated.resources.home_adjust_category
 import app.mori.reader.shared.generated.resources.home_delete_book
 import app.mori.reader.shared.generated.resources.home_delete_book_confirm
@@ -41,6 +42,7 @@ fun EditBookCategoriesSheet(
     book: BookInfo?,
     categories: List<BookCategory>,
     onDismiss: () -> Unit,
+    onCreate: () -> Unit,
     onConfirm: (BookInfo, List<String>) -> Unit,
 ) {
     when (MoriTheme.uiThemeEngine) {
@@ -49,6 +51,7 @@ fun EditBookCategoriesSheet(
                 book = book,
                 categories = categories,
                 onDismiss = onDismiss,
+                onCreate = onCreate,
                 onConfirm = onConfirm,
             )
         }
@@ -58,6 +61,7 @@ fun EditBookCategoriesSheet(
                 book = book,
                 categories = categories,
                 onDismiss = onDismiss,
+                onCreate = onCreate,
                 onConfirm = onConfirm,
             )
         }
@@ -69,6 +73,7 @@ private fun MiuixEditBookCategoriesSheet(
     book: BookInfo?,
     categories: List<BookCategory>,
     onDismiss: () -> Unit,
+    onCreate: () -> Unit,
     onConfirm: (BookInfo, List<String>) -> Unit,
 ) {
     var selectedCategoryIds by remember(book?.id, categories) {
@@ -114,20 +119,25 @@ private fun MiuixEditBookCategoriesSheet(
                 }
             }
 
-            Row(horizontalArrangement = Arrangement.SpaceBetween) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                TextButton(
+                    text = stringResource(Res.string.cd_add_category),
+                    onClick = onCreate,
+                )
+                Spacer(Modifier.weight(1f))
                 TextButton(
                     text = stringResource(Res.string.btn_cancel),
                     onClick = onDismiss,
-                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.width(20.dp))
                 TextButton(
                     text = stringResource(Res.string.btn_confirm),
                     onClick = {
                         val current = book ?: return@TextButton
                         onConfirm(current, selectedCategoryIds.toList())
                     },
-                    modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.textButtonColorsPrimary(),
                 )
             }

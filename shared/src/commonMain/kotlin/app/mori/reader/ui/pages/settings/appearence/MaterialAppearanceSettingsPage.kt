@@ -106,13 +106,13 @@ import app.mori.reader.shared.generated.resources.language_english
 import app.mori.reader.shared.generated.resources.language_follow_system
 import app.mori.reader.shared.generated.resources.monet_key_color_default
 import app.mori.reader.shared.generated.resources.theme_dark
+import app.mori.reader.shared.generated.resources.theme_dark_short
 import app.mori.reader.shared.generated.resources.theme_engine_material
 import app.mori.reader.shared.generated.resources.theme_engine_miuix
 import app.mori.reader.shared.generated.resources.theme_follow_system
 import app.mori.reader.shared.generated.resources.theme_follow_system_short
 import app.mori.reader.shared.generated.resources.theme_light
 import app.mori.reader.shared.generated.resources.theme_light_short
-import app.mori.reader.shared.generated.resources.theme_dark_short
 import app.mori.reader.ui.components.material.MaterialBackButton
 import app.mori.reader.ui.components.material.MaterialDropdownMenuOption
 import app.mori.reader.ui.components.material.MaterialDropdownSelectorRow

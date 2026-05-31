@@ -19,8 +19,8 @@ import app.mori.reader.data.dictionary.DictionaryImportFailureReason
 import app.mori.reader.data.settings.UiThemeEngine
 import app.mori.reader.features.settings.presentation.DictionaryImportFailureItem
 import app.mori.reader.features.settings.presentation.DictionaryImportSummary
-import app.mori.reader.features.settings.presentation.DictionaryManagementState
 import app.mori.reader.features.settings.presentation.DictionaryImportUiProgress
+import app.mori.reader.features.settings.presentation.DictionaryManagementState
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.btn_close
 import app.mori.reader.shared.generated.resources.dict_import_failed_all_message
@@ -39,10 +39,10 @@ import app.mori.reader.ui.components.loading.MoriLoadingDialogState
 import app.mori.reader.ui.theme.MoriTheme
 import org.jetbrains.compose.resources.stringResource
 import top.yukonga.miuix.kmp.basic.ButtonDefaults
-import top.yukonga.miuix.kmp.basic.Text as MiuixText
-import top.yukonga.miuix.kmp.basic.TextButton as MiuixTextButton
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import top.yukonga.miuix.kmp.window.WindowDialog
+import top.yukonga.miuix.kmp.basic.Text as MiuixText
+import top.yukonga.miuix.kmp.basic.TextButton as MiuixTextButton
 
 @Composable
 internal fun DictionaryImportFeedback(

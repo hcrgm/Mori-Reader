@@ -179,6 +179,8 @@ fun HomePage(
         UiThemeEngine.Miuix -> {
             MoriPageScaffold(
                 title = title,
+                useSmallTopBar = true,
+                revealTopBarOnReverseScroll = true,
                 blurEnabled = settings.appearance.blurEnabled,
                 fixedPadding = fixedPadding,
                 navigationIcon = {
@@ -343,6 +345,7 @@ fun HomePage(
         book = categoryEditingBook,
         categories = home.categories,
         onDismiss = { categoryEditingBook = null },
+        onCreate = { createCategoryOpen = true },
         onConfirm = { book, categoryIds ->
             onBookshelfIntent(BookshelfIntent.UpdateBookCategories(book.id, categoryIds))
             categoryEditingBook = null

@@ -104,7 +104,9 @@ private fun Intent.lookupText(): String =
             getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString().orEmpty()
         }
 
-        else -> ""
+        else -> {
+            ""
+        }
     }.trim()
 
 private const val ACTION_TRANSLATE = "android.intent.action.TRANSLATE"

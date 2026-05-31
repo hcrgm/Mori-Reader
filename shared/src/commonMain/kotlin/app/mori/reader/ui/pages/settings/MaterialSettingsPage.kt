@@ -70,7 +70,7 @@ internal fun MaterialSettingsPage(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(paddingValues) 
+                    .padding(paddingValues)
                     .verticalScroll(rememberScrollState()),
         ) {
             Spacer(modifier = Modifier.height(8.dp))

@@ -31,6 +31,9 @@
     <string name="cd_next">Next</string>
     <string name="cd_play_pronunciation">Play pronunciation</string>
     <string name="cd_reading_scheme">Reading scheme</string>
+    <string name="cd_more_reader_actions">More reader actions</string>
+    <string name="cd_back_to_audiobook_controls">Back to audiobook controls</string>
+    <string name="cd_jump_to_current_audiobook_sentence">Jump to the current audiobook sentence</string>
 
     <!-- Button labels -->
     <string name="btn_cancel">Cancel</string>
@@ -293,6 +296,7 @@
     <!-- ===================== Audiobook Import ===================== -->
     <string name="cd_open_audiobook">Open audiobook</string>
     <string name="audiobook_title">Audiobook</string>
+    <string name="audiobook_reading_title">AudioBook</string>
     <string name="audiobook_import_title">Import audiobook</string>
     <string name="audiobook_storage_title">Audio storage</string>
     <string name="audiobook_storage_copy">Copy locally</string>

@@ -1,5 +1,6 @@
 package app.mori.reader.ui.pages.reader
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -11,7 +12,11 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +38,13 @@ import androidx.compose.material.icons.automirrored.rounded.MenuBook
 import androidx.compose.material.icons.rounded.Bookmark
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
@@ -52,6 +63,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,10 +78,18 @@ import app.mori.reader.data.settings.ReaderPersonalizedScheme
 import app.mori.reader.data.settings.ReaderSettings
 import app.mori.reader.shared.generated.resources.Res
 import app.mori.reader.shared.generated.resources.cd_bookmarks
+import app.mori.reader.shared.generated.resources.cd_back_to_audiobook_controls
 import app.mori.reader.shared.generated.resources.cd_close
+import app.mori.reader.shared.generated.resources.cd_jump_to_current_audiobook_sentence
+import app.mori.reader.shared.generated.resources.cd_more_reader_actions
+import app.mori.reader.shared.generated.resources.cd_next
 import app.mori.reader.shared.generated.resources.cd_open_audiobook
+import app.mori.reader.shared.generated.resources.cd_pause
+import app.mori.reader.shared.generated.resources.cd_play
+import app.mori.reader.shared.generated.resources.cd_previous
 import app.mori.reader.shared.generated.resources.cd_reading_scheme
 import app.mori.reader.shared.generated.resources.cd_table_of_contents
+import app.mori.reader.shared.generated.resources.sasayaki_ready
 import app.mori.reader.ui.components.reader.ReaderAccessoryPanel
 import app.mori.reader.ui.theme.MaterialThemeConfig
 import app.mori.reader.ui.theme.materialEInkColorScheme
@@ -84,6 +108,11 @@ import top.yukonga.miuix.kmp.theme.ThemePaletteStyle
 private enum class ReaderAccessoryPanelKind {
     ReadingScheme,
     Bookmarks,
+}
+
+private enum class ReaderBottomBarContent {
+    Audiobook,
+    Actions,
 }
 
 internal val ReaderSideRailWidth = 72.dp
@@ -213,8 +242,17 @@ internal fun ReaderBottomChrome(
     monetEnabled: Boolean,
     monetKeyColor: Long,
     bottomPadding: Dp,
+    onInteraction: () -> Unit,
     onMenu: () -> Unit,
     onSasayaki: () -> Unit,
+    sasayakiQuickControlsEnabled: Boolean,
+    sasayakiPlaying: Boolean,
+    currentSasayakiCueText: String?,
+    currentSasayakiCueId: String?,
+    onPreviousSasayakiCue: () -> Unit,
+    onToggleSasayakiPlayback: () -> Unit,
+    onNextSasayakiCue: () -> Unit,
+    onJumpToSasayakiCue: (String) -> Unit,
     readingSchemePanelVisible: Boolean,
     onReadingScheme: () -> Unit,
     bookmarkPanelVisible: Boolean,
@@ -247,6 +285,7 @@ internal fun ReaderBottomChrome(
     if (activeAccessoryPanel != null) {
         lastAccessoryPanel = activeAccessoryPanel
     }
+    var bottomBarContent by remember(bookId) { mutableStateOf(ReaderBottomBarContent.Audiobook) }
 
     ReaderMaterialTheme(
         isDark = isDark,
@@ -324,7 +363,8 @@ internal fun ReaderBottomChrome(
                             modifier =
                                 Modifier
                                     .fillMaxWidth()
-                                    .height(48.dp + bottomPadding),
+                                    .height(48.dp + bottomPadding)
+                                    .readerChromeInteraction(onInteraction),
                         ) {
                             Row(
                                 modifier =
@@ -332,69 +372,64 @@ internal fun ReaderBottomChrome(
                                         .fillMaxWidth()
                                         .height(48.dp)
                                         .align(Alignment.TopCenter)
-                                        .padding(horizontal = 26.dp),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                        .padding(horizontal = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                IconButton(
-                                    onClick = onMenu,
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.MenuBook,
-                                        contentDescription = stringResource(Res.string.cd_table_of_contents),
-                                    )
-                                }
-                                IconButton(
-                                    onClick = onSasayaki,
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Rounded.GraphicEq,
-                                        contentDescription = stringResource(Res.string.cd_open_audiobook),
-                                    )
-                                }
-                                if (readingSchemePanelVisible) {
-                                    FilledTonalIconButton(
-                                        onClick = onReadingScheme,
-                                        modifier = Modifier.size(40.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Tune,
-                                            contentDescription = stringResource(Res.string.cd_reading_scheme),
-                                        )
+                                if (sasayakiQuickControlsEnabled) {
+                                    AnimatedContent(
+                                        targetState = bottomBarContent,
+                                        transitionSpec = {
+                                            if (materialEInkMode) {
+                                                EnterTransition.None togetherWith ExitTransition.None
+                                            } else if (targetState == ReaderBottomBarContent.Actions) {
+                                                slideInHorizontally { it } + fadeIn() togetherWith
+                                                    slideOutHorizontally { -it } + fadeOut()
+                                            } else {
+                                                slideInHorizontally { -it } + fadeIn() togetherWith
+                                                    slideOutHorizontally { it } + fadeOut()
+                                            }
+                                        },
+                                        label = "reader_bottom_bar_content",
+                                    ) { content ->
+                                        when (content) {
+                                            ReaderBottomBarContent.Audiobook -> {
+                                                ReaderBottomAudiobookControls(
+                                                    isPlaying = sasayakiPlaying,
+                                                    currentCueText = currentSasayakiCueText,
+                                                    currentCueId = currentSasayakiCueId,
+                                                    onPrevious = onPreviousSasayakiCue,
+                                                    onTogglePlayback = onToggleSasayakiPlayback,
+                                                    onNext = onNextSasayakiCue,
+                                                    onJumpToCue = onJumpToSasayakiCue,
+                                                    onMore = { bottomBarContent = ReaderBottomBarContent.Actions },
+                                                )
+                                            }
+
+                                            ReaderBottomBarContent.Actions -> {
+                                                ReaderBottomActions(
+                                                    showAudiobookReturn = true,
+                                                    readingSchemePanelVisible = readingSchemePanelVisible,
+                                                    bookmarkPanelVisible = bookmarkPanelVisible,
+                                                    onAudiobookReturn = { bottomBarContent = ReaderBottomBarContent.Audiobook },
+                                                    onMenu = onMenu,
+                                                    onSasayaki = onSasayaki,
+                                                    onReadingScheme = onReadingScheme,
+                                                    onBookmark = onBookmark,
+                                                )
+                                            }
+                                        }
                                     }
                                 } else {
-                                    IconButton(
-                                        onClick = onReadingScheme,
-                                        modifier = Modifier.size(40.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Tune,
-                                            contentDescription = stringResource(Res.string.cd_reading_scheme),
-                                        )
-                                    }
-                                }
-                                if (bookmarkPanelVisible) {
-                                    FilledTonalIconButton(
-                                        onClick = onBookmark,
-                                        modifier = Modifier.size(40.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Bookmark,
-                                            contentDescription = stringResource(Res.string.cd_bookmarks),
-                                        )
-                                    }
-                                } else {
-                                    IconButton(
-                                        onClick = onBookmark,
-                                        modifier = Modifier.size(40.dp),
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Bookmark,
-                                            contentDescription = stringResource(Res.string.cd_bookmarks),
-                                        )
-                                    }
+                                    ReaderBottomActions(
+                                        showAudiobookReturn = false,
+                                        readingSchemePanelVisible = readingSchemePanelVisible,
+                                        bookmarkPanelVisible = bookmarkPanelVisible,
+                                        onAudiobookReturn = {},
+                                        onMenu = onMenu,
+                                        onSasayaki = onSasayaki,
+                                        onReadingScheme = onReadingScheme,
+                                        onBookmark = onBookmark,
+                                    )
                                 }
                             }
                         }
@@ -403,6 +438,261 @@ internal fun ReaderBottomChrome(
             }
         }
     }
+}
+
+@Composable
+private fun ReaderBottomAudiobookControls(
+    isPlaying: Boolean,
+    currentCueText: String?,
+    currentCueId: String?,
+    onPrevious: () -> Unit,
+    onTogglePlayback: () -> Unit,
+    onNext: () -> Unit,
+    onJumpToCue: (String) -> Unit,
+    onMore: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AudiobookPreviousButton(onClick = onPrevious)
+        AudiobookPlaybackButton(isPlaying = isPlaying, onClick = onTogglePlayback)
+        AudiobookNextButton(onClick = onNext)
+        AudiobookCueText(
+            text = currentCueText,
+            cueId = currentCueId,
+            onJumpToCue = onJumpToCue,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(
+            onClick = onMore,
+            modifier = Modifier.size(40.dp),
+        ) {
+            ReaderChromeSwitchIcon(
+                leadingIcon = Icons.Rounded.MoreVert,
+                trailingIcon = Icons.Rounded.ChevronRight,
+                contentDescription = stringResource(Res.string.cd_more_reader_actions),
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReaderBottomActions(
+    showAudiobookReturn: Boolean,
+    readingSchemePanelVisible: Boolean,
+    bookmarkPanelVisible: Boolean,
+    onAudiobookReturn: () -> Unit,
+    onMenu: () -> Unit,
+    onSasayaki: () -> Unit,
+    onReadingScheme: () -> Unit,
+    onBookmark: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (showAudiobookReturn) {
+            IconButton(
+                onClick = onAudiobookReturn,
+                modifier = Modifier.size(40.dp),
+            ) {
+                ReaderChromeSwitchIcon(
+                    leadingIcon = Icons.Rounded.ChevronLeft,
+                    trailingIcon = Icons.Rounded.Headphones,
+                    contentDescription = stringResource(Res.string.cd_back_to_audiobook_controls),
+                )
+            }
+        }
+        Row(
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            IconButton(
+                onClick = onMenu,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Rounded.MenuBook,
+                    contentDescription = stringResource(Res.string.cd_table_of_contents),
+                )
+            }
+            IconButton(
+                onClick = onSasayaki,
+                modifier = Modifier.size(40.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.GraphicEq,
+                    contentDescription = stringResource(Res.string.cd_open_audiobook),
+                )
+            }
+            ReaderBottomActionButton(
+                selected = readingSchemePanelVisible,
+                onClick = onReadingScheme,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Tune,
+                    contentDescription = stringResource(Res.string.cd_reading_scheme),
+                )
+            }
+            ReaderBottomActionButton(
+                selected = bookmarkPanelVisible,
+                onClick = onBookmark,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Bookmark,
+                    contentDescription = stringResource(Res.string.cd_bookmarks),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReaderChromeSwitchIcon(
+    leadingIcon: ImageVector,
+    trailingIcon: ImageVector,
+    contentDescription: String,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy((-4).dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            imageVector = leadingIcon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(18.dp),
+        )
+        Icon(
+            imageVector = trailingIcon,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+@Composable
+private fun ReaderBottomActionButton(
+    selected: Boolean,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    if (selected) {
+        FilledTonalIconButton(
+            onClick = onClick,
+            modifier = Modifier.size(40.dp),
+            content = content,
+        )
+    } else {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.size(40.dp),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun ReaderSideAudiobookControls(
+    isPlaying: Boolean,
+    currentCueText: String?,
+    currentCueId: String?,
+    onPrevious: () -> Unit,
+    onTogglePlayback: () -> Unit,
+    onNext: () -> Unit,
+    onJumpToCue: (String) -> Unit,
+) {
+    AudiobookPreviousButton(onClick = onPrevious, size = 44.dp)
+    AudiobookPlaybackButton(isPlaying = isPlaying, onClick = onTogglePlayback, size = 44.dp)
+    AudiobookNextButton(onClick = onNext, size = 44.dp)
+    AudiobookCueText(
+        text = currentCueText,
+        cueId = currentCueId,
+        onJumpToCue = onJumpToCue,
+        modifier = Modifier.width(56.dp),
+        maxLines = 6,
+    )
+}
+
+@Composable
+private fun AudiobookPreviousButton(
+    onClick: () -> Unit,
+    size: Dp = 40.dp,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(size),
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.FastRewind,
+            contentDescription = stringResource(Res.string.cd_previous),
+        )
+    }
+}
+
+@Composable
+private fun AudiobookPlaybackButton(
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    size: Dp = 40.dp,
+) {
+    FilledTonalIconButton(
+        onClick = onClick,
+        modifier = Modifier.size(size),
+    ) {
+        Icon(
+            imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
+            contentDescription =
+                if (isPlaying) {
+                    stringResource(Res.string.cd_pause)
+                } else {
+                    stringResource(Res.string.cd_play)
+                },
+        )
+    }
+}
+
+@Composable
+private fun AudiobookNextButton(
+    onClick: () -> Unit,
+    size: Dp = 40.dp,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(size),
+    ) {
+        Icon(
+            imageVector = Icons.Rounded.FastForward,
+            contentDescription = stringResource(Res.string.cd_next),
+        )
+    }
+}
+
+@Composable
+private fun AudiobookCueText(
+    text: String?,
+    cueId: String?,
+    onJumpToCue: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    maxLines: Int = 1,
+) {
+    val jumpDescription = stringResource(Res.string.cd_jump_to_current_audiobook_sentence)
+    Text(
+        text = text ?: stringResource(Res.string.sasayaki_ready),
+        modifier =
+            modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable(enabled = cueId != null) {
+                    cueId?.let(onJumpToCue)
+                }.semantics {
+                    contentDescription = jumpDescription
+                }.padding(horizontal = 8.dp, vertical = 4.dp),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = MaterialTheme.typography.labelSmall,
+        maxLines = maxLines,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -420,8 +710,17 @@ internal fun ReaderSideChrome(
     bottomPadding: Dp,
     onShow: () -> Unit,
     onHide: () -> Unit,
+    onInteraction: () -> Unit,
     onMenu: () -> Unit,
     onSasayaki: () -> Unit,
+    sasayakiQuickControlsEnabled: Boolean,
+    sasayakiPlaying: Boolean,
+    currentSasayakiCueText: String?,
+    currentSasayakiCueId: String?,
+    onPreviousSasayakiCue: () -> Unit,
+    onToggleSasayakiPlayback: () -> Unit,
+    onNextSasayakiCue: () -> Unit,
+    onJumpToSasayakiCue: (String) -> Unit,
     readingSchemePanelVisible: Boolean,
     onReadingScheme: () -> Unit,
     bookmarkPanelVisible: Boolean,
@@ -486,6 +785,7 @@ internal fun ReaderSideChrome(
                         .width(railWidth)
                         .fillMaxHeight()
                         .zIndex(1f)
+                        .readerChromeInteraction(onInteraction)
                         .clickable(enabled = !visible, onClick = onShow),
             ) {
                 AnimatedVisibility(
@@ -557,6 +857,17 @@ internal fun ReaderSideChrome(
                                     contentDescription = stringResource(Res.string.cd_bookmarks),
                                 )
                             }
+                            if (sasayakiQuickControlsEnabled) {
+                                ReaderSideAudiobookControls(
+                                    isPlaying = sasayakiPlaying,
+                                    currentCueText = currentSasayakiCueText,
+                                    currentCueId = currentSasayakiCueId,
+                                    onPrevious = onPreviousSasayakiCue,
+                                    onTogglePlayback = onToggleSasayakiPlayback,
+                                    onNext = onNextSasayakiCue,
+                                    onJumpToCue = onJumpToSasayakiCue,
+                                )
+                            }
                             Spacer(modifier = Modifier.weight(1f))
                         }
                     }
@@ -622,6 +933,18 @@ internal fun ReaderSideChrome(
         }
     }
 }
+
+private fun Modifier.readerChromeInteraction(onInteraction: () -> Unit): Modifier =
+    pointerInput(onInteraction) {
+        awaitEachGesture {
+            awaitFirstDown(
+                requireUnconsumed = false,
+                pass = PointerEventPass.Initial,
+            )
+            onInteraction()
+            waitForUpOrCancellation(pass = PointerEventPass.Initial)
+        }
+    }
 
 @Composable
 private fun ReaderSideChromeIconButton(

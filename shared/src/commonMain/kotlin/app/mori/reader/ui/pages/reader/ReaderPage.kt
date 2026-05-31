@@ -2,8 +2,8 @@ package app.mori.reader.ui.pages.reader
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
@@ -155,8 +155,13 @@ fun ReaderPage(
     val readerBackground = readerBackgroundColor(isDark = isDark, materialEInkMode = materialEInkMode)
     val effectiveReaderSettings = settings.effectiveReaderSettings(book?.info?.readerSchemeId)
     val actionBarPinned = effectiveReaderSettings.actionBarPinned
-    val chromeVisible = actionBarPinned || transientReaderChromeVisible
+    val chromeVisible = (actionBarPinned || transientReaderChromeVisible) && chapter != null && !reader.isLoading
     val sideChromeVisible = chromeVisible && !chaptersOpen
+    val currentSasayakiCue =
+        reader.sasayakiPlayer.currentCueId?.let { cueId ->
+            reader.sasayakiMatches.firstOrNull { it.id == cueId }
+        }
+    val sasayakiQuickControlsEnabled = reader.sasayakiAudioAssetInfo != null && reader.sasayakiMatches.isNotEmpty()
     val readerBottomAestheticPadding = 8.dp
     val visibleNavigationBarPadding =
         if (effectiveReaderSettings.fullscreen) {
@@ -347,6 +352,7 @@ fun ReaderPage(
                                     navigationVersion = reader.navigationVersion,
                                     fragment = reader.fragment,
                                     capturePageTextRequestKey = bookmarkTextCaptureRequestKey,
+                                    selectionActive = reader.lookupStack.any { it.visible },
                                     selectionHighlightLength = reader.lookupStack.firstOrNull()?.highlightLength,
                                     sasayakiCues = currentChapterSasayakiCues,
                                     highlightedSasayakiCueId = reader.sasayakiPlayer.currentCueId,
@@ -388,7 +394,7 @@ fun ReaderPage(
                                         start = readerContentStartPadding,
                                         top = readerContentTopPadding,
                                         bottom = readerContentBottomPadding,
-                                ),
+                                    ),
                             callbacks =
                                 ReaderWebViewCallbacks(
                                     onUserInteraction = {
@@ -508,6 +514,7 @@ fun ReaderPage(
                             bookmarkPanelVisible = false
                             openReadingSchemeAdvanced = false
                         },
+                        onInteraction = refreshTransientReaderChromeTimeout,
                         onMenu = {
                             bookmarkPanelVisible = false
                             sasayakiOpen = false
@@ -523,6 +530,14 @@ fun ReaderPage(
                             openReadingSchemeAdvanced = false
                             sasayakiOpen = true
                         },
+                        sasayakiQuickControlsEnabled = sasayakiQuickControlsEnabled,
+                        sasayakiPlaying = reader.sasayakiPlayer.isPlaying,
+                        currentSasayakiCueText = currentSasayakiCue?.text,
+                        currentSasayakiCueId = currentSasayakiCue?.id,
+                        onPreviousSasayakiCue = { onReaderIntent(ReaderIntent.PreviousCue) },
+                        onToggleSasayakiPlayback = { onReaderIntent(ReaderIntent.TogglePlayback) },
+                        onNextSasayakiCue = { onReaderIntent(ReaderIntent.NextCue) },
+                        onJumpToSasayakiCue = { onReaderIntent(ReaderIntent.JumpToSasayakiCue(it)) },
                         readingSchemePanelVisible = readingSchemePanelVisible,
                         onReadingScheme = {
                             sasayakiOpen = false
@@ -595,6 +610,7 @@ fun ReaderPage(
                         monetEnabled = settings.appearance.monetEnabled,
                         monetKeyColor = settings.appearance.monetKeyColor,
                         bottomPadding = visibleNavigationBarPadding,
+                        onInteraction = refreshTransientReaderChromeTimeout,
                         onMenu = {
                             refreshTransientReaderChromeTimeout()
                             bookmarkPanelVisible = false
@@ -611,6 +627,26 @@ fun ReaderPage(
                             readingSchemePanelVisible = false
                             openReadingSchemeAdvanced = false
                             sasayakiOpen = true
+                        },
+                        sasayakiQuickControlsEnabled = sasayakiQuickControlsEnabled,
+                        sasayakiPlaying = reader.sasayakiPlayer.isPlaying,
+                        currentSasayakiCueText = currentSasayakiCue?.text,
+                        currentSasayakiCueId = currentSasayakiCue?.id,
+                        onPreviousSasayakiCue = {
+                            refreshTransientReaderChromeTimeout()
+                            onReaderIntent(ReaderIntent.PreviousCue)
+                        },
+                        onToggleSasayakiPlayback = {
+                            refreshTransientReaderChromeTimeout()
+                            onReaderIntent(ReaderIntent.TogglePlayback)
+                        },
+                        onNextSasayakiCue = {
+                            refreshTransientReaderChromeTimeout()
+                            onReaderIntent(ReaderIntent.NextCue)
+                        },
+                        onJumpToSasayakiCue = {
+                            refreshTransientReaderChromeTimeout()
+                            onReaderIntent(ReaderIntent.JumpToSasayakiCue(it))
                         },
                         readingSchemePanelVisible = readingSchemePanelVisible,
                         onReadingScheme = {
@@ -714,10 +750,7 @@ fun ReaderPage(
         monetEnabled = settings.appearance.monetEnabled,
         monetKeyColor = settings.appearance.monetKeyColor,
         player = reader.sasayakiPlayer,
-        currentCueText =
-            reader.sasayakiPlayer.currentCueId?.let { cueId ->
-                reader.sasayakiMatches.firstOrNull { it.id == cueId }?.text
-            },
+        currentCueText = currentSasayakiCue?.text,
         enabled = reader.sasayakiMatches.isNotEmpty(),
         autoScroll = settings.sasayaki.autoScroll,
         autoPauseOnLookup = settings.sasayaki.autoPauseOnLookup,

@@ -71,8 +71,8 @@ import app.mori.reader.data.settings.ReaderSettings
 import app.mori.reader.data.settings.effectiveReaderSettings
 import app.mori.reader.data.settings.findReaderScheme
 import app.mori.reader.shared.generated.resources.Res
-import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_title
 import app.mori.reader.shared.generated.resources.appearance_action_bar_pinned_title
+import app.mori.reader.shared.generated.resources.appearance_avoid_page_break_title
 import app.mori.reader.shared.generated.resources.appearance_character_spacing
 import app.mori.reader.shared.generated.resources.appearance_font_size
 import app.mori.reader.shared.generated.resources.appearance_fullscreen_title
